@@ -11,4 +11,7 @@ This is a fork of [Scorchworks F-Engrave](http://www.scorchworks.com/Fengrave/fe
 
 # Running tests
 
-
+You need `nose` to run the tests: `(sudo) pip install nose`. Run the tests later:
+```
+nosetests -s tests/test_reader.py
+```

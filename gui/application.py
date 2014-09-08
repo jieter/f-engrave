@@ -7,8 +7,8 @@ from time import time
 from math import *
 from subprocess import Popen, PIPE
 
-from readers.cxf import parse
-from readers.dxf import parse as parse_dxf
+from readers.cxf import cxf as parse_cxf
+from readers.dxf import dxf as parse_dxf
 
 
 from util import *
@@ -23,7 +23,7 @@ class Application(Frame):
         Frame.__init__(self, master)
         self.w = 780
         self.h = 490
-        frame = Frame(master, width= self.w, height=self.h)
+        frame = Frame(master, width=self.w, height=self.h)
         self.master = master
         self.x = -1
         self.y = -1
@@ -3598,17 +3598,17 @@ class Application(Frame):
     def Read_font_file(self):
         self.font = {}
         file_full = self.fontdir.get() + "/" + self.fontfile.get()
-        if ( not os.path.isfile(file_full) ):
+        if not os.path.isfile(file_full):
             return
-        if (not self.batch.get()):
-            self.statusbar.configure( bg = 'yellow' )
+        if not self.batch.get():
+            self.statusbar.configure(bg = 'yellow')
             self.statusMessage.set(" Reading File.........")
             self.master.update_idletasks()
 
         fileName, fileExtension = os.path.splitext(file_full)
         self.current_input_file.set( os.path.basename(file_full) )
 
-        SegArc    =  float(self.segarc.get())
+        SegArc = float(self.segarc.get())
         TYPE=fileExtension.upper()
         if TYPE=='.CXF':
             try:
@@ -3617,7 +3617,7 @@ class Application(Frame):
                 self.statusMessage.set("Unable to Open CXF File: %s" %(file_full))
                 self.statusbar.configure( bg = 'red' )
                 return
-            self.font = parse(file,SegArc)  # build stroke lists from font file
+            self.font = parse_cxf(file, SegArc)  # build stroke lists from font file
             file.close()
 
         elif TYPE=='.TTF':
@@ -3668,9 +3668,9 @@ class Application(Frame):
         #    new_origin = True
 
         SegArc    =  float(self.segarc.get())
-        TYPE=fileExtension.upper()
-        if TYPE=='.DXF':
-            String = self.Input.get(1.0,END).encode('ascii','ignore')
+        TYPE = fileExtension.upper()
+        if TYPE is '.DXF':
+            String = self.Input.get(1.0, END).encode('ascii', 'ignore')
             #if (self.useIMGsize.get()):
             #    new_origin = False
             #else:

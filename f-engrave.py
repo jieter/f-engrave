@@ -13,10 +13,11 @@
 version = '1.40'
 
 
-from util import icon, VERSION, Tk
-# TODO insert psyco / pypy
-from gui.application import Application
+from util import icon, Tk
 
+# TODO insert psyco / pypy
+
+from gui.application import Application
 
 root = Tk()
 app = Application(root)

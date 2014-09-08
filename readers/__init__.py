@@ -1,2 +1,2 @@
-from dxf import parse as dxf_parse
-from cxf import parse as cxf_parse
+from dxf import parse as dxf
+from cxf import parse as cxf
