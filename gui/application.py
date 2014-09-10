@@ -7,9 +7,10 @@ from time import time
 from math import *
 from subprocess import Popen, PIPE
 
-from readers.cxf import cxf as parse_cxf
-from readers.dxf import dxf as parse_dxf
+import readers.cxf as parse_cxf
+import readers.dxf as parse_dxf
 
+import writers
 
 from util import *
 
@@ -63,6 +64,8 @@ class Application(Frame):
 
         self.createWidgets()
 
+    def get_origin(self):
+        return (float(self.xorigin.get()), float(self.yorigin.get()))
 
     def createWidgets(self):
         self.initComplete = 0
@@ -263,8 +266,8 @@ class Application(Frame):
         self.default_text = "F-Engrave"
         self.DXF_source = " "
         self.HOME_DIR     =  os.path.expanduser("~")
-        self.NGC_FILE     = (self.HOME_DIR+"/None")
-        self.IMAGE_FILE   = (self.HOME_DIR+"/None")
+        self.NGC_FILE     = (self.HOME_DIR + "/None")
+        self.IMAGE_FILE   = (self.HOME_DIR + "/None")
         self.current_input_file.set(" ")
         self.bounding_box.set(" ")
 
@@ -384,13 +387,17 @@ class Application(Frame):
             self.DoIt()
             if self.cut_type.get() == "v-carve":
                 self.V_Carve_It()
-            self.WriteGCode()
+            # self.WriteGCode()
+            self.WriteSVG()
 
-            for line in self.gcode:
-                try:
-                    sys.stdout.write(line+'\n')
-                except:
-                    sys.stdout.write('(skipping line)\n')
+            for line in self.svgcode:
+                print line
+
+            # for line in self.gcode:
+            #     try:
+            #         sys.stdout.write(line+'\n')
+            #     except:
+            #         sys.stdout.write('(skipping line)\n')
             sys.exit()
 
         ##########################################################################
@@ -931,10 +938,7 @@ class Application(Frame):
                         seg_cos_test  =  -(x1 - lastx)/ cord_a
                         phi_test      = Get_Angle(seg_sin_test,seg_cos_test)
                         X_test,Y_test = Transform(x_center-lastx,y_center-lasty,radians(phi_test))
-                        if Y_test > 0.0:
-                            code="G2"
-                        else:
-                            code="G3"
+                        code = 'G2' if Y_test > 0.0 else 'G3'
                         x_center_last = x_center
                         y_center_last = y_center
                         R_last = R_arc
@@ -1582,83 +1586,7 @@ class Application(Frame):
         ###################################
 
     def WriteSVG(self):
-        if self.cut_type.get() == "v-carve":
-            Thick = 0.001
-        else:
-            Thick   = float(self.STHICK.get())
-
-        dpi=100
-
-        maxx = -99919.0
-        maxy = -99929.0
-        maxa = -99939.0
-        mina =  99949.0
-        miny =  99959.0
-        minx =  99969.0
-        for line in self.coords:
-            XY = line
-            maxx = max(maxx, XY[0],XY[2])
-            minx = min(minx, XY[0],XY[2])
-            miny = min(miny, XY[1],XY[3])
-            maxy = max(maxy, XY[1],XY[3])
-
-        XOrigin    =  float(self.xorigin.get())
-        YOrigin    =  float(self.yorigin.get())
-        Radius_plot=  float(self.RADIUS_PLOT)
-        if Radius_plot != 0:
-            maxx = max(maxx, XOrigin+Radius_plot - self.Xzero)
-            minx = min(minx, XOrigin-Radius_plot - self.Xzero)
-            miny = min(miny, YOrigin-Radius_plot - self.Yzero)
-            maxy = max(maxy, YOrigin+Radius_plot - self.Yzero)
-
-        maxx = maxx + Thick/2
-        minx = minx - Thick/2
-        miny = miny - Thick/2
-        maxy = maxy + Thick/2
-
-        width_in  = maxx-minx
-        height_in = maxy-miny
-        width  = ((maxx-minx)*dpi)
-        height = ((maxy-miny)*dpi)
-
-        self.svgcode = []
-        self.svgcode.append('<?xml version="1.0" standalone="no"?>')
-        self.svgcode.append('<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"  ')
-        self.svgcode.append('  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">  ')
-        self.svgcode.append('<svg width="%f%s" height="%f%s" viewBox="0 0 %f %f"  ' \
-                            %(width_in,self.units.get(),height_in,self.units.get(),width,height) )
-        self.svgcode.append('     xmlns="http://www.w3.org/2000/svg" version="1.1">')
-        self.svgcode.append('  <title> F-engrave Output </title>')
-        self.svgcode.append('  <desc>SVG File Created By F-Engrave</desc>')
-
-        # Make Circle
-        if Radius_plot != 0 and self.cut_type.get() == "engrave":
-            self.svgcode.append('  <circle cx="%f" cy="%f" r="%f"' %(
-                        ( XOrigin-self.Xzero-minx)*dpi,
-                        (-YOrigin+self.Yzero+maxy)*dpi,
-                        ( Radius_plot            )*dpi) )
-            self.svgcode.append('        fill="none" stroke="blue" stroke-width="%f"/>' %(Thick*dpi))
-        # End Circle
-
-        for line in self.coords:
-            XY = line
-            self.svgcode.append('  <path d="M %f %f L %f %f"' %(
-                    ( XY[0]-minx)*dpi,
-                    (-XY[1]+maxy)*dpi,
-                    ( XY[2]-minx)*dpi,
-                    (-XY[3]+maxy)*dpi) )
-            self.svgcode.append('        fill="none" stroke="blue" stroke-width="%f" stroke-linecap="round" stroke-linejoin="round"/>' %(Thick*dpi))
-
-        if self.input_type.get() == "text":
-            Radius_in =  float(self.TRADIUS.get())
-        else:
-            Radius_in = 0.0
-
-        Thick     =  float(self.STHICK.get() )
-        if self.plotbox.get() != "no_box":
-            if Radius_in != 0:
-                Delta = Thick/2 + float(self.boxgap.get())
-        self.svgcode.append('</svg>')
+        self.svgcode = writers.svg(self)
 
     def CopyClipboard_GCode(self):
         self.clipboard_clear()
