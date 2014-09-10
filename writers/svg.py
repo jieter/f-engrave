@@ -20,16 +20,12 @@ def svg(app):
     #     miny = min(miny, YOrigin - Radius_plot - app.Yzero)
     #     maxy = max(maxy, YOrigin + Radius_plot - app.Yzero)
 
-    print bbox
     bbox.pad(thickness / 2)
-    print bbox
     width_in  = bbox.xmax - bbox.xmin
     height_in = bbox.ymax - bbox.ymin
 
     width  = width_in * dpi
     height = height_in * dpi
-
-    print bbox, thickness, width, height, width_in, height_in
 
     svgcode = []
     svgcode.append('''
