@@ -75,4 +75,3 @@ class BoundingBoxTest(unittest.TestCase):
         bbox = BoundingBox(0, 1, 2, 3)
 
         self.assertEquals(str(bbox), 'BoundingBox([0.0, 1.0, 2.0, 3.0])')
-
