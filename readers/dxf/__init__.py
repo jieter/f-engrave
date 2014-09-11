@@ -32,9 +32,6 @@ def parse(dxf_file, segarc, new_origin=True):
 
     font[key] = Character(key)
     font[key].stroke_list = stroke_list
-    font[key].xmax = bbox.xmax
-    font[key].ymax = bbox.ymax
-    font[key].xmin = bbox.xmin
-    font[key].ymin = bbox.ymin
+    font[key].bbox = bbox
 
     return font, DXF_source
