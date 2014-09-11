@@ -39,7 +39,8 @@ def Read_font_file(settings):
             else:
                 fontfile = stdout.split("\n")
 
-            font = parse_cxf(fontfile, segarc)  # build stroke lists from font file
+            # build stroke lists from font file
+            font = parse_cxf(fontfile, segarc)
             settings.set('input_type', 'text')
         except:
             fmessage("Unable To open True Type (TTF) font file: %s" % (file_full))

@@ -2,7 +2,7 @@
 
 This is a fork of [Scorchworks F-Engrave](http://www.scorchworks.com/Fengrave/fengrave.html) version 1.41 (2014-09-08).
 
-# !! Please note that this code is very likely not functional at all. The tests should
+# !! Please note that this code is very likely not functional at all. The tests should work though.
 
 
 ## Changes made:
