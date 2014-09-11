@@ -10,7 +10,7 @@
 from math import sin, cos, radians
 import re
 
-from util.mathutil import Character, Line
+from geometry import Character, Line
 
 
 def parse(file, segarc):

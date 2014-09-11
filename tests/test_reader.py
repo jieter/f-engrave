@@ -2,6 +2,7 @@
 import unittest
 
 import readers.dxf as dxf
+import readers.cxf as cxf
 
 
 class DXFReaderTest(unittest.TestCase):
@@ -38,4 +39,7 @@ class DXFReaderTest(unittest.TestCase):
 
 
 class CXFReaderTest(unittest.TestCase):
-    pass
+
+    def test_one(self):
+        with open('fonts/normal.cxf') as fontfile:
+            cxf.parse(fontfile, 1.0)
