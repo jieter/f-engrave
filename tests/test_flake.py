@@ -22,6 +22,8 @@ flake8 = get_style_guide(
         'gui.py',
         'nurbs.py',
         'bspline.py',
+        'linearcfitter.py',
+        'gcode.py',
     ]
 )
 

@@ -1,7 +1,8 @@
 import unittest
 import csv
 
-from util.mathutil import *
+from geometry import *
+from geometry.boundingbox import BoundingBox
 
 INFINITY = 1e10
 

@@ -180,6 +180,9 @@ class Settings(object):
     def has_setting(self, name):
         return name in self._settings
 
+    def get_fontfile(self):
+        return self.get('fontdir') + os.path.sep + self.get('fontfile')
+
     def from_configfile(self, filename):
         with open(filename, 'r') as config:
             for line in config.readlines():

@@ -1,6 +1,8 @@
 import sys
 import os
 
+import externals
+
 IN_AXIS = "AXIS_PROGRESS_BAR" in os.environ
 
 # Setting QUIET to True will stop almost all console messages
@@ -29,6 +31,12 @@ def fmessage(text, newline=True):
             sys.stdout.write("\n")
     except:
         pass
+
+try:
+    TTF_AVAILABLE = externals.check_ttf()
+    POTRACE_AVAILABLE = externals.check_potrace()
+except Exception, e:
+    fmessage(e)
 
 
 def message_box(title, message):

@@ -1,7 +1,7 @@
 
 import unittest
 
-import readers
+import readers.dxf as dxf
 
 
 class DXFReaderTest(unittest.TestCase):
@@ -10,7 +10,7 @@ class DXFReaderTest(unittest.TestCase):
 
     def test_line(self):
         with open('tests/files/line.dxf', 'r') as raw_dxf:
-            parsed, source = readers.dxf(raw_dxf, self.tolerance)
+            parsed, source = dxf.parse(raw_dxf, self.tolerance)
 
             self.assertEquals(
                 str(parsed[self.key].stroke_list[0]),
@@ -18,7 +18,7 @@ class DXFReaderTest(unittest.TestCase):
 
     def test_polyline(self):
         with open('tests/files/polyline.dxf', 'r') as raw_dxf:
-            parsed, source = readers.dxf(raw_dxf, self.tolerance)
+            parsed, source = dxf.parse(raw_dxf, self.tolerance)
 
             for i, line in enumerate(parsed[self.key].stroke_list):
                 line = str(line)
@@ -29,7 +29,7 @@ class DXFReaderTest(unittest.TestCase):
 
     def test_circle(self):
         with open('tests/files/circle.dxf', 'r') as raw_dxf:
-            parsed, source = readers.dxf(raw_dxf, self.tolerance)
+            parsed, source = dxf.parse(raw_dxf, self.tolerance)
 
             # circles are approximated
             self.assertEquals(

@@ -1,9 +1,9 @@
 from util import fmessage
 
+
 class Batch(object):
 
-
-    class __init__(self, settings):
+    def __init__(self, settings):
 
         self.settings = settings
 

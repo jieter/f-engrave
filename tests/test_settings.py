@@ -47,7 +47,7 @@ class SettingsTest(unittest.TestCase):
 
         self.assertEquals(s.get('v_bit_angle'), 60)
 
-        #TODO: quote and unquote strings in config
+        # TODO: quote and unquote strings in config
 
     # def test_autoload(self):
     #     s = Settings(autoload=True)

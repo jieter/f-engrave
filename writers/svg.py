@@ -16,16 +16,17 @@ path_template = '<path d="M %f %f L %f %f" fill="none" stroke="' + color + '" ' 
 circle_template = '<circle cx="%f" cy="%f" r="%f" fill="none" stroke="' + color + '" stroke-width="%f" />'
 
 
-def svg(settings, coords):
-    if setings.get('cut_type') == "v-carve":
+def svg(job):
+    settings = job.settings
+    if settings.get('cut_type') == "v-carve":
         thickness = 0.001
     else:
-        thickness = settings.('STHICK')
+        thickness = settings.get('STHICK')
 
     dpi = 100
 
     bbox = BoundingBox()
-    for line in app.coords:
+    for line in job.coords:
         bbox.extend(Line(line[0:4]))
 
     # XOrigin, YOrigin = (settings.get('xorigin'), settings.get('yorigin'))
@@ -61,7 +62,7 @@ def svg(settings, coords):
     #                   thickness                   * dpi)
     # # End Circle
 
-    for l in coords:
+    for l in job.coords:
         # translate
         line = [
             l[0] - bbox.xmin, -l[1] + bbox.ymax,

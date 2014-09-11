@@ -1,4 +1,6 @@
-from math import cos, sin, degrees, acos
+from math import cos, sin, degrees, radians, atan2, acos, hypot
+
+from boundingbox import BoundingBox
 
 Zero = 0.0000001
 
@@ -34,6 +36,40 @@ def Get_Angle(s, c):
     if angle > 359.999 and s >= 0:
         angle == 0.0
     return angle
+
+
+############################################################################
+# routine takes an x and y the point is rotated by angle returns new x,y   #
+############################################################################
+def Rotn(x, y, angle, radius):
+    if radius > 0.0:
+        alpha = x / radius
+        xx = (radius + y) * sin(alpha)
+        yy = (radius + y) * cos(alpha)
+    elif radius < 0.0:
+        alpha = x / radius
+        xx = (radius + y) * sin(alpha)
+        yy = (radius + y) * cos(alpha)
+    else:
+        # radius is exacly 0
+        alpha = 0
+        xx = x
+        yy = y
+
+    rad = hypot(xx, yy)
+    theta = atan2(yy, xx)
+    newx = rad * cos(theta + radians(angle))
+    newy = rad * sin(theta + radians(angle))
+    return newx, newy, alpha
+
+
+############################################################################
+# routine takes an x and a y scales are applied and returns new x,y tuple  #
+############################################################################
+def CoordScale(x, y, xscale, yscale):
+    newx = x * xscale
+    newy = y * yscale
+    return newx, newy
 
 
 class Character(object):
@@ -92,57 +128,26 @@ class Line(object):
         return "Line([%s, %s, %s, %s])" % (self.xstart, self.ystart, self.xend, self.yend)
 
 
-class BoundingBox(object):
-    def __init__(self, xmin=1e10, xmax=-1e10, ymin=1e10, ymax=-1e10):
-        self.xmin = float(xmin)
-        self.xmax = float(xmax)
-        self.ymin = float(ymin)
-        self.ymax = float(ymax)
+def point_inside_polygon(self, x, y, poly):
+    '''
+    determine if a point is inside a given polygon or not
+    Polygon is a list of (x,y) pairs.
+    http://www.ariel.com.au/a/python-point-int-poly.html
+    '''
+    n = len(poly)
+    inside = -1
+    p1x = poly[0][0]
+    p1y = poly[0][1]
+    for i in range(n + 1):
+        p2x = poly[i % n][0]
+        p2y = poly[i % n][1]
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = inside * -1
+        p1x, p1y = p2x, p2y
 
-    def extend(self, *args):
-        if len(args) is 1:
-            obj = args[0]
-            if type(obj) is BoundingBox:
-                self.xmin = min(self.xmin, obj.xmin)
-                self.xmax = max(self.xmax, obj.xmax)
-
-                self.ymin = min(self.ymin, obj.ymin)
-                self.ymax = max(self.ymax, obj.ymax)
-
-            elif hasattr(obj, 'bounds'):
-                self.extend(obj.bounds())
-
-        elif len(args) == 4:
-            self.extend(BoundingBox(*args))
-
-        elif len(args) == 2:
-            self.extend(BoundingBox(args[0], args[0], args[1], args[1]))
-
-        return self
-
-    def pad(self, amount):
-        self.padX(amount)
-        self.padY(amount)
-
-        return self
-
-    def padX(self, amount):
-        self.xmin -= float(amount)
-        self.xmax += float(amount)
-
-        return self
-
-    def padY(self, amount):
-        self.ymin -= float(amount)
-        self.ymax += float(amount)
-
-        return self
-
-    def tuple(self):
-        return (self.xmin, self.xmax, self.ymin, self.ymax)
-
-    def __eq__(self, other):
-        return self.tuple() == other.tuple()
-
-    def __str__(self):
-        return 'BoundingBox([%s, %s, %s, %s])' % self.tuple()
+    return inside

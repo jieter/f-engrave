@@ -1,9 +1,10 @@
 from subprocess import Popen, PIPE
+import sys
 
-from util import fmessage, VERSION
+VERSION = sys.version_info[0]
 
 
-def checkExternalBinaries():
+def check_ttf():
     cmd = ["ttf2cxf_stream", "TEST", "STDOUT"]
     try:
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -11,14 +12,16 @@ def checkExternalBinaries():
         if VERSION == 3:
             stdout = bytes.decode(stdout)
         if str.find(stdout.upper(), 'TTF2CXF') != -1:
-            TTF_AVAIL = True
+            return True
         else:
-            TTF_AVAIL = False
-            fmessage("ttf2cxf_stream is not working...Bummer")
+            raise Exception("ttf2cxf_stream is not working...Bummer")
     except:
-        fmessage("ttf2cxf_stream executable is not present/working...Bummer")
-        TTF_AVAIL = False
+        raise Exception("ttf2cxf_stream executable is not present/working...Bummer")
 
+    return False
+
+
+def check_potrace():
     cmd = ["potrace", "-v"]
     try:
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -26,17 +29,12 @@ def checkExternalBinaries():
         if VERSION == 3:
             stdout = bytes.decode(stdout)
         if str.find(stdout.upper(), 'POTRACE') != -1:
-            POTRACE_AVAIL = True
+            return True
             if str.find(stdout.upper(), '1.1') == -1:
-                fmessage("F-Engrave Requires Potrace Version 1.10 or Newer.")
+                raise Exception("F-Engrave Requires Potrace Version 1.10 or Newer.")
         else:
-            POTRACE_AVAIL = False
-            fmessage("potrace is not working...Bummer")
+            raise Exception("potrace is not working...Bummer")
     except:
-        fmessage("potrace executable is not present/working...Bummer")
-        POTRACE_AVAIL = False
+        raise Exception("potrace executable is not present/working...Bummer")
 
-    return {
-        'TTF': TTF_AVAIL,
-        'POTRACE': POTRACE_AVAIL
-    }
+    return False
