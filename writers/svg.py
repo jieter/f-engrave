@@ -16,11 +16,11 @@ path_template = '<path d="M %f %f L %f %f" fill="none" stroke="' + color + '" ' 
 circle_template = '<circle cx="%f" cy="%f" r="%f" fill="none" stroke="' + color + '" stroke-width="%f" />'
 
 
-def svg(app):
-    if app.cut_type.get() == "v-carve":
+def svg(settings, coords):
+    if setings.get('cut_type') == "v-carve":
         thickness = 0.001
     else:
-        thickness = float(app.STHICK.get())
+        thickness = settings.('STHICK')
 
     dpi = 100
 
@@ -28,8 +28,8 @@ def svg(app):
     for line in app.coords:
         bbox.extend(Line(line[0:4]))
 
-    # XOrigin, YOrigin = app.get_origin()
-    # Radius_plot=  float(app.RADIUS_PLOT)
+    # XOrigin, YOrigin = (settings.get('xorigin'), settings.get('yorigin'))
+    # Radius_plot=  app.RADIUS_PLOT)
     # if Radius_plot != 0:
     #     maxx = max(maxx, XOrigin + Radius_plot - app.Xzero)
     #     minx = min(minx, XOrigin - Radius_plot - app.Xzero)
@@ -47,21 +47,21 @@ def svg(app):
     svgcode.append(header_template % {
         'width_in': width_in,
         'height_in': height_in,
-        'units': app.units.get(),
+        'units': settings.get('units'),
         'width': width,
         'height': height
     })
 
     # # Make Circle
-    # if Radius_plot != 0 and app.cut_type.get() == "engrave":
-    #     svgcode.append('    <circle cx="%f" cy="%f" r="%f" fill="none" stroke="blue" stroke-width="%f" />' % (
+    # if Radius_plot != 0 and settings.get('cut_type.get') == "engrave":
+    #     svgcode.append(circle_template % (
     #                 ( XOrigin - app.Xzero - minx) * dpi,
     #                 (-YOrigin + app.Yzero + maxy) * dpi,
     #                   Radius_plot               ) * dpi,
     #                   thickness                   * dpi)
     # # End Circle
 
-    for l in app.coords:
+    for l in coords:
         # translate
         line = [
             l[0] - bbox.xmin, -l[1] + bbox.ymax,

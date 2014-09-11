@@ -12,19 +12,28 @@
 
 version = '1.40'
 
-
-from util import icon, Tk
-
 # TODO insert psyco / pypy
+#
+from application.settings import Settings
 
-from gui.application import Application
+settings = Settings(autoload=True)
 
-root = Tk()
-app = Application(root)
-app.master.title("F-Engrave V" + version)
-app.master.iconname("F-Engrave")
-app.master.minsize(780, 540)
+# TODO: parse command line options.
 
-icon.add_to_app(app)
+if settings.get('batch'):
+    # batch processing
+    pass
 
-root.mainloop()
+else:
+    from util import icon, Tk
+    from application.gui import Gui
+
+    root = Tk()
+    app = Gui(root, settings)
+    app.master.title("F-Engrave V" + version)
+    app.master.iconname("F-Engrave")
+    app.master.minsize(780, 540)
+
+    icon.add_to_app(app)
+
+    root.mainloop()

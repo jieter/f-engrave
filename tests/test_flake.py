@@ -19,7 +19,7 @@ flake8 = get_style_guide(
         'py2exe_setup.py',
 
         # new files, to be cleaned up:
-        'application.py',
+        'gui.py',
         'nurbs.py',
         'bspline.py',
     ]

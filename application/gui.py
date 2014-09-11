@@ -5,7 +5,7 @@ import getopt
 from time import time
 
 from math import *
-from subprocess import Popen, PIPE
+
 
 import readers.cxf as parse_cxf
 import readers.dxf as parse_dxf
@@ -16,11 +16,16 @@ from util import *
 
 from util.mathutil import Zero, Get_Angle, Transform
 
+from settings import Settings
+
 version = '1.5'
 
 ################################################################################
-class Application(Frame):
-    def __init__(self, master):
+class Gui(Frame):
+
+    self.settings = None
+
+    def __init__(self, master, settings):
         Frame.__init__(self, master)
         self.w = 780
         self.h = 490
@@ -30,45 +35,18 @@ class Application(Frame):
         self.y = -1
         self.delay_calc = 0
 
-        cmd = ["ttf2cxf_stream","TEST","STDOUT"]
-        try:
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            stdout, stderr = p.communicate()
-            if VERSION == 3:
-                stdout = bytes.decode(stdout)
-            if str.find(stdout.upper(),'TTF2CXF') != -1:
-                self.TTF_AVAIL = True
-            else:
-                self.TTF_AVAIL = False
-                fmessage("ttf2cxf_stream is not working...Bummer")
-        except:
-            fmessage("ttf2cxf_stream executable is not present/working...Bummer")
-            self.TTF_AVAIL = False
+        self.settings = settings
 
-        cmd = ["potrace","-v"]
-        try:
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            stdout, stderr = p.communicate()
-            if VERSION == 3:
-                stdout = bytes.decode(stdout)
-            if str.find(stdout.upper(),'POTRACE') != -1:
-                self.POTRACE_AVAIL = True
-                if str.find(stdout.upper(),'1.1') == -1:
-                    fmessage("F-Engrave Requires Potrace Version 1.10 or Newer.")
-            else:
-                self.POTRACE_AVAIL = False
-                fmessage("potrace is not working...Bummer")
-        except:
-            fmessage("potrace executable is not present/working...Bummer")
-            self.POTRACE_AVAIL = False
+        # TODO checkExternalBinaries() from util.externals
 
         self.createWidgets()
 
-    def get_origin(self):
-        return (float(self.xorigin.get()), float(self.yorigin.get()))
+    def setting(self, name):
+        '''shorthand for self.settings.get(name)'''
+        return self.settings.get(name)
 
-    def createWidgets(self):
-        self.initComplete = 0
+
+    def bindKeys(self):
         self.master.bind("<Configure>", self.Master_Configure)
         self.master.bind('<Enter>', self.bindConfigure)
         self.master.bind('<Escape>', self.KEY_ESC)
@@ -82,6 +60,10 @@ class Application(Frame):
         self.master.bind('<Prior>', self.KEY_ZOOM_IN) # Page Up
         self.master.bind('<Next>', self.KEY_ZOOM_OUT) # Page Down
         self.master.bind('<Control-g>', self.KEY_CTRL_G)
+
+    def createWidgets(self):
+        self.initComplete = 0
+        self.bindKeys()
 
         self.batch      = BooleanVar()
         self.show_axis  = BooleanVar()
@@ -164,80 +146,6 @@ class Application(Frame):
         self.current_input_file = StringVar()
         self.bounding_box       = StringVar()
 
-        ###########################################################################
-        #                         INITILIZE VARIABLES                             #
-        #    if you want to change a default setting this is the place to do it   #
-        ###########################################################################
-        self.batch.set(0)
-        self.show_axis.set(1)
-        self.show_box.set(1)
-        self.show_thick.set(1)
-        self.flip.set(0)
-        self.mirror.set(0)
-        self.outer.set(1)
-        self.upper.set(1)
-        self.fontdex.set(0)
-        self.useIMGsize.set(0)
-
-        self.v_flop.set(0)
-        self.b_carve.set(0)
-        self.v_pplot.set(1)
-        self.arc_fit.set(1)
-        self.ext_char.set(0)
-        self.var_dis.set(0)
-
-        self.clean_P.set(1)
-        self.clean_X.set(1)
-        self.clean_Y.set(0)
-        self.v_clean_P.set(0)
-        self.v_clean_Y.set(1)
-        self.v_clean_X.set(0)
-
-        self.YSCALE.set("2.0")
-        self.XSCALE.set("100")
-        self.LSPACE.set("1.1")
-        self.CSPACE.set("25")
-        self.WSPACE.set("100")
-        self.TANGLE.set("0.0")
-        self.TRADIUS.set("0.0")
-        self.ZSAFE.set("0.25")
-        self.ZCUT.set("-0.005")
-        self.STHICK.set("0.01")
-        self.origin.set("Default")      # Options are "Default",
-                                        #             "Top-Left", "Top-Center", "Top-Right",
-                                        #             "Mid-Left", "Mid-Center", "Mid-Right",
-                                        #             "Bot-Left", "Bot-Center", "Bot-Right"
-
-        self.justify.set("Left")        # Options are "Left", "Right", "Center"
-        self.units.set("in")            # Options are "in" and "mm"
-        self.FEED.set("5.0")
-        self.fontfile.set(" ")
-        self.H_CALC.set("max_use")
-        self.plotbox.set("no_box")
-        self.boxgap.set("0.25")
-        self.fontdir.set("fonts")
-        self.cut_type.set("engrave")    # Options are "engrave" and "v-carve"
-        self.input_type.set("text")     # Options are "text" and "image"
-
-        self.v_bit_angle.set("90")
-        self.v_bit_dia.set("0.5")
-        self.v_depth_lim.set("0.0")
-        self.v_drv_crner.set("135")
-        self.v_stp_crner.set("200")
-        self.v_step_len.set("0.01")
-        self.v_acc.set("0.001")
-        self.v_check_all.set("all")      # Options are "chr" and "all"
-
-        self.bmp_turnpol.set("minority") # options: black, white, right, left, minority, majority, or random
-        self.bmp_turdsize.set("2")       # default 2
-        self.bmp_alphamax.set("1")       # default 1
-        self.bmp_opttolerance.set("0.2") # default 0.2
-        self.bmp_longcurve.set(1)        # default 1 (True)
-
-        self.xorigin.set("0.0")
-        self.yorigin.set("0.0")
-        self.segarc.set("5.0")
-        self.accuracy.set("0.001")
 
         self.segID   = []
         self.gcode   = []
@@ -248,12 +156,6 @@ class Application(Frame):
         self.clean_segment=[]
         self.clean_coords_sort=[]
         self.v_clean_coords_sort=[]
-
-        self.clean_w.set("2")          # Width of the clean-up search area
-        self.clean_v.set("0.05")
-        self.clean_dia.set(".25")      # Diameter of clean-up bit
-        self.clean_step.set("50")      # Clean-up step-over as percent of clean-up bit diameter
-        self.clean_name.set("_clean")
 
         self.font    = {}
         self.RADIUS_PLOT = 0
@@ -376,7 +278,7 @@ class Application(Frame):
             if option in ('-b','--batch'):
                 self.batch.set(1)
 
-        if self.batch.get():
+        if self.setting('batch'):
             fmessage('(F-Engrave Batch Mode)')
 
             if self.input_type.get() == "text":
@@ -590,10 +492,10 @@ class Application(Frame):
         self.Listbox_1.bind("<Down>", self.Listbox_Key_Down)
 
         try:
-            font_files=os.listdir(self.fontdir.get())
+            font_files = os.listdir(self.fontdir.get())
             font_files.sort()
         except:
-            font_files=" "
+            font_files = " "
         for name in font_files:
             if str.find(name.upper(),'.CXF') != -1 \
             or (str.find(name.upper(),'.TTF') != -1 and self.TTF_AVAIL ):
@@ -772,21 +674,21 @@ class Application(Frame):
         return 1
 
 ################################################################################
-    def Sort_Paths(self,ecoords,i_loop=2):
+    def Sort_Paths(self, ecoords, i_loop=2):
         ##########################
         ###   find loop ends   ###
         ##########################
-        Lbeg=[]
-        Lend=[]
-        if len(ecoords)>0:
+        Lbeg = []
+        Lend = []
+        if len(ecoords) > 0:
             Lbeg.append(0)
-            loop_old=ecoords[0][i_loop]
+            loop_old = ecoords[0][i_loop]
             for i in range(1,len(ecoords)):
                 loop = ecoords[i][i_loop]
                 if loop != loop_old:
                     Lbeg.append(i)
                     Lend.append(i-1)
-                loop_old=loop
+                loop_old = loop
             Lend.append(i)
 
         #######################################################
@@ -797,7 +699,7 @@ class Application(Frame):
         if len(ecoords)>0:
             order_out.append([Lbeg[0],Lend[0]])
         inext = 0
-        total=len(Lbeg)
+        total = len(Lbeg)
         for i in range(total-1):
             if use_beg==1:
                 ii=Lbeg.pop(inext)
@@ -844,7 +746,8 @@ class Application(Frame):
         ###########################################################
         return order_out
 
-    def Line_Arc_Fit(self,lastx,lasty,lastz,x1,y1,z1,nextx,nexty,nextz,FLAG_arc,code,R_last,x_center_last,y_center_last,FLAG_line):
+    def Line_Arc_Fit(self, lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz, FLAG_arc, code,
+                     R_last, x_center_last, y_center_last, FLAG_line):
         global Zero
         Acc    =   float(self.accuracy.get())
         ########################################
