@@ -1,4 +1,5 @@
-from util.mathutil import Character, Line
+from geometry import Character, Line
+from geometry.boundingbox import BoundingBox
 
 from dxf_class import DXF_CLASS
 
@@ -7,9 +8,6 @@ def parse(dxf_file, segarc, new_origin=True):
     # Initialize / reset
     font = {}
     key = None
-    stroke_list = []
-    xmax, ymax = -1e10, -1e10
-    xmin, ymin = 1e10, 1e10
 
     DXF_source = " "
     dxf_import = DXF_CLASS()
@@ -24,21 +22,19 @@ def parse(dxf_file, segarc, new_origin=True):
     # save the character to our dictionary
     key = ord("F")
     stroke_list = []
+    bbox = BoundingBox()
+
     for line in dxfcoords:
-        XY = line
-        stroke_list += [
-            Line([XY[0], XY[1], XY[2], XY[3]])
-        ]
-        xmax = max(xmax, XY[0], XY[2])
-        ymax = max(ymax, XY[1], XY[3])
-        xmin = min(xmin, XY[0], XY[2])
-        ymin = min(ymin, XY[1], XY[3])
+        line = Line(line[0:4])
+
+        stroke_list.append(line)
+        bbox.extend(line)
 
     font[key] = Character(key)
     font[key].stroke_list = stroke_list
-    font[key].xmax = xmax
-    font[key].ymax = ymax
-    font[key].xmin = xmin
-    font[key].ymin = ymin
+    font[key].xmax = bbox.xmax
+    font[key].ymax = bbox.ymax
+    font[key].xmin = bbox.xmin
+    font[key].ymin = bbox.ymin
 
     return font, DXF_source

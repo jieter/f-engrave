@@ -2,7 +2,7 @@ from math import *
 
 from bspline import BSplineClass
 from elements import PointClass
-from util.mathutil import Zero
+from geometry import Zero
 
 ####################################################
 ##  Begin Excerpts from dxf2gcode_b02_nurbs_calc  ##
