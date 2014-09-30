@@ -4,8 +4,7 @@ This is a fork of [Scorchworks F-Engrave](http://www.scorchworks.com/Fengrave/fe
 
 # !! Please note that this code is very likely not functional at all. The tests should work though.
 
-
-## Changes made:
+## Changes (being) made:
 
  - split(ting) into modules.
  - Decouple the Gui from the actual processing.
@@ -13,11 +12,12 @@ This is a fork of [Scorchworks F-Engrave](http://www.scorchworks.com/Fengrave/fe
  - Tests.
 
 ## TODOs
- - SVG export of text on circle.
- - Document settings in settings file and use longer, more descriptive names.
- - support settings 'TRADIUS', 'imagefile', 'clean_paths' and
-   * 'TCODE': list of character codes for the string being engraved
- - Compare some gcode to the output of the f-engrave 1.41
+ - [ ] SVG export of text on circle.
+ - [ ] Document settings in settings file and use longer, more descriptive names.
+ - [ ] Clean up settings: support settings 'TRADIUS', 'imagefile', 'clean_paths',  'TCODE' (list of character codes for the string being engraved)
+ - [ ] Compare some newly generated gcode files to the output of the f-engrave 1.41
+ - [ ] Font preview
+
 
 ## Running tests
 

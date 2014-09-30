@@ -20,10 +20,21 @@ OLD_SETTING_NAMES = {
     'bmp_turds': 'bmp_turdsize',
     'bmp_alpha': 'bmp_alphamax',
     'FEED': 'feedrate',
+    'WSPACE': 'word_space',
+    'CSPACE': 'char_space',
+    'LSPACE': 'line_space',
+    'H_CALC': 'height_calculation',
+    'XSCALE': 'xscale',
+    'YSCALE': 'yscale',
+    'STHICK': 'line_thickness',
+    'TRADIUS': 'text_radius',
 }
 
 CONFIG_MARKER = '(fengrave_set '
 CONFIG_TEMPLATE = CONFIG_MARKER + '%20s %s )'
+
+CUT_TYPE_ENGRAVE = 'engrave'
+CUT_TYPE_VCARVE = 'v-carve'
 
 
 class Settings(object):
@@ -38,10 +49,15 @@ class Settings(object):
         'show_thick': True,
         'flip': False,
         'mirror': False,
-        'outer': True,
-        'upper': True,
+
+        # text plotted on a circle with radius
+        'text_radius': 0.0,
+        'outer': True,  # outside circle
+        'upper': True,  # on top of cirle
         'fontdex': False,
         'useIMGsize': False,
+
+        # flip normals (V-carve side)
         'v_flop': False,
         'b_carve': False,
         'v_pplot': True,
@@ -56,15 +72,15 @@ class Settings(object):
         'v_clean_X': True,
         'v_clean_Y': False,
 
-        'YSCALE': 2.0,
-        'XSCALE': 100.0,
-        'LSPACE': 1.1,
-        'CSPACE': 25,
-        'WSPACE': 100,
+        'yscale': 2.0,
+        'xscale': 100.0,
+        'line_space': 1.1,
+        'char_space': 25,
+        'word_space': 100,
         'TANGLE': 0.0,
         'ZSAFE': 0.25,
         'ZCUT': -0.005,
-        'STHICK': 0.01,
+        'line_thickness': 0.01,
 
         # Options:  "Default",
         # "Top-Left", "Top-Center", "Top-Right",
@@ -78,14 +94,17 @@ class Settings(object):
         # options: 'in', 'mm'
         'units': 'mm',
         'feedrate': 5.0,
-        'fontfile': '',
-        'H_CALC': 'max_use',
+        'fontfile': 'normal.cxf',
+
+        # which bounding boxes are used to calculate line height
+        # options: 'max_all', 'max_use'
+        'height_calculation': 'max_use',
         'plotbox': 'no_box',
         'boxgap': 0.25,
         'fontdir': 'fonts',
 
         # options: 'engrave', 'v-carve'
-        'cut_type': 'engrave',
+        'cut_type': CUT_TYPE_ENGRAVE,
 
         # options: 'text', 'image'
         'input_type': 'text',
@@ -95,7 +114,7 @@ class Settings(object):
         'v_depth_lim': 0.0,
         'v_drv_crner': 135,
         'v_stp_crner': 200,
-        'v_step_len': 0.01,
+        'v_step_len': 0.25,
 
         # V-carve loop accuracy
         'v_acc': 0.001,
@@ -141,6 +160,8 @@ class Settings(object):
         # M9 : Turn all coolant off
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
+
+        'text': 'F-engrave'
     }
 
     def __init__(self, filename=None, autoload=False):
@@ -166,7 +187,13 @@ class Settings(object):
 
     def set(self, name, value):
         cast = CAST_TYPES[self.type(name)]
-        self._settings[name] = cast(value)
+
+        value = cast(value)
+        # unquote string
+        if self.type(name) == 'str' and value.startswith('"') and value.endswith('"'):
+            value = value[1:-1]
+
+        self._settings[name] = value
 
     def get(self, name):
         return self._settings[name]

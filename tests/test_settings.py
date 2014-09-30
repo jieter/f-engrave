@@ -49,5 +49,15 @@ class SettingsTest(unittest.TestCase):
 
         # TODO: quote and unquote strings in config
 
+    def test_casting(self):
+        s = Settings()
+
+        for var in ('yscale', 'text', 'v_bit_angle'):
+            a = type(s.get(var))
+            s.set(var, 1)
+            self.assertEquals(a, type(s.get(var)))
+            s.set(var, 1.0)
+            self.assertEquals(a, type(s.get(var)))
+
     # def test_autoload(self):
     #     s = Settings(autoload=True)

@@ -2717,15 +2717,11 @@ class Gui(Frame):
 
         line_maxx = []
         line_maxy = []
-        line_maxa = []
-        line_mina = []
         line_miny = []
         line_minx = []
 
         maxx_tmp = -99991.0
         maxy_tmp = -99992.0
-        maxa_tmp = -99993.0
-        mina_tmp =  99993.0
         miny_tmp =  99994.0
         minx_tmp =  99995.0
 
@@ -2739,39 +2735,39 @@ class Gui(Frame):
         ################################
         ##      Font Index Preview    ##
         ################################
-        if self.fontdex.get() == True:
-            Radius_in = 0.0
-            String = ""
-            for key in self.font:
-                if self.ext_char:
-                    String = String + unichr(key)
-                elif int(key) < 256:
-                    String = String + unichr(key)
-                    #String = String + chr(key)
+#         if self.fontdex.get() == True:
+#             Radius_in = 0.0
+#             String = ""
+#             for key in self.font:
+#                 if self.ext_char:
+#                     String = String + unichr(key)
+#                 elif int(key) < 256:
+#                     String = String + unichr(key)
+#                     #String = String + chr(key)
 
-            Strings = sorted(String)
-            mcnt = 0
-            String = ""
+#             Strings = sorted(String)
+#             mcnt = 0
+#             String = ""
 
-            if self.ext_char.get():
-                pcols = int(1.5*sqrt(float(len(self.font))))
-            else:
-                pcols = 15
+#             if self.ext_char.get():
+#                 pcols = int(1.5*sqrt(float(len(self.font))))
+#             else:
+#                 pcols = 15
 
-            for char in Strings:
-##                tcnt = tcnt + 1
-##
-##                #fmessage( "% %x: %s\t" %( hex(ord(char)),char),False)
-##                fmessage( "%s " %( hex(ord(char))),False)
-##                if tcnt > tcols:
-##                    fmessage( "\n",False)
-##                    tcnt = 0
-                mcnt = mcnt+1
-                String = String + char
-                if mcnt > pcols:
-                    String = String + '\n'
-                    mcnt = 0
-            #fmessage( "\n",False)
+#             for char in Strings:
+# ##                tcnt = tcnt + 1
+# ##
+# ##                #fmessage( "% %x: %s\t" %( hex(ord(char)),char),False)
+# ##                fmessage( "%s " %( hex(ord(char))),False)
+# ##                if tcnt > tcols:
+# ##                    fmessage( "\n",False)
+# ##                    tcnt = 0
+#                 mcnt = mcnt+1
+#                 String = String + char
+#                 if mcnt > pcols:
+#                     String = String + '\n'
+#                     mcnt = 0
+#             #fmessage( "\n",False)
 
         ##################################
         ## Font Height/Width Calculation #
@@ -2793,7 +2789,7 @@ class Gui(Frame):
 
         if font_line_height > 0:
             if (self.useIMGsize.get() and self.input_type.get()=="image"):
-                YScale = YScale_in/100.0
+                YScale = YScale_in / 100.0
             else:
                 YScale = (YScale_in-Thick)/(font_line_height-font_line_depth)
                 if YScale <= Zero:
@@ -2855,16 +2851,14 @@ class Gui(Frame):
                 xposition = 0
                 yposition += font_line_space
                 line_cnt = line_cnt+1
+
                 line_minx.append(minx_tmp)
                 line_miny.append(miny_tmp)
                 line_maxx.append(maxx_tmp)
                 line_maxy.append(maxy_tmp)
-                line_maxa.append(maxa_tmp)
-                line_mina.append(mina_tmp)
+
                 maxx_tmp = -99919.0
                 maxy_tmp = -99929.0
-                maxa_tmp = -99939.0
-                mina_tmp =  99949.0
                 miny_tmp =  99959.0
                 minx_tmp =  99969.0
                 continue
@@ -2888,8 +2882,8 @@ class Gui(Frame):
                 y2 = stroke.yend   - yposition
 
                 # Perform scaling
-                x1,y1 = self.CoordScale(x1,y1,XScale,YScale)
-                x2,y2 = self.CoordScale(x2,y2,XScale,YScale)
+                x1,y1 = self.CoordScale(x1, y1, XScale, YScale)
+                x2,y2 = self.CoordScale(x2, y2, XScale, YScale)
 
                 self.coords.append([x1,y1,x2,y2,line_cnt,char_cnt])
 
@@ -2954,8 +2948,8 @@ class Gui(Frame):
         if Radius != 0.0:
             for line in self.coords:
                 XY = line
-                XY[0],XY[1],A1 = self.Rotn(XY[0],XY[1],0,Radius)
-                XY[2],XY[3],A2 = self.Rotn(XY[2],XY[3],0,Radius)
+                XY[0], XY[1], A1 = self.Rotn(XY[0], XY[1], 0, Radius)
+                XY[2], XY[3], A2 = self.Rotn(XY[2], XY[3], 0, Radius)
                 maxa = max(maxa, A1, A2)
                 mina = min(mina, A1, A2)
             mida = (mina+maxa)/2
@@ -3177,7 +3171,7 @@ class Gui(Frame):
         ################
 
     ##################################################
-    def record_v_carve_data(self,x1,y1,phi,rout,loop_cnt, clean_flag):
+    def record_v_carve_data(self, x1, y1, phi, rout, loop_cnt, clean_flag):
         rbit = self.calc_vbit_dia() / 2.0
 
         Lx, Ly = Transform(0,rout,-phi)
@@ -3194,10 +3188,10 @@ class Gui(Frame):
             if rout > rbit:
                 self.clean_coords.append([xnormv, ynormv, rout, loop_cnt])
 
-        return xnormv,ynormv,rout,need_clean
+        return xnormv, ynormv, rout, need_clean
 
 
-    def V_Carve_It(self,clean_flag=0):
+    def V_Carve_It(self, clean_flag=0):
         global STOP_CALC
         self.master.unbind("<Configure>")
         STOP_CALC=0

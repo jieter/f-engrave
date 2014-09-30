@@ -1,4 +1,4 @@
-from util.mathutil import BoundingBox, Line
+from geometry import BoundingBox, Line
 
 color = 'blue'
 
@@ -21,7 +21,7 @@ def svg(job):
     if settings.get('cut_type') == "v-carve":
         thickness = 0.001
     else:
-        thickness = settings.get('STHICK')
+        thickness = settings.get('line_thickness')
 
     dpi = 100
 
@@ -38,10 +38,10 @@ def svg(job):
     #     maxy = max(maxy, YOrigin + Radius_plot - app.Yzero)
 
     bbox.pad(thickness / 2)
-    width_in  = bbox.xmax - bbox.xmin
+    width_in = bbox.xmax - bbox.xmin
     height_in = bbox.ymax - bbox.ymin
 
-    width  = width_in * dpi
+    width = width_in * dpi
     height = height_in * dpi
 
     svgcode = []

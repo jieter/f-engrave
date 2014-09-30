@@ -8,8 +8,8 @@ flake8 = get_style_guide(
         'E501',  # Line too long
         'F403',  # 'import *'
         'E128',  # continuation line under-indented for visual indent?
-        'E221',  # Multiple spaces before operator
-        'E222',  # Multiple spaces after operator
+        # 'E221',  # Multiple spaces before operator
+        # 'E222',  # Multiple spaces after operator
 
     ),
     report=None,
@@ -22,8 +22,8 @@ flake8 = get_style_guide(
         'gui.py',
         'nurbs.py',
         'bspline.py',
-        'linearcfitter.py',
-        'gcode.py',
+        # 'linearcfitter.py',
+        'dxf_class.py',
     ]
 )
 

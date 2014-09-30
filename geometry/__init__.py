@@ -1,6 +1,7 @@
 from math import cos, sin, degrees, radians, atan2, acos, hypot
 
 from boundingbox import BoundingBox
+from character import *
 
 Zero = 0.0000001
 
@@ -42,11 +43,7 @@ def Get_Angle(s, c):
 # routine takes an x and y the point is rotated by angle returns new x,y   #
 ############################################################################
 def Rotn(x, y, angle, radius):
-    if radius > 0.0:
-        alpha = x / radius
-        xx = (radius + y) * sin(alpha)
-        yy = (radius + y) * cos(alpha)
-    elif radius < 0.0:
+    if 0.0 > radius > 0.0:
         alpha = x / radius
         xx = (radius + y) * sin(alpha)
         yy = (radius + y) * cos(alpha)
@@ -63,53 +60,12 @@ def Rotn(x, y, angle, radius):
     return newx, newy, alpha
 
 
-############################################################################
-# routine takes an x and a y scales are applied and returns new x,y tuple  #
-############################################################################
-def CoordScale(x, y, xscale, yscale):
-    newx = x * xscale
-    newy = y * yscale
-    return newx, newy
+def Scale(x, y, xscale, yscale):
+    return x * xscale, y * yscale
 
 
-class Character(object):
-    def __init__(self, key):
-        self.key = key
-        self.stroke_list = []
-
-    def __repr__(self):
-        return "%%s" % (self.stroke_list)
-
-    def bounds(self):
-        return BoundingBox(
-            self.get_xmin(),
-            self.get_xmax(),
-            self.get_ymin(),
-            self.get_ymax())
-
-    def get_xmin(self):
-        try:
-            return min([s.xmin for s in self.stroke_list[:]])
-        except ValueError:
-            return 0
-
-    def get_xmax(self):
-        try:
-            return max([s.xmax for s in self.stroke_list[:]])
-        except ValueError:
-            return 0
-
-    def get_ymax(self):
-        try:
-            return max([s.ymax for s in self.stroke_list[:]])
-        except ValueError:
-            return 0
-
-    def get_ymin(self):
-        try:
-            return min([s.ymin for s in self.stroke_list[:]])
-        except ValueError:
-            return 0
+def Translate(x1, y1, x2, y2):
+    return x1 + x2, y1 + y2
 
 
 class Line(object):
@@ -123,6 +79,22 @@ class Line(object):
 
     def bounds(self):
         return BoundingBox(self.xmin, self.xmax, self.ymin, self.ymax)
+
+    def translate(self, x, y):
+        self.xmin += x
+        self.xmax += x
+        self.ymin += y
+        self.ymin += y
+
+        return self
+
+    def scale(self, x, y=None):
+        y = y or x
+
+        self.xmin *= x
+        self.xmax *= x
+        self.ymin *= y
+        self.ymax *= y
 
     def __repr__(self):
         return "Line([%s, %s, %s, %s])" % (self.xstart, self.ystart, self.xend, self.yend)

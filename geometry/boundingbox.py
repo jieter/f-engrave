@@ -33,16 +33,30 @@ class BoundingBox(object):
         return self
 
     def padX(self, amount):
+        assert -amount * 2 < self.width(), 'pad (%f) exceeds width (%f) of X axis' % (float(amount), self.width())
         self.xmin -= float(amount)
         self.xmax += float(amount)
 
         return self
 
     def padY(self, amount):
+        assert -amount * 2 < self.height(), 'pad (%f) exceeds width (%f) of Y axis' % (float(amount), self.height())
         self.ymin -= float(amount)
         self.ymax += float(amount)
 
         return self
+
+    def width(self):
+        return self.xmax - self.xmin
+
+    def height(self):
+        return self.ymax - self.ymin
+
+    def center(self):
+        return (
+            self.xmin + (self.width() / 2),
+            self.ymin + (self.height() / 2)
+        )
 
     def tuple(self):
         return (self.xmin, self.xmax, self.ymin, self.ymax)

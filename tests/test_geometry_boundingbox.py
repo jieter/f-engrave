@@ -72,7 +72,32 @@ class BoundingBoxTest(unittest.TestCase):
 
         self.assertEquals(bbox, BoundingBox(-10, 110, -10, 110))
 
+        bbox = BoundingBox(10, 12, 10, 12)
+
+        bbox.pad(-0.8)
+        self.assertEquals(bbox, BoundingBox(10.8, 11.2, 10.8, 11.2))
+
     def test_str(self):
         bbox = BoundingBox(0, 1, 2, 3)
 
         self.assertEquals(str(bbox), 'BoundingBox([0.0, 1.0, 2.0, 3.0])')
+
+    def test_width(self):
+        bbox = BoundingBox(0, 10, 0, 10)
+        self.assertEquals(bbox.width(), 10)
+
+        bbox = BoundingBox(-10, 10, -10, 10)
+        self.assertEquals(bbox.width(), 20)
+
+    def test_height(self):
+        bbox = BoundingBox(0, 10, 0, 10)
+        self.assertEquals(bbox.height(), 10)
+
+    def test_center(self):
+        bbox = BoundingBox(0, 10, 0, 10)
+
+        self.assertEquals(bbox.center(), (5.0, 5.0))
+
+        bbox.pad(500)
+
+        self.assertEquals(bbox.center(), (5.0, 5.0))

@@ -41,5 +41,14 @@ class DXFReaderTest(unittest.TestCase):
 class CXFReaderTest(unittest.TestCase):
 
     def test_one(self):
-        with open('fonts/normal.cxf') as fontfile:
-            cxf.parse(fontfile, 1.0)
+        # test a couple of fonts, check their expected number of charaters.
+        testfonts = (
+            ('fonts/normal.cxf', 102),
+            ('fonts/courier.cxf', 122),
+        )
+
+        for fontfile, numchars in testfonts:
+            with open(fontfile) as f:
+                font = cxf.parse(f, 1.0)
+
+                self.assertEquals(len(font), numchars)
