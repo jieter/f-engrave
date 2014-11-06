@@ -68,18 +68,19 @@ class Job(object):
 
         font_bbox = BoundingBox()
 
-        if settings.get('height_calculation') is 'max_all':
+        if settings.get('height_calculation') == 'max_all':
             # Use the maximum height from all the characters in the font
             for char in font:
                 font_bbox.extend(font[ord(char)])
-
-        elif settings.get('height_calculation') is 'max_use':
+        else:
+            # 'max_use'
             for char in engrave_text:
                 font_bbox.extend(font[ord(char)])
 
         font_line_height = font_bbox.ymax
         font_line_depth = font_bbox.ymin
         font_char_width = font_bbox.xmax
+
         font_word_space = font_char_width * (settings.get('word_space') / 100.0)
 
         yscale = (settings.get('yscale') - line_thickness) / (font_line_height - font_line_depth)

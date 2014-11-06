@@ -25,15 +25,16 @@ if settings.get('batch'):
     pass
 
 else:
-    from util import icon, Tk
-    from application.gui import Gui
+    print 'Currently no working GUI'
+    # from util import icon, Tk
+    # from application.gui import Gui
 
-    root = Tk()
-    app = Gui(root, settings)
-    app.master.title("F-Engrave V" + version)
-    app.master.iconname("F-Engrave")
-    app.master.minsize(780, 540)
+    # root = Tk()
+    # app = Gui(root, settings)
+    # app.master.title("F-Engrave V" + version)
+    # app.master.iconname("F-Engrave")
+    # app.master.minsize(780, 540)
 
-    icon.add_to_app(app)
+    # icon.add_to_app(app)
 
-    root.mainloop()
+    # root.mainloop()

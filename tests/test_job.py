@@ -12,7 +12,10 @@ class JobTest(unittest.TestCase):
     def test_write_gcode(self):
         settings = Settings(filename='tests/files/job_test_settings.ngc')
 
-        settings.set('text', 'J')
+        settings.set('text', 'Jieter')
+        # settings.set('arc_fit', False)
+        settings.set('fontfile', 'gabriola.cxf')
+        settings.set('var_dis', False)
 
         j = Job(settings)
 

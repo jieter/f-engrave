@@ -66,6 +66,7 @@ def engrave_gcode(job):
         safe_val = FORMAT % SafeZ
         depth_val = FORMAT % Depth
     else:
+        raise Exception('Not implemented')
         FORMAT = '#1 = %%.%df  ( Safe Z )' % (dp)
         code.append(FORMAT % SafeZ)
         FORMAT = '#2 = %%.%df  ( Engraving Depth Z )' % (dp)
@@ -74,6 +75,7 @@ def engrave_gcode(job):
         depth_val = '#2'
 
     FORMAT = 'F%%.%df  ( Set Feed Rate )' % dpfeed
+    code.append("(#########################################################)")
     code.append(FORMAT % settings.get('feedrate'))
     code.append('G0 Z%s' % safe_val)
 
@@ -173,7 +175,7 @@ def engrave_gcode(job):
                     if arccode in ('G2', 'G3'):
                         R_check_1 = abs((x1 - x_center_last) ** 2 + (y1 - y_center_last) ** 2 - R_last ** 2)
                         R_check_2 = abs((lastx - x_center_last) ** 2 + (lasty - y_center_last) ** 2 - R_last ** 2)
-                        # print len(code)
+
                         if R_check_1 > Zero or R_check_2 > Zero:
                             fmessage("-- G-Code Curve Fitting Anomaly - Check Output --")
                             code.append('(---Curve Fitting Anomaly - Check Output. Error = %.6f ---)' % (max(R_check_1, R_check_2)))
@@ -186,7 +188,8 @@ def engrave_gcode(job):
                             Ival = x_center_last - lastx
                             Jval = y_center_last - lasty
                             FORMAT = '%%s X%%.%df Y%%.%df I%%.%df J%%.%df' % (dp, dp, dp, dp)
-                            code.append(FORMAT % (code, x1, y1, Ival, Jval))
+
+                            code.append(FORMAT % (arccode, x1, y1, Ival, Jval))
 
                             # This is the code for the old format for arcs
                             # FORMAT = '%%s X%%.%df Y%%.%df R%%.%df' %(dp, dp, dp)
