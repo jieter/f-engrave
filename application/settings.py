@@ -1,9 +1,27 @@
 import os
 
+
+def cast_boolean(value):
+    if len(value) > 1:
+        return value == 'True'
+    else:
+        return bool(int(value))
+
+
+def cast_string(value):
+    value = str(value).strip()
+
+    # unquote string
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1].strip()
+    else:
+        return value
+
+
 CAST_TYPES = {
-    'bool': bool,
+    'bool': cast_boolean,
     'int': int,
-    'str': str,
+    'str': cast_string,
     'int': int,
     'float': float
 }
@@ -188,12 +206,7 @@ class Settings(object):
     def set(self, name, value):
         cast = CAST_TYPES[self.type(name)]
 
-        value = cast(value)
-        # unquote string
-        if self.type(name) == 'str' and value.startswith('"') and value.endswith('"'):
-            value = value[1:-1]
-
-        self._settings[name] = value
+        self._settings[name] = cast(value)
 
     def get(self, name):
         return self._settings[name]
