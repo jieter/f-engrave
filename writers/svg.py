@@ -66,7 +66,7 @@ def svg(job):
         # translate
         line = [
             l[0] - bbox.xmin, -l[1] + bbox.ymax,
-            l[2] - bbox.xmin, -l[1] + bbox.ymax
+            l[2] - bbox.xmin, -l[3] + bbox.ymax
         ]
         # scale
         line = map(lambda x: x * dpi, line)

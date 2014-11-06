@@ -13,15 +13,12 @@ class JobTest(unittest.TestCase):
         settings = Settings(filename='tests/files/job_test_settings.ngc')
 
         settings.set('text', 'Jieter')
-        # settings.set('arc_fit', False)
         settings.set('fontfile', 'gabriola.cxf')
         settings.set('var_dis', False)
 
         j = Job(settings)
 
         j.execute()
-
-        # print j.text_bbox
 
         with open('/home/jieter/Dropbox/cnc/test.ngc', 'w') as f:
             f.write(j.get_gcode())
