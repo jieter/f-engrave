@@ -10,27 +10,26 @@ def Read_font_file(settings):
     Read a font file (.cxf, .ttf)
     '''
 
-    font = {}
-    file_full = settings.get_fontfile()
+    filename = settings.get_fontfile()
 
-    if not os.path.isfile(file_full):
+    if not os.path.isfile(filename):
         return
 
-    fileName, fileExtension = os.path.splitext(file_full)
-    # self.current_input_file.set( os.path.basename(file_full) )
+    fileName, fileExtension = os.path.splitext(filename)
+    # self.current_input_file.set( os.path.basename(filename) )
 
     segarc = settings.get('segarc')
 
     TYPE = fileExtension.upper()
     if TYPE == '.CXF':
-        with open(file_full, 'r') as fontfile:
+        with open(filename, 'r') as fontfile:
             # build stroke lists from font file
-            font = parse_cxf(file, segarc)
+            return parse_cxf(fontfile, segarc)
 
     elif TYPE == '.TTF':
         option = '-e' if settings.get('ext_char') else ''
 
-        cmd = ["ttf2cxf_stream", option, file_full, "STDOUT"]
+        cmd = ["ttf2cxf_stream", option, filename, "STDOUT"]
         try:
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             stdout, stderr = p.communicate()
@@ -40,14 +39,12 @@ def Read_font_file(settings):
                 fontfile = stdout.split("\n")
 
             # build stroke lists from font file
-            font = parse_cxf(fontfile, segarc)
             settings.set('input_type', 'text')
+            return parse_cxf(fontfile, segarc)
         except:
-            fmessage("Unable To open True Type (TTF) font file: %s" % (file_full))
+            fmessage("Unable To open True Type (TTF) font file: %s" % (filename))
     else:
         pass
-
-    return font
 
 
 def list_fonts(settings):

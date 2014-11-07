@@ -1,7 +1,7 @@
 from math import cos, sin, degrees, radians, atan2, acos, hypot
 
 from boundingbox import BoundingBox
-from character import *
+from font import *
 
 Zero = 0.0000001
 

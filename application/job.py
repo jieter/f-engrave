@@ -30,7 +30,8 @@ class Job(object):
         self.clean_coords_sort = []
         self.v_clean_coords_sort = []
 
-        self.RADIUS_PLOT = 0
+        self._move_origin()
+        self.load_font()
 
         if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
             self.vcarve()
@@ -49,37 +50,63 @@ class Job(object):
         with open(filename) as font:
             return parse_cxf(font, self.settings.get('segarc'))
 
-    def engrave(self):
-        settings = self.settings
-
-        engrave_text = self.settings.get('text')
-
-        line_thickness = settings.get('line_thickness')
-
-        # v_flop = settings.get('v_flop')
-
-        # if settings.get('input_type') == "image":
-        #     if len(self.image) == 0:
-        #         raise JobError('No image file loaded')
+    def load_font(self):
         font = self.get_font()
-
         if font == 0:
             raise JobError('No font file loaded')
 
-        font_bbox = BoundingBox()
+        self.font = font
+
+    def get_origin(self):
+        return (
+            self.settings.get('xorigin'),
+            self.settings.get('yorigin')
+        )
+
+    def get_plot_radius(self):
+        settings = self.settings
+
+        if settings.get('plotbox') == "no_box" or settings.get('input_type') != 'text':
+            return 0.0
+
+        base_radius = self.get('text_radius')
+        thickness = self.get('line_thickness')
+        font = self.font
+
+        # TODO this assumes height_calculation = 'max_all'.
+        # We should look in bounding box with max_char, maybe
+        # set the string as Font parameter and set a height_calculation
+        # flag in Font
+        yscale = self.get('yscale') - thickness / (font.line_height() - font.line_depth())
+        if yscale <= Zero:
+            yscale = 0.1
+
+        if self.get('outer'):
+            if self.get('upper'):
+                return base_radius + thickness / 2 + yscale * -font.line_height()
+            else:
+                return -base_radius - thickness / 2 - yscale * font.line_depth()
+        else:
+            if self.get('upper'):
+                return base_radius - thickness / 2 - yscale * font.line_height()
+            else:
+                return -base_radius + thickness / 2 + yscale * -font.line_depth()
+
+    def engrave(self):
+        settings = self.settings
+
+        font = self.font
+        engrave_text = self.settings.get('text')
+        line_thickness = settings.get('line_thickness')
 
         if settings.get('height_calculation') == 'max_all':
-            # Use the maximum height from all the characters in the font
-            for char in font:
-                font_bbox.extend(font[ord(char)])
+            bbox = font.bbox
         else:
-            # 'max_use'
-            for char in engrave_text:
-                font_bbox.extend(font[ord(char)])
+            bbox = font.get_char_bbox_used(engrave_text)
 
-        font_line_height = font_bbox.ymax
-        font_line_depth = font_bbox.ymin
-        font_char_width = font_bbox.xmax
+        font_line_height = bbox.ymax
+        font_line_depth = bbox.ymin
+        font_char_width = bbox.xmax
 
         font_word_space = font_char_width * (settings.get('word_space') / 100.0)
 
@@ -90,23 +117,11 @@ class Job(object):
         xscale = settings.get('xscale') * yscale / 100
         font_char_space = font_char_width * (settings.get('char_space') / 100.0)
 
-        radius = settings.get('text_radius')
-        if radius != 0.0:
-            if settings.get('outer'):
-                if settings.get('upper'):
-                    radius = radius + line_thickness / 2 + yscale * (-font_line_depth)
-                else:
-                    radius = -radius - line_thickness / 2 - yscale * (font_line_height)
-            else:
-                if settings.get('upper'):
-                    radius = radius - line_thickness / 2 - yscale * (font_line_height)
-                else:
-                    radius = -radius + line_thickness / 2 + yscale * (-font_line_depth)
+        radius = self.get_plot_radius()
 
         font_line_space = (font_line_height - font_line_depth + line_thickness / yscale) * settings.get('line_space')
 
         # loop over chars and add
-        char_count = 0
         line_count = 0
 
         xposition = 0.0
@@ -116,9 +131,7 @@ class Job(object):
         line_bbox = BoundingBox()
         lines_bboxes = []
 
-        for char in engrave_text:
-            char_count += 1
-
+        for char_count, char in enumerate(engrave_text):
             if char == ' ':
                 xposition += font_word_space
                 continue
@@ -162,28 +175,66 @@ class Job(object):
 
             text_bbox.extend(line_bbox)
 
-        # end for char in engrave_text
+        self._transform_justify()
 
+        if settings.get('mirror'):
+            self._transform_mirror()
+
+        if settings.get('flip'):
+            self._transform_flip()
+
+    def _transform_justify(self):
         # Justification
-        justify = settings.get('justify')
+        justify = self.settings.get('justify')
 
         if justify is 'Left':
             pass
         elif justify is 'Center':
             for i, line in enumerate(self.coords):
                 pass
+                # TODO: fix justify center.
         elif justify is 'Right':
             for i, line in enumerate(self.coords):
                 pass
+                # TODO: fix justify right
 
-        self.text_bbox = text_bbox.pad(line_thickness)
+    def _transform_radius(self):
+        '''Transform the coordinates to a radius'''
+
+    def _transform_mirror(self):
+        for i, line in enumerate(self.coords):
+            line[0] *= -1
+            line[2] *= -1
+
+            self.coords[i] = line
+
+    def _transform_flip(self):
+        for i, line in enumerate(self.coords):
+            line[1] *= -1
+            line[3] *= -1
+
+            self.coords[i] = line
+
+    def _draw_box(self):
+        line_thickness = self.settings.get('line_thickness')
+        delta = line_thickness / 2 + self.settings.get('boxgap')
+
+        self.coords.append([])
+
+    def _draw_circle(self):
+        # only for vcarving
+        pass
 
     def _move_origin(self):
         settings = self.settings
 
         x_zero = y_zero = 0
 
-        vertical, horizontal = settings.get('origin').split('-')
+        origin = settings.get('origin')
+        if origin == 'Default':
+            origin = 'Arc-Center'
+
+        vertical, horizontal = origin.split('-')
         if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
             if vertical is 'Top':
                 y_zero = self.text_bbox.maxy
@@ -214,3 +265,5 @@ class Job(object):
         if self.settings.get('units') == 'mm' and self.settings.get('v_step_len') <= .01:
             fmessage('v_step_len is too small, setting to default metric value')
             self.settings.reset('v_step_len')
+
+        raise Exception('Not implemented yet.')

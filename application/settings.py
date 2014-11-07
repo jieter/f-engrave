@@ -2,7 +2,9 @@ import os
 
 
 def cast_boolean(value):
-    if len(value) > 1:
+    if type(value) is bool:
+        return bool(value)
+    elif len(value) > 1:
         return value == 'True'
     else:
         return bool(int(value))
@@ -77,10 +79,17 @@ class Settings(object):
 
         # flip normals (V-carve side)
         'v_flop': False,
+
+        # ball carve (ball nose cutter)
         'b_carve': False,
+
+        # plot during v-carve calculation [GUI]
         'v_pplot': True,
+
         'arc_fit': True,
         'ext_char': False,
+
+        # disable variables in gcode [GCODE]
         'var_dis': False,
 
         'clean_P': True,
@@ -96,8 +105,13 @@ class Settings(object):
         'char_space': 25,
         'word_space': 100,
         'TANGLE': 0.0,
+
+        # safe height [GCODE]
         'ZSAFE': 0.25,
+
+        # engraving depth [GCODE]
         'ZCUT': -0.005,
+
         'line_thickness': 0.01,
 
         # Options:  "Default",
@@ -111,15 +125,25 @@ class Settings(object):
 
         # options: 'in', 'mm'
         'units': 'mm',
+
+        # horizontal feedrate [GCODE]
         'feedrate': 5.0,
-        'fontfile': 'normal.cxf',
+
 
         # which bounding boxes are used to calculate line height
         # options: 'max_all', 'max_use'
         'height_calculation': 'max_use',
+
+        # Add a box/circle around plot
+        # options: 'box', 'no_box'
         'plotbox': 'no_box',
+
+        # Gap between box and engraving
         'boxgap': 0.25,
+
+        # font location and name
         'fontdir': 'fonts',
+        'fontfile': 'normal.cxf',
 
         # options: 'engrave', 'v-carve'
         'cut_type': CUT_TYPE_ENGRAVE,
@@ -127,8 +151,10 @@ class Settings(object):
         # options: 'text', 'image'
         'input_type': 'text',
 
+        # v-cutter parameters
         'v_bit_angle': 90,
-        'v_bit_dia': 0.5,
+        'v_bit_dia': 3.0,
+
         'v_depth_lim': 0.0,
         'v_drv_crner': 135,
         'v_stp_crner': 200,
@@ -160,7 +186,6 @@ class Settings(object):
         # Clean-up step-over as percent of clean-up bit diameter
         'clean_step': 50,
         'clean_name': '_clean',
-
 
         # G-Code Default Preamble
         #

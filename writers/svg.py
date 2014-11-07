@@ -29,13 +29,14 @@ def svg(job):
     for line in job.coords:
         bbox.extend(Line(line[0:4]))
 
-    # XOrigin, YOrigin = (settings.get('xorigin'), settings.get('yorigin'))
-    # Radius_plot=  app.RADIUS_PLOT)
-    # if Radius_plot != 0:
-    #     maxx = max(maxx, XOrigin + Radius_plot - app.Xzero)
-    #     minx = min(minx, XOrigin - Radius_plot - app.Xzero)
-    #     miny = min(miny, YOrigin - Radius_plot - app.Yzero)
-    #     maxy = max(maxy, YOrigin + Radius_plot - app.Yzero)
+    plot_radius = job.get_plot_radius()
+    if plot_radius != 0:
+        origin = job.get_origin()
+
+    #     maxx = max(maxx, origin[0] + plot_radus - job.xzero)
+    #     minx = min(minx, origin[0] - plot_radus - job.xzero)
+    #     miny = min(miny, origin[1] - plot_radus - job.yzero)
+    #     maxy = max(maxy, origin[1] + plot_radus - job.yzero)
 
     bbox.pad(thickness / 2)
     width_in = bbox.xmax - bbox.xmin
@@ -55,9 +56,11 @@ def svg(job):
 
     # # Make Circle
     # if Radius_plot != 0 and settings.get('cut_type.get') == "engrave":
+    #     params = ( )
+    #
     #     svgcode.append(circle_template % (
-    #                 ( XOrigin - app.Xzero - minx) * dpi,
-    #                 (-YOrigin + app.Yzero + maxy) * dpi,
+    #                 ( XOrigin - job.Xzero - minx) * dpi,
+    #                 (-YOrigin + job.Yzero + maxy) * dpi,
     #                   Radius_plot               ) * dpi,
     #                   thickness                   * dpi)
     # # End Circle

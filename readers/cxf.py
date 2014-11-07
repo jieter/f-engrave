@@ -10,11 +10,12 @@
 from math import sin, cos, radians
 import re
 
-from geometry import Character, Line
+from geometry import Character, Line, Font
 
 
 def parse(file, segarc):
-    font = {}
+    font = Font()
+
     key = None
     stroke_list = []
     xmax, ymax = 0, 0
@@ -32,9 +33,9 @@ def parse(file, segarc):
         end_char = len(text)
         # save the character to our dictionary
         if end_char and key:
-            font[key] = Character(key)
-            font[key].stroke_list = stroke_list
-            font[key].xmax = xmax
+            font.add_character(
+                Character(key=key, stroke_list=stroke_list)
+            )
 
         new_cmd = re.match('^\[(.*)\]\s', text)
 

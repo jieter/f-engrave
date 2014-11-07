@@ -1,4 +1,4 @@
-from geometry import Character, Line
+from geometry import Character, Line, Font
 from geometry.boundingbox import BoundingBox
 
 from dxf_class import DXF_CLASS
@@ -6,7 +6,7 @@ from dxf_class import DXF_CLASS
 
 def parse(dxf_file, segarc, new_origin=True):
     # Initialize / reset
-    font = {}
+    font = Font()
     key = None
 
     DXF_source = " "
@@ -30,8 +30,6 @@ def parse(dxf_file, segarc, new_origin=True):
         stroke_list.append(line)
         bbox.extend(line)
 
-    font[key] = Character(key)
-    font[key].stroke_list = stroke_list
-    font[key].bbox = bbox
+    font.add_character(Character(key, stroke_list))
 
     return font, DXF_source

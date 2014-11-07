@@ -1,0 +1,72 @@
+from geometry.boundingbox import BoundingBox
+
+
+class Character(object):
+    def __init__(self, key, stroke_list):
+        self.key = key
+        self.stroke_list = stroke_list
+
+    def __str__(self):
+        return "%%s" % (self.stroke_list)
+
+    def bounds(self):
+        return BoundingBox(
+            self.get_xmin(),
+            self.get_xmax(),
+            self.get_ymin(),
+            self.get_ymax()
+        )
+
+    def get_xmin(self):
+        try:
+            return min([s.xmin for s in self.stroke_list[:]])
+        except ValueError:
+            return 0
+
+    def get_xmax(self):
+        try:
+            return max([s.xmax for s in self.stroke_list[:]])
+        except ValueError:
+            return 0
+
+    def get_ymax(self):
+        try:
+            return max([s.ymax for s in self.stroke_list[:]])
+        except ValueError:
+            return 0
+
+    def get_ymin(self):
+        try:
+            return min([s.ymin for s in self.stroke_list[:]])
+        except ValueError:
+            return 0
+
+
+class Font(object):
+    def __init__(self):
+        self.characters = {}
+        self.bbox = BoundingBox()
+
+    def __len__(self):
+        return len(self.characters)
+
+    def __getitem__(self, key):
+        return self.characters[key]
+
+    def add_character(self, char):
+        self.characters[char.key] = char
+        self.bbox.extend(char.bounds())
+
+    def get_char_bbox_used(self, string):
+        bbox = BoundingBox()
+
+        for char in string:
+            bbox.extend(self[ord(char)])
+
+        return bbox
+
+    def line_height(self):
+        return self.bbox.ymax
+
+    def line_depth(self):
+        return self.bbox.ymin
