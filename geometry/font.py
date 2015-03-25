@@ -51,6 +51,10 @@ class Font(object):
         return len(self.characters)
 
     def __getitem__(self, key):
+
+        if key in (32, 10):
+            return Character(' ', [])
+
         return self.characters[key]
 
     def add_character(self, char):

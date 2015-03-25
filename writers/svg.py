@@ -29,9 +29,9 @@ def svg(job):
     for line in job.coords:
         bbox.extend(Line(line[0:4]))
 
-    plot_radius = job.get_plot_radius()
-    if plot_radius != 0:
-        origin = job.get_origin()
+    # plot_radius = job.get_plot_radius()
+    # if plot_radius != 0:
+        # origin = job.get_origin()
 
     #     maxx = max(maxx, origin[0] + plot_radus - job.xzero)
     #     minx = min(minx, origin[0] - plot_radus - job.xzero)

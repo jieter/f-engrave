@@ -1,4 +1,4 @@
-from geometry import BoundingBox, Zero, Scale, Translate
+from geometry import BoundingBox, Zero, Scale, Translate, Rotn
 from readers.cxf import parse as parse_cxf
 from settings import CUT_TYPE_VCARVE
 from util import fmessage
@@ -66,28 +66,25 @@ class Job(object):
     def get_plot_radius(self):
         settings = self.settings
 
-        if settings.get('plotbox') == "no_box" or settings.get('input_type') != 'text':
-            return 0.0
-
-        base_radius = self.get('text_radius')
-        thickness = self.get('line_thickness')
+        base_radius = settings.get('text_radius')
+        thickness = settings.get('line_thickness')
         font = self.font
 
         # TODO this assumes height_calculation = 'max_all'.
         # We should look in bounding box with max_char, maybe
         # set the string as Font parameter and set a height_calculation
         # flag in Font
-        yscale = self.get('yscale') - thickness / (font.line_height() - font.line_depth())
+        yscale = settings.get('yscale') - thickness / (font.line_height() - font.line_depth())
         if yscale <= Zero:
             yscale = 0.1
 
-        if self.get('outer'):
-            if self.get('upper'):
+        if settings.get('outer'):
+            if settings.get('upper'):
                 return base_radius + thickness / 2 + yscale * -font.line_height()
             else:
                 return -base_radius - thickness / 2 - yscale * font.line_depth()
         else:
-            if self.get('upper'):
+            if settings.get('upper'):
                 return base_radius - thickness / 2 - yscale * font.line_height()
             else:
                 return -base_radius + thickness / 2 + yscale * -font.line_depth()
@@ -115,10 +112,8 @@ class Job(object):
             yscale = .1
 
         xscale = settings.get('xscale') * yscale / 100
+
         font_char_space = font_char_width * (settings.get('char_space') / 100.0)
-
-        radius = self.get_plot_radius()
-
         font_line_space = (font_line_height - font_line_depth + line_thickness / yscale) * settings.get('line_space')
 
         # loop over chars and add
@@ -145,9 +140,7 @@ class Job(object):
                 lines_bboxes.append(line_bbox)
                 line_bbox = BoundingBox()
 
-                raise Exception('Only one line for now...')
-                # continue
-                break
+                continue
 
             line_bbox.extend(font[ord(char)])
 
@@ -177,14 +170,19 @@ class Job(object):
 
         self._transform_justify()
 
+        self._transform_radius()
+
         if settings.get('mirror'):
             self._transform_mirror()
 
         if settings.get('flip'):
             self._transform_flip()
 
+        if settings.get('plotbox') != "no_box":
+            self._draw_box()
+
     def _transform_justify(self):
-        # Justification
+        '''Jusitify the text'''
         justify = self.settings.get('justify')
 
         if justify is 'Left':
@@ -192,16 +190,14 @@ class Job(object):
         elif justify is 'Center':
             for i, line in enumerate(self.coords):
                 pass
-                # TODO: fix justify center.
+                # TODO: implement justify center.
         elif justify is 'Right':
             for i, line in enumerate(self.coords):
                 pass
-                # TODO: fix justify right
-
-    def _transform_radius(self):
-        '''Transform the coordinates to a radius'''
+                # TODO: implement justify right
 
     def _transform_mirror(self):
+        '''Mirror in x-axis'''
         for i, line in enumerate(self.coords):
             line[0] *= -1
             line[2] *= -1
@@ -219,7 +215,35 @@ class Job(object):
         line_thickness = self.settings.get('line_thickness')
         delta = line_thickness / 2 + self.settings.get('boxgap')
 
-        self.coords.append([])
+        bbox = BoundingBox()
+        for line in self.coords:
+            bbox.extend(line[0], line[2], line[1], line[3])
+
+        bbox.pad(delta)
+
+        self.coords.append([bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymin, 0, 0])
+        self.coords.append([bbox.xmax, bbox.ymin, bbox.xmax, bbox.ymax, 0, 0])
+        self.coords.append([bbox.xmax, bbox.ymax, bbox.xmin, bbox.ymax, 0, 0])
+        self.coords.append([bbox.xmin, bbox.ymax, bbox.xmin, bbox.ymin, 0, 0])
+
+    def _transform_radius(self):
+        '''Transform the coordinates to a radius'''
+        radius = self.get_plot_radius()
+
+        # print radius
+        if radius == 0.0:
+            return
+
+        min_alpha = 100000
+        max_alpha = -100000
+        for i, line in enumerate(self.coords):
+            # print line
+            line[0], line[1], alpha1 = Rotn(line[0], line[1], 0, radius)
+            line[1], line[2], alpha2 = Rotn(line[1], line[2], 0, radius)
+            # print line
+            self.coords[i] = line
+            min_alpha = min(alpha1, alpha2, min_alpha)
+            max_alpha = max(alpha1, alpha2, max_alpha)
 
     def _draw_circle(self):
         # only for vcarving
@@ -237,18 +261,18 @@ class Job(object):
         vertical, horizontal = origin.split('-')
         if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
             if vertical is 'Top':
-                y_zero = self.text_bbox.maxy
+                y_zero = self.text_bbox.ymax
             elif vertical is 'Mid':
                 y_zero = self.text_bbox.height() / 2
             elif vertical is 'Bot':
-                y_zero = self.text_bbox.miny
+                y_zero = self.text_bbox.ymin
 
             if horizontal is 'Center':
                 x_zero = self.text_bbox.width() / 2
             elif horizontal is 'Right':
-                x_zero = self.text_bbox.maxx
+                x_zero = self.text_bbox.xmax
             elif horizontal is 'Left':
-                x_zero = self.text_bbox.minx
+                x_zero = self.text_bbox.xmin
 
         xorigin = settings.get('xorigin')
         yorigin = settings.get('yorigin')

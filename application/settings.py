@@ -12,6 +12,7 @@ def cast_boolean(value):
 
 def cast_string(value):
     value = str(value).strip()
+    value = value.replace('\\n', '\n')
 
     # unquote string
     if value.startswith('"') and value.endswith('"'):
@@ -270,7 +271,12 @@ class Settings(object):
                     # print '?? ', name
 
     def to_gcode(self):
-        return '\n'.join([CONFIG_TEMPLATE % l for l in self._settings.items()])
+        return '\n'.join(
+            [
+                CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))
+                for key, value in self._settings.items()
+            ]
+        )
 
     def __str__(self):
         return 'Settings:\n' + ('\n'.join([', '.join(map(str, l)) for l in self._settings.items()]))

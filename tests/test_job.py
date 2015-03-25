@@ -50,3 +50,11 @@ class JobTest(unittest.TestCase):
     def test_write_flip(self):
         job = self._job_with_settings(('flip', True))
         self._save_testfiles(job, 'flip')
+
+    def test_write_box(self):
+        job = self._job_with_settings(
+            ('text', 'plotbox\nboxgap=50 '),
+            ('plotbox', 'box'),
+            ('boxgap', 50)
+        )
+        self._save_testfiles(job, 'box')
