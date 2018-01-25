@@ -1,6 +1,6 @@
 # F-Engrave
 
-This is a fork of [jieter/f-engrave] (https://github.com/jieter/f-engrave) (2015) 
+This is a fork of [jieter/f-engrave](https://github.com/jieter/f-engrave) (2015) 
 which was a fork of [Scorchworks F-Engrave](http://www.scorchworks.com/Fengrave/fengrave.html) version 1.41 (2014-09-08).
 
 # !! Work in progress !!
