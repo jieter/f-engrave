@@ -6,21 +6,21 @@ from font import *
 Zero = 0.0000001
 
 
-############################################################################
-# routine takes an x and a y coords and does a coordinate transformation   #
-# to a new coordinate system at angle from the initial coordinate system   #
-# Returns new x,y tuple                                                    #
-############################################################################
 def Transform(x, y, angle):
+    '''
+    routine takes an x and a y coords and does a coordinate transformation
+    to a new coordinate system at angle from the initial coordinate system
+    Returns new x,y tuple
+    '''
     newx = x * cos(angle) - y * sin(angle)
     newy = x * sin(angle) + y * cos(angle)
     return newx, newy
 
 
-############################################################################
-# routine takes an sin and cos and returns the angle (between 0 and 360)   #
-############################################################################
 def Get_Angle(s, c):
+    '''
+    routine takes an sin and cos and returns the angle (between 0 and 360)
+    '''
     if (s >= 0.0 and c >= 0.0):
         angle = degrees(acos(c))
     elif (s >= 0.0 and c < 0.0):
@@ -39,10 +39,10 @@ def Get_Angle(s, c):
     return angle
 
 
-############################################################################
-# routine takes an x and y the point is rotated by angle returns new x,y   #
-############################################################################
 def Rotn(x, y, angle, radius):
+    '''
+    routine takes an x and y the point is rotated by angle returns new x,y,alpha
+    '''
     if 0.0 > radius > 0.0:
         alpha = x / radius
         xx = (radius + y) * sin(alpha)

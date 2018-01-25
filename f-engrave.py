@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
     f-engrave.py G-Code Generator
-    Copyright (C) <2014>  <Scorch>
+    Copyright (C) <2017>  <Scorch>
     Source was used from the following works:
               engrave-11.py G-Code Generator -- Lawrence Glaister --
               GUI framework from arcbuddy.py -- John Thornton  --
@@ -12,29 +12,40 @@
 
 version = '1.40'
 
-# TODO insert psyco / pypy
-#
+#TODO insert psyco / pypy
+
 from application.settings import Settings
 
 settings = Settings(autoload=True)
 
-# TODO: parse command line options.
+#TODO: parse command line options.
 
 if settings.get('batch'):
     # batch processing
     pass
 
 else:
-    print 'Currently no working GUI'
-    # from util import icon, Tk
-    # from application.gui import Gui
+    print 'GUI is under construction...'
+    #TEST print settings
 
-    # root = Tk()
-    # app = Gui(root, settings)
-    # app.master.title("F-Engrave V" + version)
-    # app.master.iconname("F-Engrave")
-    # app.master.minsize(780, 540)
+    from util import icon
+    from application.gui import Gui
+    try:
+        from tkinter import *
+        from tkinter.filedialog import *
+        import tkinter.messagebox
+    except:
+        from Tkinter import *
+        from tkFileDialog import *
+        import tkMessageBox
 
-    # icon.add_to_app(app)
+    root = Tk()
+    app = Gui(root, settings)
+    app.master.title("F-Engrave V" + version)
+    app.master.iconname("F-Engrave")
+    app.master.minsize(780, 540)
 
-    # root.mainloop()
+    #app.f_engrave_init()
+    icon.add_to_app(app)
+
+    root.mainloop()

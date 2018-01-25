@@ -1,6 +1,5 @@
 import os
 
-
 def cast_boolean(value):
     if type(value) is bool:
         return bool(value)
@@ -8,7 +7,6 @@ def cast_boolean(value):
         return value == 'True'
     else:
         return bool(int(value))
-
 
 def cast_string(value):
     value = str(value).strip()
@@ -19,7 +17,6 @@ def cast_string(value):
         return value[1:-1].strip()
     else:
         return value
-
 
 CAST_TYPES = {
     'bool': cast_boolean,
@@ -40,10 +37,13 @@ OLD_SETTING_NAMES = {
     'bmp_turnp': 'bmp_turnpol',
     'bmp_turds': 'bmp_turdsize',
     'bmp_alpha': 'bmp_alphamax',
+    'v_drv_crner': 'v_drv_corner',
+    'v_stp_crner': 'v_step_corner',
     'FEED': 'feedrate',
     'WSPACE': 'word_space',
     'CSPACE': 'char_space',
     'LSPACE': 'line_space',
+    'TANGLE': 'text_angle',
     'H_CALC': 'height_calculation',
     'XSCALE': 'xscale',
     'YSCALE': 'yscale',
@@ -59,7 +59,6 @@ CUT_TYPE_VCARVE = 'v-carve'
 
 
 class Settings(object):
-
     '''
     Default values for the application settings.
     '''
@@ -84,8 +83,14 @@ class Settings(object):
         # ball carve (ball nose cutter)
         'b_carve': False,
 
+        # options: "VBIT", "FLAT"
+        'bit_shape': 'VBIT',
+
         # plot during v-carve calculation [GUI]
         'v_pplot': True,
+
+        'inlay': False,
+        'no_comments': True,
 
         'arc_fit': True,
         'ext_char': False,
@@ -105,17 +110,17 @@ class Settings(object):
         'line_space': 1.1,
         'char_space': 25,
         'word_space': 100,
-        'TANGLE': 0.0,
+        'text_angle': 0.0,
 
         # safe height [GCODE]
-        'ZSAFE': 0.25,
+        'zsafe': 0.25,
 
         # engraving depth [GCODE]
-        'ZCUT': -0.005,
+        'zcut': -0.005,
 
         'line_thickness': 0.01,
 
-        # Options:  "Default",
+        # options:  "Default",
         # "Top-Left", "Top-Center", "Top-Right",
         # "Mid-Left", "Mid-Center", "Mid-Right",
         # "Bot-Left", "Bot-Center", "Bot-Right"
@@ -130,14 +135,14 @@ class Settings(object):
         # horizontal feedrate [GCODE]
         'feedrate': 5.0,
 
+        'plunge_rate': 0.0,
 
         # which bounding boxes are used to calculate line height
         # options: 'max_all', 'max_use'
         'height_calculation': 'max_use',
 
         # Add a box/circle around plot
-        # options: 'box', 'no_box'
-        'plotbox': 'no_box',
+        'plotbox': False,
 
         # Gap between box and engraving
         'boxgap': 0.25,
@@ -157,15 +162,21 @@ class Settings(object):
         'v_bit_dia': 3.0,
 
         'v_depth_lim': 0.0,
-        'v_drv_crner': 135,
-        'v_stp_crner': 200,
+        'v_drv_corner': 135,
+        'v_step_corner': 200,
         'v_step_len': 0.25,
 
         # V-carve loop accuracy
         'v_acc': 0.001,
 
+        'allowance': 0.0,
+
         # options: 'chr', 'all'
         'v_check_all': 'all',
+
+        #TODO
+        'v_rough_stk': 0.0,
+        'v_max_cut': 0.0,
 
         # options: black, white, right, left, minority, majority, or random
         'bmp_turnpol': 'minority',
@@ -209,6 +220,7 @@ class Settings(object):
     }
 
     def __init__(self, filename=None, autoload=False):
+
         self._settings = self._defaults.copy()
 
         if filename is not None:

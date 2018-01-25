@@ -1,9 +1,3 @@
-
-
-	
-############################################################################
-##  2018 JvO Refactoring                                                  ##
-############################################################################
 class Model():
     def __init__(self, controller):
 
@@ -188,7 +182,7 @@ class Model():
             i_y2 = 3
 
         #
-        #TODO preferences object instead of application
+        #TODO Use settings instead
         #
         not_b_carve = not bool(self.controller.bit_shape.get() == "BALL")
         if (self.controller.v_pplot.get() == 1):
@@ -432,7 +426,7 @@ class Model():
                 #the distance calculations
                 seg_sin = dy/Lseg
                 seg_cos = -dx/Lseg
-                phi = getAngle(seg_sin, seg_cos)
+                phi = Get_Angle(seg_sin, seg_cos)
                 
                 if calc_flag != 0:
                     CUR_LENGTH = CUR_LENGTH + Lseg
@@ -465,7 +459,7 @@ class Model():
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
-                    delta = getAngle(d_seg_sin, d_seg_cos)
+                    delta = Get_Angle(d_seg_sin, d_seg_cos)
 
                 if delta < float(v_drv_corner) and bit_angle !=0 and not_b_carve and clean_flag != 1:
                     #drive to corner
@@ -513,7 +507,7 @@ class Model():
 
                 seg_sin =  dy/Lseg
                 seg_cos = -dx/Lseg
-                phi2 = radians(getAngle(seg_sin, seg_cos))
+                phi2 = radians(Get_Angle(seg_sin, seg_cos))
                 while cnt < nsteps-1:
                     cnt += 1
                     #determine location of next step along outline (xpt, ypt)
@@ -548,7 +542,7 @@ class Model():
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
-                    delta = getAngle(d_seg_sin,d_seg_cos)
+                    delta = Get_Angle(d_seg_sin,d_seg_cos)
                     if delta < v_drv_corner and clean_flag != 1:
                         #drive to corner
                         self.vcoords.append([xa, ya, 0.0, loop_cnt])
