@@ -21,11 +21,8 @@ else:
 
 
 def fmessage(text, newline=True):
-    global IN_AXIS, QUIET
-
     if IN_AXIS or QUIET:
         return
-
     try:
         sys.stdout.write(text)
         if newline:
@@ -35,20 +32,21 @@ def fmessage(text, newline=True):
 
 
 try:
-    from PIL import Image
-    PIL = True
-except:
-    PIL = False
-
-if PIL == False:
-   fmessage("Python Imaging Library (PIL) was not found...Bummer")
-   fmessage("PIL enables more image file formats.")
-
-try:
+    PIL = externals.check_pil()
     TTF_AVAILABLE = externals.check_ttf()
     POTRACE_AVAILABLE = externals.check_potrace()
 except Exception, e:
     fmessage(e)
+
+
+#TODO remove?
+def message_box(title, message):
+    if VERSION == 3:
+        tkinter.messagebox.showinfo(title, message)
+    else:
+        tkMessageBox.showinfo(title, message)
+        pass
+
 
 def message_ask_ok_cancel(title, message):
     if VERSION == 3:
@@ -56,4 +54,3 @@ def message_ask_ok_cancel(title, message):
     else:
         result = tkMessageBox.askokcancel(title, message)
     return result
-

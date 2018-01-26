@@ -30,6 +30,7 @@ else:
 
     from util import icon
     from application.gui import Gui
+
     try:
         from tkinter import *
         from tkinter.filedialog import *

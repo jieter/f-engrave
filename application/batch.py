@@ -11,10 +11,10 @@ class Batch(object):
 
         if settings.get('input_type') == "text":
             pass
-            # self.Read_font_file()
+            # self.readFontFile(self.settings)
         else:
             pass
-            # self.Read_image_file()
+            # self.readImageFile(self.settings)
 
         # self.DoIt()
         # if self.cut_type.get() == "v-carve":

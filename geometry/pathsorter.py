@@ -1,4 +1,4 @@
-def sort_paths(ecoords, i_loop=2):
+def sortPaths(ecoords, i_loop=2):
     # find loop ends
     Lbeg = []
     Lend = []

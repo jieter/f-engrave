@@ -1,5 +1,6 @@
 import os
 
+
 def cast_boolean(value):
     if type(value) is bool:
         return bool(value)
@@ -7,6 +8,7 @@ def cast_boolean(value):
         return value == 'True'
     else:
         return bool(int(value))
+
 
 def cast_string(value):
     value = str(value).strip()
@@ -17,6 +19,7 @@ def cast_string(value):
         return value[1:-1].strip()
     else:
         return value
+
 
 CAST_TYPES = {
     'bool': cast_boolean,
@@ -57,12 +60,23 @@ CONFIG_TEMPLATE = CONFIG_MARKER + '%20s %s )'
 CUT_TYPE_ENGRAVE = 'engrave'
 CUT_TYPE_VCARVE = 'v-carve'
 
+HOME_DIR = os.path.expanduser("~")
+NGC_FILE = (HOME_DIR + "/None")
+# IMAGE_FILE = (HOME_DIR + "/None")
+IMAGE_FILE = (HOME_DIR + "/Desktop/None")  # TEST
+
+
+# IMAGE_FILE = (HOME_DIR + "/Desktop/circle.dxf")
 
 class Settings(object):
     '''
     Default values for the application settings.
     '''
     _defaults = {
+        'HOME_DIR': HOME_DIR,
+        'NGC_FILE': NGC_FILE,
+        'IMAGE_FILE': IMAGE_FILE,
+
         'batch': False,
         'show_axis': True,
         'show_box': True,
@@ -174,7 +188,7 @@ class Settings(object):
         # options: 'chr', 'all'
         'v_check_all': 'all',
 
-        #TODO
+        # TODO
         'v_rough_stk': 0.0,
         'v_max_cut': 0.0,
 
@@ -216,7 +230,7 @@ class Settings(object):
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
 
-        'text': 'F-engrave'
+        'default_text': 'F-engrave'
     }
 
     def __init__(self, filename=None, autoload=False):

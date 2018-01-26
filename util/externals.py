@@ -38,3 +38,12 @@ def check_potrace():
         raise Exception("potrace executable is not present/working...Bummer")
 
     return False
+
+
+def check_pil():
+    try:
+        from PIL import Image
+        return True
+    except:
+        raise Exception("Python Imaging Library (PIL) was not found...Bummer\n\
+        PIL enables more image file formats.")

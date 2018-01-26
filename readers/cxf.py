@@ -1,12 +1,3 @@
-################################################################################
-# This routine parses the .cxf font file and builds a font dictionary of       #
-# line segment strokes required to cut each character.                         #
-# Arcs (only used in some fonts) are converted to a number of line             #
-# segments based on the angular length of the arc. Since the idea of           #
-# this font description is to make it support independent x and y scaling,     #
-# we do not use native arcs in the g-code.                                     #
-################################################################################
-
 from math import sin, cos, radians
 import re
 
@@ -14,6 +5,14 @@ from geometry import Character, Line, Font
 
 
 def parse(file, segarc):
+    '''
+    This routine parses the .cxf font file and builds a font dictionary of
+    line segment strokes required to cut each character.
+    Arcs (only used in some fonts) are converted to a number of line
+    segments based on the angular length of the arc. Since the idea of
+    this font description is to make it support independent x and y scaling,
+    we do not use native arcs in the g-code.
+    '''
     font = Font()
 
     key = None
@@ -33,9 +32,7 @@ def parse(file, segarc):
         end_char = len(text)
         # save the character to our dictionary
         if end_char and key:
-            font.add_character(
-                Character(key=key, stroke_list=stroke_list)
-            )
+            font.add_character( Character(key=key, stroke_list=stroke_list) )
 
         new_cmd = re.match('^\[(.*)\]\s', text)
 
@@ -99,4 +96,5 @@ def parse(file, segarc):
                 ymax = max(ymax, coords[1], coords[3])
                 xstart = xend
                 ystart = yend
+
     return font

@@ -1,7 +1,7 @@
 from math import hypot
 
 from geometry import Zero
-from geometry.pathsorter import sort_paths
+from geometry.pathsorter import sortPaths
 from geometry.linearcfitter import Line_Arc_Fit
 
 from util import fmessage
@@ -100,7 +100,7 @@ def engrave_gcode(job):
         ecoords.append([x2, y2, loop])
         oldx, oldy = x2, y2
 
-    order_out = sort_paths(ecoords)
+    order_out = sortPaths(ecoords)
 
     ###########################
     dist = 999

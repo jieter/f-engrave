@@ -16,6 +16,7 @@ def parse(dxf_file, segarc, new_origin=True):
 
     if "POTRACE" in dxf_import.comment.upper():
         DXF_source = "POTRACE"
+
     if "INKSCAPE" in dxf_import.comment.upper():
         DXF_source = "INKSCAPE"
 

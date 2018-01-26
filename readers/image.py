@@ -2,10 +2,11 @@ import os
 from subprocess import Popen, PIPE
 
 from util import fmessage, VERSION
-from . import parse_dxf
+from . import dxf as parse_dxf
 
 
-def Read_image_file(settings):
+def readImageFile(settings):
+
     font = {}
 
     file_full = settings.get('IMAGE_FILE')
@@ -38,11 +39,11 @@ def Read_image_file(settings):
         try:
             # cmd = ["potrace","-b","dxf",file_full,"-o","-"]
             cmd = ["potrace",
-               "-z", settings.get('bmp_turnpol'),
-               "-t", settings.get('bmp_turdsize'),
-               "-a", settings.get('bmp_alphamax'),
-               "-n",
-               "-b", "dxf", file_full, "-o", "-"]
+                   "-z", settings.get('bmp_turnpol'),
+                   "-t", settings.get('bmp_turdsize'),
+                   "-a", settings.get('bmp_alphamax'),
+                   "-n",
+                   "-b", "dxf", file_full, "-o", "-"]
             if settings.get('bmp_longcurve'):
                 cmd.extend(("-O", settings.get('bmp_opttolerance')))
 

@@ -57,6 +57,14 @@ class Font(object):
 
         return self.characters[key]
 
+    # TODO To be removed after testing has been completed
+    def __str__(self):
+        charstring = ''
+        for char in self.characters:
+            charstring = charstring + str(char) + ' '
+
+        return charstring
+
     def add_character(self, char):
         self.characters[char.key] = char
         self.bbox.extend(char.bounds())
@@ -68,6 +76,9 @@ class Font(object):
             bbox.extend(self[ord(char)])
 
         return bbox
+
+    def get_character_width(self):
+        return max(self.characters[key].get_xmax() for key in self.characters)
 
     def line_height(self):
         return self.bbox.ymax
