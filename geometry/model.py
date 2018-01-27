@@ -1,13 +1,21 @@
+from time import time
+from math import fabs, floor, sqrt
+from geometry import *
+
+
 class Model():
 
-    def __init__(self, controller):
+    def __init__(self, controller, settings):
 
         self.controller = controller
+        self.settings = settings
         self.init_coords()
 
-        self.setBatch(False)
-        self.set_accuracy(0.001)
-        self.set_plotscale(1.0)
+        #TODO remove batch flag (use batch | gui)
+        self.batch = self.settings.get('batch')
+        self.accuracy = self.settings.get('accuracy')
+
+        self.set_plot_scale(1.0)
 
         self.setMaxX(0)
         self.setMinX(0)
@@ -25,14 +33,8 @@ class Model():
         self.v_clean_coords_sort = []
         self.clean_segment = []
 
-    def set_accuracy(self, accuracy):
-        self.accuracy = float(accuracy)
-
-    def setBatch(self, batch):
-        self.batch = batch
-
-    def set_plotscale(self, plotScale):
-        self.plotScale = plotScale
+    def set_plot_scale(self, scale):
+        self.plot_scale = scale
 
     def setMaxX(self, x):
         self.maxX = x
@@ -299,7 +301,7 @@ class Model():
 
         #Update canvas with modified paths
         if (not self.batch):
-            self.controller.plotData()
+            self.controller.plot_data()
 
         if TOT_LENGTH > 0.0:
 
@@ -358,7 +360,7 @@ class Model():
                 #the distance calculations
                 seg_sin = dy/Lseg
                 seg_cos = -dx/Lseg
-                phi = geometry.get_angle(seg_sin, seg_cos)
+                phi = get_angle(seg_sin, seg_cos)
                 
                 if calc_flag != 0:
                     CUR_LENGTH = CUR_LENGTH + Lseg
@@ -391,7 +393,7 @@ class Model():
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
-                    delta = geometry.get_angle(d_seg_sin, d_seg_cos)
+                    delta = get_angle(d_seg_sin, d_seg_cos)
 
                 if delta < float(v_drv_corner) and bit_angle !=0 and not_b_carve and clean_flag != 1:
                     #drive to corner
@@ -417,7 +419,7 @@ class Model():
                        self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
 
                        if v_pplot and (not self.batch) and (clean_flag != 1 ):
-                           self.controller.plotCircle(xv, yv, midx, midy, cszw, cszh, self.plotScale, "blue", rv, 0)
+                           self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, self.plot_scale, "blue", rv, 0)
 
                 theta = phi
                 x0 = x2
@@ -439,7 +441,7 @@ class Model():
 
                 seg_sin =  dy/Lseg
                 seg_cos = -dx/Lseg
-                phi2 = radians(geometry.get_angle(seg_sin, seg_cos))
+                phi2 = radians(get_angle(seg_sin, seg_cos))
                 while cnt < nsteps-1:
                     cnt += 1
                     #determine location of next step along outline (xpt, ypt)
@@ -457,7 +459,7 @@ class Model():
                     if v_pplot and (not self.batch) and (clean_flag != 1 ):
                         #self.master.update_idletasks()
                         self.controller.update_idletasks()
-                        self.controller.plotCircle(xv, yv, midx, midy, cszw, cszh, self.plotScale, "blue", rv, 0)
+                        self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, self.plot_scale, "blue", rv, 0)
 
                     if (New_Loop == 1 and cnt == 1):
                         xpta = xpt
@@ -474,7 +476,7 @@ class Model():
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
-                    delta = geometry.get_angle(d_seg_sin,d_seg_cos)
+                    delta = get_angle(d_seg_sin,d_seg_cos)
                     if delta < v_drv_corner and clean_flag != 1:
                         #drive to corner
                         self.vcoords.append([xa, ya, 0.0, loop_cnt])
@@ -495,7 +497,7 @@ class Model():
                             xv, yv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt, clean_flag)
                             self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
                             if v_pplot and (not self.batch) and (clean_flag != 1 ):
-                                self.controller.plotCircle(xv, yv, midx, midy, cszw, cszh, self.plotScale, "blue", rv, 0)
+                                self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, self.plot_scale, "blue", rv, 0)
 
                         xv, yv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean_flag)
                         self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
@@ -516,7 +518,7 @@ class Model():
         rbit = self.controller.calc_vbit_dia() / 2.0
         r_clean = float(self.controller.clean_dia.get())/2.0
         
-        Lx, Ly = geometry.transform(0,rout,-phi)
+        Lx, Ly = transform(0,rout,-phi)
         xnormv = x1+Lx
         ynormv = y1+Ly
         need_clean = 0
@@ -644,8 +646,6 @@ class Model():
         self.coords = self._sort_for_v_carve(self.coords, LN_START)
 
     def _sort_for_v_carve(self, sort_coords, LN_START):
-
-        from geometry import point_inside_polygon
 
         ecoords = []
         Lbeg=[]
@@ -862,7 +862,7 @@ class Model():
                     if jloop != iloop:
                         inside = 0
                         jval = Lbeg[jloop]
-                        inside = inside + geometry.point_inside_polygon(ecoords[jval][0],ecoords[jval][1],ipoly)
+                        inside = inside + point_inside_polygon(ecoords[jval][0],ecoords[jval][1],ipoly)
                         if inside > 0:
                             Lflip[jloop] = not Lflip[jloop]
                             LoopTree[iloop][1].append(jloop)
@@ -1154,8 +1154,6 @@ class Model():
     
     def _clean_path_calc(self, bit_type="straight"):
 
-        from geometry import pathsorter, detect_intersect
-
         v_flop = self.get_flop_status(CLEAN_FLAG=True)
         if v_flop:
             edge = 1
@@ -1304,7 +1302,7 @@ class Model():
                         for iY in range(0,int(Ysteps+1)):
                             y = y_pmin + iY/Ysteps * (y_pmax-y_pmin)
                             intXYlist=[]
-                            intXYlist = geometry.detect_intersect([x_pmin-1,y],[x_pmax+1,y],loop_coords,XY_T_F=True)
+                            intXYlist = detect_intersect([x_pmin-1,y],[x_pmax+1,y],loop_coords,XY_T_F=True)
                             intXY_len = len(intXYlist)
 
                             for i in range(edge,intXY_len-1-edge,2):
@@ -1327,7 +1325,7 @@ class Model():
                         for iX in range(0,int(Xsteps+1)):
                             x = x_pmin + iX/Xsteps * (x_pmax-x_pmin)
                             intXYlist=[]
-                            intXYlist = geometry.detect_intersect([x,y_pmin-1],[x,y_pmax+1],loop_coords,XY_T_F=True)
+                            intXYlist = detect_intersect([x,y_pmin-1],[x,y_pmax+1],loop_coords,XY_T_F=True)
                             intXY_len = len(intXYlist)
                             for i in range(edge,intXY_len-1-edge,2):
                                 x1 = intXYlist[i][0]
@@ -1434,7 +1432,7 @@ class Model():
                (self.v_clean_X.get() == 1 and bit_type == "v-bit"):
                 x_old = -999
                 y_old = -999
-                order_out = geometry.sort_paths(Xclean_coords)
+                order_out = sort_paths(Xclean_coords)
                 loop_old = -1
                 for line in order_out:
                     temp = line
@@ -1463,7 +1461,7 @@ class Model():
                (self.v_clean_Y.get() == 1 and bit_type == "v-bit"):
                 x_old = -999
                 y_old = -999
-                order_out = geometry.sort_paths(Yclean_coords)
+                order_out = sort_paths(Yclean_coords)
                 loop_old = -1
                 for line in order_out:
                     temp = line
@@ -1485,9 +1483,10 @@ class Model():
                         y_old = y1
                         loop_old = loop
 
-            self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), 1)
-            self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), 1)
-            self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), 1)
+            # TODO move to controller
+            self.controller.entry_set(self.controller.Entry_CLEAN_DIA, self.controller.Entry_CLEAN_DIA_Check(), 1)
+            self.controller.entry_set(self.controller.Entry_STEP_OVER, self.controller.Entry_STEP_OVER_Check(), 1)
+            self.controller.entry_set(self.controller.Entry_V_CLEAN, self.controller.Entry_V_CLEAN_Check(), 1)
 
             if bit_type=="v-bit":
                 self.v_clean_coords_sort = clean_coords_out

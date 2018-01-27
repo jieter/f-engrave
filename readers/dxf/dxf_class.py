@@ -116,7 +116,9 @@ class DXF_CLASS(object):
                 pass
 
     def bulge_coords(self, x0, y0, x1, y1, bulge, tol_deg=20):
+
         global Zero
+
         bcoords = []
         if bulge < 0.0:
             sign = 1

@@ -4,7 +4,9 @@ from boundingbox import BoundingBox
 from font import *
 
 
-Zero = 0.0000001
+Zero = 1e-6
+
+STOP_CALC = 0
 
 
 def transform(x, y, angle):
@@ -15,28 +17,21 @@ def transform(x, y, angle):
     '''
     newx = x * cos(angle) - y * sin(angle)
     newy = x * sin(angle) + y * cos(angle)
+
     return newx, newy
 
 
 def get_angle(s, c):
     '''
-    routine takes an sin and cos and returns the angle (between 0 and 360)
+    routine takes a sin and cos and returns the angle (between 0 and 360)
     '''
-    if (s >= 0.0 and c >= 0.0):
-        angle = degrees(acos(c))
-    elif (s >= 0.0 and c < 0.0):
-        angle = degrees(acos(c))
-    elif (s < 0.0 and c <= 0.0):
-        angle = 360 - degrees(acos(c))
-    elif (s < 0.0 and c > 0.0):
-        angle = 360 - degrees(acos(c))
-    else:
-        pass
+    angle = 90.0 - degrees(atan2(s, c))
 
-    if angle < 0.001 and s < 0:
-        angle == 360.0
-    if angle > 359.999 and s >= 0:
-        angle == 0.0
+    if angle < 0:
+        angle = 360 + angle
+
+    return angle
+
     return angle
 
 
@@ -58,6 +53,7 @@ def rotation(x, y, angle, radius):
     theta = atan2(yy, xx)
     newx = rad * cos(theta + radians(angle))
     newy = rad * sin(theta + radians(angle))
+
     return newx, newy, alpha
 
 
@@ -69,7 +65,7 @@ def translate(x1, y1, x2, y2):
     return x1 + x2, y1 + y2
 
 
-def point_inside_polygon(self, x, y, poly):
+def point_inside_polygon(x, y, poly):
     '''
     determine if a point is inside a given polygon or not
     Polygon is a list of (x,y) pairs.
@@ -94,79 +90,83 @@ def point_inside_polygon(self, x, y, poly):
     return inside
 
 
-def detect_intersect(self, Coords0, Coords1, lcoords, XY_T_F=True):
-        '''
-        Find intersecting lines
-        '''
-        [x0, y0] = Coords0
-        [x1, y1] = Coords1
-        Zero = 1e-6
-        all_intersects = []
-        Xint_list = []
-        numcoords = len(lcoords)
-        if numcoords < 1:
-            return False
+def detect_intersect(coords0, coords1, lcoords, XY_T_F=True):
+    '''
+    Find intersecting lines
+    '''
+    [x0, y0] = coords0
+    [x1, y1] = coords1
 
-        dx = x1 - x0
-        dy = y1 - y0
-        len_seg = sqrt(dx * dx + dy * dy)
+    global Zero
 
-        if len_seg < Zero:
-            if XY_T_F == False:
-                return False
-            else:
-                return []
+    all_intersects = []
+    Xint_list = []
+    numcoords = len(lcoords)
+    if numcoords < 1:
+        return False
 
-        seg_sin = dy / len_seg
-        seg_cos = dx / len_seg
-        Xint_local = 0
+    dx = x1 - x0
+    dy = y1 - y0
+    len_seg = sqrt(dx * dx + dy * dy)
 
-        for ii in range(0, numcoords):
-            x2 = lcoords[ii][0]
-            y2 = lcoords[ii][1]
-            x3 = lcoords[ii][2]
-            y3 = lcoords[ii][3]
-
-            xr0 = (x2 - x0) * seg_cos + (y2 - y0) * seg_sin
-            yr0 = (x2 - x0) * seg_sin - (y2 - y0) * seg_cos
-            xr1 = (x3 - x0) * seg_cos + (y3 - y0) * seg_sin
-            yr1 = (x3 - x0) * seg_sin - (y3 - y0) * seg_cos
-            yrmax = max(yr0, yr1)
-            yrmin = min(yr0, yr1)
-            if (yrmin < Zero and yrmax > Zero):
-                dxr = xr1 - xr0
-                if (abs(dxr) < Zero):
-                    if (xr0 > Zero and xr0 < len_seg - Zero):
-                        Xint_local = xr0  # True
-                else:
-                    dyr = yr1 - yr0;
-                    mr = dyr / dxr;
-                    br = yr1 - mr * xr1
-                    xint = -br / mr
-                    if (xint > Zero and xint < len_seg - Zero):
-                        Xint_local = xint  # True
-
-                # Check if there was a intersection detected
-                if (Xint_local != 0):
-                    if XY_T_F == False:
-                        return True
-                    else:
-                        Xint_list.append(Xint_local)
-                        Xint_local = 0
-
+    if len_seg < Zero:
         if XY_T_F == False:
-
             return False
-
         else:
-            if len(Xint_list) > 0:
-                Xint_list.sort()
-                for Xint_local in Xint_list:
-                    Xint = Xint_local * seg_cos + x0
-                    Yint = Xint_local * seg_sin + y0
-                    all_intersects.append([Xint, Yint])
+            return []
 
-            return all_intersects
+    seg_sin = dy / len_seg
+    seg_cos = dx / len_seg
+    Xint_local = 0
+
+    for ii in range(0, numcoords):
+        x2 = lcoords[ii][0]
+        y2 = lcoords[ii][1]
+        x3 = lcoords[ii][2]
+        y3 = lcoords[ii][3]
+
+        xr0 = (x2 - x0) * seg_cos + (y2 - y0) * seg_sin
+        yr0 = (x2 - x0) * seg_sin - (y2 - y0) * seg_cos
+        xr1 = (x3 - x0) * seg_cos + (y3 - y0) * seg_sin
+        yr1 = (x3 - x0) * seg_sin - (y3 - y0) * seg_cos
+
+        yrmax = max(yr0, yr1)
+        yrmin = min(yr0, yr1)
+
+        if yrmin < Zero and yrmax > Zero:
+            dxr = xr1 - xr0
+            if (abs(dxr) < Zero):
+                if (xr0 > Zero and xr0 < len_seg - Zero):
+                    Xint_local = xr0  # True
+            else:
+                dyr = yr1 - yr0;
+                mr = dyr / dxr;
+                br = yr1 - mr * xr1
+                xint = -br / mr
+                if (xint > Zero and xint < len_seg - Zero):
+                    Xint_local = xint  # True
+
+            # Check if there was a intersection detected
+            if Xint_local != 0:
+                if XY_T_F == False:
+                    return True
+                else:
+                    Xint_list.append(Xint_local)
+                    Xint_local = 0
+
+    if XY_T_F == False:
+
+        return False
+
+    else:
+        if len(Xint_list) > 0:
+            Xint_list.sort()
+            for Xint_local in Xint_list:
+                Xint = Xint_local * seg_cos + x0
+                Yint = Xint_local * seg_sin + y0
+                all_intersects.append([Xint, Yint])
+
+        return all_intersects
 
 
 class Line(object):

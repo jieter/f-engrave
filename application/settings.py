@@ -56,6 +56,8 @@ OLD_SETTING_NAMES = {
     'ZCUT': 'zcut',
 }
 
+CONFIG_FILENAME = 'config.ngc'
+
 CONFIG_MARKER = '(fengrave_set '
 CONFIG_TEMPLATE = CONFIG_MARKER + '%20s %s )'
 
@@ -79,6 +81,7 @@ class Settings(object):
         'NGC_FILE': NGC_FILE,
         'IMAGE_FILE': IMAGE_FILE,
 
+        'config_filename': CONFIG_FILENAME,
         'batch': False,
         'show_axis': True,
         'show_box': True,
@@ -243,9 +246,9 @@ class Settings(object):
             self.from_configfile(filename)
         elif autoload:
             files_to_try = (
-                'config.ngc',
-                os.path.expanduser('~') + os.path.sep + '.fengraverc',
-                os.path.expanduser('~') + os.path.sep + 'config.ngc',
+                CONFIG_FILENAME,
+                os.path.expanduser('~') + os.path.sep + CONFIG_FILENAME,
+                os.path.expanduser('~') + os.path.sep + '.fengraverc'
             )
             available = [c for c in files_to_try if os.path.isfile(c)]
             if len(available) > 0:
@@ -299,12 +302,11 @@ class Settings(object):
                     # print '?? ', name
 
     def to_gcode(self):
-        return '\n'.join(
-            [
-                CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))
-                for key, value in self._settings.items()
-            ]
-        )
+        #return '\n'.join(
+        return [
+            CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))
+            for key, value in self._settings.items()
+        ]
 
     def __str__(self):
         return 'Settings:\n' + ('\n'.join([', '.join(map(str, l)) for l in self._settings.items()]))
