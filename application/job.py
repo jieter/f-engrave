@@ -151,12 +151,12 @@ class Job(object):
                 y2 = stroke.yend
 
                 # translate
-                x1, y1 = Translate(x1, y1, xposition, -yposition)
-                x2, y2 = Translate(x2, y2, xposition, -yposition)
+                x1, y1 = translate(x1, y1, xposition, -yposition)
+                x2, y2 = translate(x2, y2, xposition, -yposition)
 
                 # scale
-                x1, y1 = Scale(x1, y1, xscale, yscale)
-                x2, y2 = Scale(x2, y2, xscale, yscale)
+                x1, y1 = scale(x1, y1, xscale, yscale)
+                x2, y2 = scale(x2, y2, xscale, yscale)
 
                 # append
                 self.coords.append([x1, y1, x2, y2, line_count, char_count])
@@ -250,11 +250,10 @@ class Job(object):
         pass
 
     def _move_origin(self):
-        settings = self.settings
 
         x_zero = y_zero = 0
 
-        origin = settings.get('origin')
+        origin = self.settings.get('origin')
         if origin == 'Default':
             origin = 'Arc-Center'
 
@@ -274,8 +273,8 @@ class Job(object):
             elif horizontal is 'Left':
                 x_zero = self.text_bbox.xmin
 
-        xorigin = settings.get('xorigin')
-        yorigin = settings.get('yorigin')
+        xorigin = self.settings.get('xorigin')
+        yorigin = self.settings.get('yorigin')
         for i, line in enumerate(self.coords):
             self.coords[i][0] = line[0] - x_zero + xorigin
             self.coords[i][1] = line[1] - y_zero + yorigin

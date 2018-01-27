@@ -52,6 +52,8 @@ OLD_SETTING_NAMES = {
     'YSCALE': 'yscale',
     'STHICK': 'line_thickness',
     'TRADIUS': 'text_radius',
+    'ZSAFE': 'zsafe',
+    'ZCUT': 'zcut',
 }
 
 CONFIG_MARKER = '(fengrave_set '

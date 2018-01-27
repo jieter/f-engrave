@@ -1,4 +1,11 @@
-def sortPaths(ecoords, i_loop=2):
+def sort_paths(ecoords, i_loop=2):
+    '''
+    Sort paths
+    :param ecoords: list of loops
+    :param i_loop: inner loop? #TODO
+    :return: ordered loops
+    '''
+
     # find loop ends
     Lbeg = []
     Lend = []
@@ -48,14 +55,14 @@ def sortPaths(ecoords, i_loop=2):
             if dist < min_dist:
                 min_dist = dist
                 inext = j
-            ###
+
             dxe = Xcur - ecoords[Lend[j]][0]
             dye = Ycur - ecoords[Lend[j]][1]
             diste = dxe * dxe + dye * dye
             if diste < min_diste:
                 min_diste = diste
                 inexte = j
-            ###
+
         if min_diste < min_dist:
             inext = inexte
             order_out.append([Lend[inexte], Lbeg[inexte]])

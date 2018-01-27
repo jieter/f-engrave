@@ -1,36 +1,37 @@
 class Model():
+
     def __init__(self, controller):
 
         self.controller = controller
-        self.initCoords()
+        self.init_coords()
 
         self.setBatch(False)
-        self.setAccuracy(0.001)
-        self.setPlotScale(1.0)
+        self.set_accuracy(0.001)
+        self.set_plotscale(1.0)
 
         self.setMaxX(0)
         self.setMinX(0)
         self.setMaxY(0)
         self.setMinY(0)
 
-    def initCoords(self):
+    def init_coords(self):
         self.coords = []
         self.vcoords = []
-        self.initCleanCoords()
+        self.init_clean_coords()
 
-    def initCleanCoords(self):
+    def init_clean_coords(self):
         self.clean_coords = []
         self.clean_coords_sort = []
         self.v_clean_coords_sort = []
         self.clean_segment = []
 
-    def setAccuracy(self, accuracy):
+    def set_accuracy(self, accuracy):
         self.accuracy = float(accuracy)
 
     def setBatch(self, batch):
         self.batch = batch
 
-    def setPlotScale(self, plotScale):
+    def set_plotscale(self, plotScale):
         self.plotScale = plotScale
 
     def setMaxX(self, x):
@@ -45,16 +46,16 @@ class Model():
     def setMinY(self, y):
         self.minY = y
 
-    def numberOfCleanSegments(self):
+    def number_of_clean_segments(self):
         return len(self.clean_segment)
 
-    def numberOfVSegments(self):
+    def number_of_v_segments(self):
         return len(self.vcoords)
 
-    def numberOfSegments(self):
+    def number_of_segments(self):
         return len(self.coords)
 
-    def getSegmentsLength(self, i_x1, i_y1, i_x2, i_y2, clean_flag):
+    def get_segments_length(self, i_x1, i_y1, i_x2, i_y2, clean_flag):
 
         total_length = 0.0
 
@@ -72,76 +73,7 @@ class Model():
                 total_length += length
 
         return total_length
-                   
-    def sortPaths(self, ecoords, i_loop=2):
 
-        #find loop ends
-        Lbeg = []
-        Lend = []
-        if len(ecoords) > 0:
-            Lbeg.append(0)
-            loop_old = ecoords[0][i_loop]
-            for i in range(1, len(ecoords)):
-                loop = ecoords[i][i_loop]
-                if loop != loop_old:
-                    Lbeg.append(i)
-                    Lend.append(i-1)
-                loop_old = loop
-            Lend.append(i)
-
-        # Find new order based on distance to next begin or end
-        order_out = []
-        use_beg = 0
-        if len(ecoords) > 0:
-            order_out.append([Lbeg[0], Lend[0]])
-            
-        inext = 0
-        total = len(Lbeg)
-        for i in range(total-1):
-            if use_beg == 1:
-                ii = Lbeg.pop(inext)
-                Lend.pop(inext)
-            else:
-                ii = Lend.pop(inext)
-                Lbeg.pop(inext)
-
-            Xcur = ecoords[ii][0]
-            Ycur = ecoords[ii][1]
-
-            dx = Xcur - ecoords[ Lbeg[0] ][0]
-            dy = Ycur - ecoords[ Lbeg[0] ][1]
-            min_dist = dx*dx + dy*dy
-
-            dxe = Xcur - ecoords[ Lend[0] ][0]
-            dye = Ycur - ecoords[ Lend[0] ][1]
-            min_diste = dxe*dxe + dye*dye
-
-            inext = 0
-            inexte = 0
-            for j in range(1, len(Lbeg)):
-                dx = Xcur - ecoords[ Lbeg[j] ][0]
-                dy = Ycur - ecoords[ Lbeg[j] ][1]
-                dist = dx*dx + dy*dy
-                if dist < min_dist:
-                    min_dist = dist
-                    inext = j
-
-                dxe = Xcur - ecoords[ Lend[j] ][0]
-                dye = Ycur - ecoords[ Lend[j] ][1]
-                diste = dxe*dxe + dye*dye
-                if diste < min_diste:
-                    min_diste = diste
-                    inexte = j
-
-            if min_diste < min_dist:
-                inext = inexte
-                order_out.append([Lend[inexte], Lbeg[inexte]])
-                use_beg = 1
-            else:
-                order_out.append([Lbeg[inext],Lend[inext]])
-                use_beg = 0
-
-        return order_out
 
     #########################################
     # V-Carve Stuff
@@ -168,7 +100,7 @@ class Model():
 
         if v_flop:
             v_inc = -1
-            v_index = self.numberOfSegments()
+            v_index = self.number_of_segments()
             i_x1 = 2
             i_y1 = 3
             i_x2 = 0
@@ -257,7 +189,7 @@ class Model():
         ###############################
 
         CUR_CNT = -1
-        while (self.numberOfSegments() > CUR_CNT+1):
+        while (self.number_of_segments() > CUR_CNT+1):
             CUR_CNT += 1
             XY_R = self.coords[CUR_CNT][:]
             x1_R = XY_R[0]
@@ -358,8 +290,8 @@ class Model():
         # End Determine active partitions for each line segment #
         #########################################################
 
-        TOT_LENGTH = self.getSegmentsLength(i_x1, i_y1, i_x2, i_y2, clean_flag)
-        MAX_CNT = self.numberOfSegments()
+        TOT_LENGTH = self.get_segments_length(i_x1, i_y1, i_x2, i_y2, clean_flag)
+        MAX_CNT = self.number_of_segments()
 
         CUR_LENGTH = 0.0
         CUR_CNT = -1
@@ -373,13 +305,13 @@ class Model():
 
             calc_flag = 1
 
-            for line in range( self.numberOfSegments() ):
+            for line in range( self.number_of_segments() ):
 
                 CUR_CNT += 1
 
                 if clean_flag == 0:
                     self.clean_segment.append(0)
-                elif self.numberOfCleanSegments() != self.numberOfSegments():
+                elif self.number_of_clean_segments() != self.number_of_segments():
                     fmessage("Need to Recalculate V-Carve Path")
                     break
                 else:
@@ -426,7 +358,7 @@ class Model():
                 #the distance calculations
                 seg_sin = dy/Lseg
                 seg_cos = -dx/Lseg
-                phi = geometry.getAngle(seg_sin, seg_cos)
+                phi = geometry.get_angle(seg_sin, seg_cos)
                 
                 if calc_flag != 0:
                     CUR_LENGTH = CUR_LENGTH + Lseg
@@ -459,7 +391,7 @@ class Model():
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
-                    delta = geometry.getAngle(d_seg_sin, d_seg_cos)
+                    delta = geometry.get_angle(d_seg_sin, d_seg_cos)
 
                 if delta < float(v_drv_corner) and bit_angle !=0 and not_b_carve and clean_flag != 1:
                     #drive to corner
@@ -478,7 +410,7 @@ class Model():
                        sub_seg_cos = cos(sub_phi)
                        sub_seg_sin = sin(sub_phi)
 
-                       rout = self.findMaxCircle(x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
+                       rout = self.find_max_circle(x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
 
                        xv, yv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rout, loop_cnt, clean_flag)
 
@@ -507,14 +439,14 @@ class Model():
 
                 seg_sin =  dy/Lseg
                 seg_cos = -dx/Lseg
-                phi2 = radians(geometry.getAngle(seg_sin, seg_cos))
+                phi2 = radians(geometry.get_angle(seg_sin, seg_cos))
                 while cnt < nsteps-1:
                     cnt += 1
                     #determine location of next step along outline (xpt, ypt)
                     xpt = x1 + dxpt * cnt
                     ypt = y1 + dypt * cnt
 
-                    rout = self.findMaxCircle(xpt, ypt, rmax, char_num, seg_sin, seg_cos, 0, CHK_STRING)
+                    rout = self.find_max_circle(xpt, ypt, rmax, char_num, seg_sin, seg_cos, 0, CHK_STRING)
                     # Make the first cut drive down at an angle instead of straight down plunge
                     if cnt == 0 and not_b_carve:
                         rout = 0.0
@@ -542,7 +474,7 @@ class Model():
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
-                    delta = geometry.getAngle(d_seg_sin,d_seg_cos)
+                    delta = geometry.get_angle(d_seg_sin,d_seg_cos)
                     if delta < v_drv_corner and clean_flag != 1:
                         #drive to corner
                         self.vcoords.append([xa, ya, 0.0, loop_cnt])
@@ -559,7 +491,7 @@ class Model():
                             sub_seg_cos = cos(sub_phi)
                             sub_seg_sin = sin(sub_phi)
 
-                            rout = self.findMaxCircle(xa, ya, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
+                            rout = self.find_max_circle(xa, ya, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
                             xv, yv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt, clean_flag)
                             self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
                             if v_pplot and (not self.batch) and (clean_flag != 1 ):
@@ -603,7 +535,7 @@ class Model():
     # Routine finds the maximum radius that can be placed in the position      #
     # xpt,ypt witout interfearing with other line segments (rmin is max R LOL) #
     ############################################################################
-    def findMaxCircle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
+    def find_max_circle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
 
         global Zero
         rtmp = rmin
@@ -708,10 +640,12 @@ class Model():
 
         return rmin
         
-    def sortForVCarve(self, LN_START=0):
-        self.coords = self._sortForVCarve(self.coords, LN_START)
+    def sort_for_v_carve(self, LN_START=0):
+        self.coords = self._sort_for_v_carve(self.coords, LN_START)
 
-    def _sortForVCarve(self, sort_coords, LN_START):
+    def _sort_for_v_carve(self, sort_coords, LN_START):
+
+        from geometry import point_inside_polygon
 
         ecoords = []
         Lbeg=[]
@@ -928,7 +862,7 @@ class Model():
                     if jloop != iloop:
                         inside = 0
                         jval = Lbeg[jloop]
-                        inside = inside + self._pointInsidePolygon(ecoords[jval][0],ecoords[jval][1],ipoly)
+                        inside = inside + geometry.point_inside_polygon(ecoords[jval][0],ecoords[jval][1],ipoly)
                         if inside > 0:
                             Lflip[jloop] = not Lflip[jloop]
                             LoopTree[iloop][1].append(jloop)
@@ -1024,7 +958,7 @@ class Model():
                         temp_coords.append([x1,y1,xa,ya,LN,0])
         return temp_coords
 
-    def _findPaths(self, check_coords_in, clean_dia, Radjust, clean_step, skip, direction):
+    def _find_paths(self, check_coords_in, clean_dia, Radjust, clean_step, skip, direction):
         check_coords=[]
         
         if direction == "Y":
@@ -1204,7 +1138,7 @@ class Model():
 
         return Xclean_coords_out, Xclean_coords_short_out
 
-    def _cleanCoordsToPathCoords(self, clean_coords_in):
+    def _clean_coords_to_path_coords(self, clean_coords_in):
         path_coords_out=[]
         # Clean coords format ([xnormv, ynormv, rout, loop_cnt]) - self.clean_coords
         # Path coords format  ([x1,y1,x2,y2,line_cnt,char_cnt])  - self.coords
@@ -1218,7 +1152,10 @@ class Model():
                                             0])
         return path_coords_out
     
-    def _cleanPathCalc(self, bit_type="straight"):
+    def _clean_path_calc(self, bit_type="straight"):
+
+        from geometry import pathsorter, detect_intersect
+
         v_flop = self.get_flop_status(CLEAN_FLAG=True)
         if v_flop:
             edge = 1
@@ -1314,8 +1251,8 @@ class Model():
                 # Calculate Straight bit "Perimeter" tool path ####
                 ###################################################
                 P_coords = []
-                loop_coords = self.cleanCoordsToPathCoords(check_coords)
-                loop_coords = self._sortForVCarve(loop_coords,LN_START=0)
+                loop_coords = self.clean_coords_to_path_coords(check_coords)
+                loop_coords = self._sort_for_v_carve(loop_coords,LN_START=0)
 
                 #######################
                 #Line fit loop_coords
@@ -1339,7 +1276,7 @@ class Model():
                             P_coords.append([x,y,clean_dia/2,Ln_last])
                 ##################### 
 
-                loop_coords = self._cleanCoordsToPathCoords(P_coords)
+                loop_coords = self._clean_coords_to_path_coords(P_coords)
                 # Find min/max values for x,y and the highest loop number
                 x_pmin= 99999
                 x_pmax=-99999
@@ -1367,7 +1304,7 @@ class Model():
                         for iY in range(0,int(Ysteps+1)):
                             y = y_pmin + iY/Ysteps * (y_pmax-y_pmin)
                             intXYlist=[]
-                            intXYlist = self._detectIntersect([x_pmin-1,y],[x_pmax+1,y],loop_coords,XY_T_F=True)
+                            intXYlist = geometry.detect_intersect([x_pmin-1,y],[x_pmax+1,y],loop_coords,XY_T_F=True)
                             intXY_len = len(intXYlist)
 
                             for i in range(edge,intXY_len-1-edge,2):
@@ -1390,7 +1327,7 @@ class Model():
                         for iX in range(0,int(Xsteps+1)):
                             x = x_pmin + iX/Xsteps * (x_pmax-x_pmin)
                             intXYlist=[]
-                            intXYlist = self._detectIntersect([x,y_pmin-1],[x,y_pmax+1],loop_coords,XY_T_F=True)
+                            intXYlist = geometry.detect_intersect([x,y_pmin-1],[x,y_pmax+1],loop_coords,XY_T_F=True)
                             intXY_len = len(intXYlist)
                             for i in range(edge,intXY_len-1-edge,2):
                                 x1 = intXYlist[i][0]
@@ -1411,12 +1348,12 @@ class Model():
                 #########################################################################
                 # Find ends of horizontal lines for carving clean-up
                 #########################################################################
-                Xclean_perimeter, Xclean_coords = self._findPaths(check_coords, clean_dia, Radjust, clean_step, skip, "X")
+                Xclean_perimeter, Xclean_coords = self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip, "X")
 
                 #########################################################################
                 # Find ends of Vertical lines for carving clean-up
                 #########################################################################
-                Yclean_perimeter, Yclean_coords = self._findPaths(check_coords, clean_dia,Radjust, clean_step, skip, "Y")
+                Yclean_perimeter, Yclean_coords = self._find_paths(check_coords, clean_dia,Radjust, clean_step, skip, "Y")
 
                 #######################################################
                 # Find new order based on distance                    #
@@ -1497,7 +1434,7 @@ class Model():
                (self.v_clean_X.get() == 1 and bit_type == "v-bit"):
                 x_old = -999
                 y_old = -999
-                order_out = self.sortPaths(Xclean_coords)
+                order_out = geometry.sort_paths(Xclean_coords)
                 loop_old = -1
                 for line in order_out:
                     temp = line
@@ -1526,7 +1463,7 @@ class Model():
                (self.v_clean_Y.get() == 1 and bit_type == "v-bit"):
                 x_old = -999
                 y_old = -999
-                order_out = self.sortPaths(Yclean_coords)
+                order_out = geometry.sort_paths(Yclean_coords)
                 loop_old = -1
                 for line in order_out:
                     temp = line
@@ -1547,7 +1484,7 @@ class Model():
                         x_old = x1
                         y_old = y1
                         loop_old = loop
-                        
+
             self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), 1)
             self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), 1)
             self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), 1)
@@ -1560,101 +1497,3 @@ class Model():
         self.controller.statusMessage.set('Done Calculating Cleanup Cut Paths')
         self.controller.statusbar.configure( bg='white' )
         self.controller.master.update_idletasks()
-
-
-    #####################################################
-    ### Find intersecting lines
-    #####################################################
-    def _detectIntersect(self, Coords0,Coords1,lcoords,XY_T_F=True):
-        [x0,y0]=Coords0
-        [x1,y1]=Coords1
-        Zero = 1e-6
-        all_intersects = []
-        Xint_list = []
-        numcoords = len(lcoords)
-        if numcoords < 1:
-            return False
-        
-        dx = x1-x0
-        dy = y1-y0
-        len_seg = sqrt(dx*dx+dy*dy)
-
-        if len_seg < Zero:
-            if XY_T_F == False:
-                return False
-            else:
-                return []
-            
-        seg_sin = dy/len_seg
-        seg_cos = dx/len_seg    
-        Xint_local = 0
-        
-        for ii in range(0,numcoords):
-            x2 = lcoords[ii][0]
-            y2 = lcoords[ii][1]      
-            x3 = lcoords[ii][2]
-            y3 = lcoords[ii][3]
-            
-            xr0 = (x2-x0)*seg_cos + (y2-y0)*seg_sin
-            yr0 = (x2-x0)*seg_sin - (y2-y0)*seg_cos
-            xr1 = (x3-x0)*seg_cos + (y3-y0)*seg_sin
-            yr1 = (x3-x0)*seg_sin - (y3-y0)*seg_cos
-            yrmax = max(yr0,yr1)
-            yrmin = min(yr0,yr1)
-            if (yrmin < Zero and yrmax > Zero):
-                dxr = xr1-xr0
-                if (abs(dxr) < Zero):
-                    if (xr0 > Zero and xr0 < len_seg-Zero):
-                        Xint_local = xr0 #True
-                else:
-                    dyr = yr1-yr0;
-                    mr = dyr/dxr;
-                    br = yr1 - mr * xr1
-                    xint = -br/mr
-                    if (xint > Zero and xint < len_seg-Zero):
-                        Xint_local = xint #True
-                        
-                # Check if there was a intersection detected
-                if (Xint_local != 0):
-                    if XY_T_F==False:
-                        return True
-                    else:
-                        Xint_list.append(Xint_local)
-                        Xint_local = 0
-            
-        if XY_T_F == False:
-            return False
-        else:
-            if len(Xint_list) > 0:
-                Xint_list.sort()
-                for Xint_local in Xint_list:
-                    Xint = Xint_local * seg_cos + x0
-                    Yint = Xint_local * seg_sin + y0
-                    all_intersects.append([Xint,Yint])
-            return all_intersects
-            
-    #######################################################
-    # determine if a point is inside a given polygon or not
-    # Polygon is a list of (x,y) pairs.
-    # http://www.ariel.com.au/a/python-point-int-poly.html
-    #######################################################
-    def _pointInsidePolygon(self, x, y, poly):
-
-        n = len(poly)
-        inside = -1
-        p1x = poly[0][0]
-        p1y = poly[0][1]
-
-        for i in range(n+1):
-            p2x = poly[i%n][0]
-            p2y = poly[i%n][1]
-            if y > min(p1y,p2y):
-                if y <= max(p1y, p2y):
-                    if x <= max(p1x,p2x):
-                        if p1y != p2y:
-                            xinters = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-                        if p1x == p2x or x <= xinters:
-                            inside = inside * -1
-            p1x,p1y = p2x,p2y
-
-        return inside

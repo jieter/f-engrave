@@ -25,9 +25,6 @@ if settings.get('batch'):
     pass
 
 else:
-    print 'GUI is under construction...'
-    #TEST print settings
-
     from util import icon
     from application.gui import Gui
 
@@ -46,7 +43,8 @@ else:
     app.master.iconname("F-Engrave")
     app.master.minsize(780, 540)
 
-    #app.f_engrave_init()
+    app.f_engrave_init()
+
     icon.add_to_app(app)
 
     root.mainloop()

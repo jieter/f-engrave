@@ -1,8 +1,8 @@
 from math import hypot
 
 from geometry import Zero
-from geometry.pathsorter import sortPaths
-from geometry.linearcfitter import Line_Arc_Fit
+from geometry.pathsorter import sort_paths
+from geometry.linearcfitter import line_arc_fit
 
 from util import fmessage
 
@@ -46,6 +46,7 @@ def gcode(job):
 
 
 def engrave_gcode(job):
+
     settings = job.settings
     accuracy = settings.get('accuracy')
 
@@ -58,8 +59,8 @@ def engrave_gcode(job):
         dp = 3
         dpfeed = 1
 
-    SafeZ = settings.get('ZSAFE')
-    Depth = settings.get('ZCUT')
+    SafeZ = settings.get('zsafe')
+    Depth = settings.get('zcut')
 
     if not settings.get('var_dis'):
         FORMAT = '%%.%df' % dp
@@ -100,7 +101,7 @@ def engrave_gcode(job):
         ecoords.append([x2, y2, loop])
         oldx, oldy = x2, y2
 
-    order_out = sortPaths(ecoords)
+    order_out = sort_paths(ecoords)
 
     ###########################
     dist = 999
@@ -110,7 +111,8 @@ def engrave_gcode(job):
     z1 = 0
     nextz = 0
 
-    code.append("G0 Z%s" % settings.get('ZSAFE'))
+    code.append("G0 Z%s" % settings.get('zsafe'))
+
     for line in order_out:
         temp = line
         if temp[0] > temp[1]:
@@ -147,7 +149,7 @@ def engrave_gcode(job):
                 dist = hypot(dx, dy)
                 if dist > accuracy:
                     # lift engraver
-                    code.append("G0 Z%s" % settings.get('ZSAFE'))
+                    code.append("G0 Z%s" % settings.get('zsafe'))
                     # rapid to current position
 
                     FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
@@ -166,7 +168,7 @@ def engrave_gcode(job):
             else:
                 # Line fit and arc fit (curve fit)
                 [arccode, FLAG_arc, R_last, x_center_last, y_center_last, WRITE, FLAG_line] = \
-                    Line_Arc_Fit(lastx, lasty, lastz, x1, y1, z1,
+                    line_arc_fit(lastx, lasty, lastz, x1, y1, z1,
                                  nextx, nexty, nextz,
                                  FLAG_arc, arccode,
                                  R_last, x_center_last, y_center_last, FLAG_line, accuracy)
@@ -178,12 +180,13 @@ def engrave_gcode(job):
 
                         if R_check_1 > Zero or R_check_2 > Zero:
                             fmessage("-- G-Code Curve Fitting Anomaly - Check Output --")
-                            code.append('(---Curve Fitting Anomaly - Check Output. Error = %.6f ---)' % (max(R_check_1, R_check_2)))
+                            code.append('(---Curve Fitting Anomaly - Check Output. Error = %.6f ---)' % (
+                                max(R_check_1, R_check_2)))
 
                             FORMAT = 'G1 X%%.%df Y%%.%df' % (dp, dp)
                             code.append(FORMAT % (lastx, lasty))
                             code.append(FORMAT % (x1, y1))
-                            code.append('(------------------ End Anomoly Resolution -------------------)')
+                            code.append('(------------------ End Anomaly Resolution -------------------)')
                         else:
                             Ival = x_center_last - lastx
                             Jval = y_center_last - lasty
@@ -206,6 +209,7 @@ def engrave_gcode(job):
                     lastx = x1
                     lasty = y1
                 # End Line and Arc Fitting
+
             loop_old = loop
 
     # Make Circle
@@ -225,6 +229,7 @@ def engrave_gcode(job):
 
     # final engraver up
     code.append('G0 Z%s' % safe_val)
+
     return code
 
 
