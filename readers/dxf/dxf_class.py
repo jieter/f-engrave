@@ -7,7 +7,7 @@ from math import (
     ceil, floor
 )
 
-from geometry import Get_Angle, Transform, Zero
+from geometry import getAngle, transform, Zero
 from util import fmessage, VERSION
 
 from elements import *
@@ -141,7 +141,7 @@ class DXF_CLASS(object):
 
         seg_sin = dy / c
         seg_cos = dx / c
-        phi = Get_Angle(seg_sin, seg_cos)
+        phi = geometry.getAngle(seg_sin, seg_cos)
 
         d_theta = 2 * alpha / steps
         theta = alpha - d_theta
@@ -151,7 +151,7 @@ class DXF_CLASS(object):
         for i in range(1, int(steps)):
             xp = c / 2 - R * sin(theta)
             yp = R * cos(theta) - L
-            xb, yb = Transform(xp, yp * sign, radians(phi))
+            xb, yb = geometry.transform(xp, yp * sign, radians(phi))
             xb = xb + x0
             yb = yb + y0
 

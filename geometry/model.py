@@ -426,7 +426,7 @@ class Model():
                 #the distance calculations
                 seg_sin = dy/Lseg
                 seg_cos = -dx/Lseg
-                phi = Get_Angle(seg_sin, seg_cos)
+                phi = geometry.getAngle(seg_sin, seg_cos)
                 
                 if calc_flag != 0:
                     CUR_LENGTH = CUR_LENGTH + Lseg
@@ -459,7 +459,7 @@ class Model():
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
-                    delta = Get_Angle(d_seg_sin, d_seg_cos)
+                    delta = geometry.getAngle(d_seg_sin, d_seg_cos)
 
                 if delta < float(v_drv_corner) and bit_angle !=0 and not_b_carve and clean_flag != 1:
                     #drive to corner
@@ -507,7 +507,7 @@ class Model():
 
                 seg_sin =  dy/Lseg
                 seg_cos = -dx/Lseg
-                phi2 = radians(Get_Angle(seg_sin, seg_cos))
+                phi2 = radians(geometry.getAngle(seg_sin, seg_cos))
                 while cnt < nsteps-1:
                     cnt += 1
                     #determine location of next step along outline (xpt, ypt)
@@ -542,7 +542,7 @@ class Model():
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
-                    delta = Get_Angle(d_seg_sin,d_seg_cos)
+                    delta = geometry.getAngle(d_seg_sin,d_seg_cos)
                     if delta < v_drv_corner and clean_flag != 1:
                         #drive to corner
                         self.vcoords.append([xa, ya, 0.0, loop_cnt])
@@ -584,7 +584,7 @@ class Model():
         rbit = self.controller.calc_vbit_dia() / 2.0
         r_clean = float(self.controller.clean_dia.get())/2.0
         
-        Lx, Ly = Transform(0,rout,-phi)
+        Lx, Ly = geometry.transform(0,rout,-phi)
         xnormv = x1+Lx
         ynormv = y1+Ly
         need_clean = 0

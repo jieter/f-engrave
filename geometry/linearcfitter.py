@@ -99,8 +99,8 @@ def Line_Arc_Fit(lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz, FLAG_arc,
 
                     seg_sin_test = (y1 - lasty) / cord_a
                     seg_cos_test = -(x1 - lastx) / cord_a
-                    phi_test = Get_Angle(seg_sin_test, seg_cos_test)
-                    X_test, Y_test = Transform(x_center - lastx, y_center - lasty, radians(phi_test))
+                    phi_test = geometry.getAngle(seg_sin_test, seg_cos_test)
+                    X_test, Y_test = geometry.transform(x_center - lastx, y_center - lasty, radians(phi_test))
                     code = 'G2' if Y_test > 0.0 else 'G3'
                     x_center_last = x_center
                     y_center_last = y_center

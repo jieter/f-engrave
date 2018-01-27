@@ -6,7 +6,7 @@ from font import *
 Zero = 0.0000001
 
 
-def Transform(x, y, angle):
+def transform(x, y, angle):
     '''
     routine takes an x and a y coords and does a coordinate transformation
     to a new coordinate system at angle from the initial coordinate system
@@ -17,7 +17,7 @@ def Transform(x, y, angle):
     return newx, newy
 
 
-def Get_Angle(s, c):
+def getAngle(s, c):
     '''
     routine takes an sin and cos and returns the angle (between 0 and 360)
     '''
@@ -39,7 +39,7 @@ def Get_Angle(s, c):
     return angle
 
 
-def Rotn(x, y, angle, radius):
+def rotation(x, y, angle, radius):
     '''
     routine takes an x and y the point is rotated by angle returns new x,y,alpha
     '''
