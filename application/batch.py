@@ -14,7 +14,7 @@ class Batch(object):
             # self.readFontFile(self.settings)
         else:
             pass
-            # self.readImageFile(self.settings)
+            # self.read_image_file(self.settings)
 
         # self.DoIt()
         # if self.cut_type.get() == "v-carve":

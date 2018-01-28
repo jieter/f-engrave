@@ -5,6 +5,7 @@ from dxf_class import DXF_CLASS
 
 
 def parse(dxf_file, segarc, new_origin=True):
+
     # Initialize / reset
     font = Font()
     key = None

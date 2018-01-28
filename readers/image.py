@@ -1,11 +1,12 @@
 import os
 from subprocess import Popen, PIPE
 
+import dxf
 from util import fmessage, VERSION
-from . import dxf as parse_dxf
+from geometry import Font
+#from . import dxf as parse_dxf
 
-
-def readImageFile(settings):
+def read_image_file(settings):
 
     font = {}
 
@@ -23,12 +24,12 @@ def readImageFile(settings):
     segarc = settings.get('segarc')
 
     filetype = fileExtension.upper()
-    if filetype is '.DXF':
+    if filetype == '.DXF':
         try:
             with open(file_full) as dxf_file:
-                # build stroke lists from font file
-                font, DXF_source = parse_dxf(dxf_file, segarc, new_origin)
-                font['DXF_source'] = DXF_source
+                # build stroke lists from image file
+                font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
+                #font['DXF_source'] = DXF_source
                 settings.set('input_type', 'image')
 
         except Exception, e:
@@ -55,13 +56,13 @@ def readImageFile(settings):
                 dxf_file = stdout.split("\n")
 
             # build stroke lists from font file
-            font, DXF_source = parse_dxf(dxf_file, segarc, new_origin)
-            font['DXF_source'] = DXF_source
+            font, DXF_source = dxf.parse_dxf(dxf_file, segarc, new_origin)
+            #font['DXF_source'] = DXF_source
             settings.set('input_type', 'image')
         except:
             fmessage("Unable To create path data from bitmap File.")
     else:
-        pass
+        fmessage("Unknown filetype: "+fileExtension)
 
     # Reset Entry Fields in Bitmap Settings
     # if (not settings.get('batch.get()):

@@ -9,8 +9,6 @@ from geometry import *
 from geometry.model import Model
 
 import readers
-#import readers.cxf as parse_cxf
-#import readers.dxf as parse_dxf
 from writers import engrave_gcode
 
 if VERSION == 3:
@@ -254,7 +252,7 @@ class Gui(Frame):
             if self.input_type.get() == "text":
                 self.font = readers.readFontFile(self.settings)
             else:
-                readers.readImageFile(self.settings)
+                readers.read_image_file(self.settings)
 
             self.DoIt()
 
@@ -797,431 +795,431 @@ class Gui(Frame):
             pass
 
     #TODO Remove (replaced by engrave_gcode())
-    def write_gcode(self):
-        '''
-        Generate and write G-code
-        '''
-        self.gcode = []
-
-        SafeZ = float(self.ZSAFE.get())
-        Depth = float(self.ZCUT.get())
-        Acc = float(self.accuracy.get())
-
-        if self.batch.get():
-            String = self.default_text
-        else:
-            String = self.Input.get(1.0, END)
-
-        String_short = String
-        max_len = 40
-        if len(String)  >  max_len:
-            String_short = String[0:max_len] + '___'
-
-        if self.units.get() == "in":
-            dp = 4
-            dpfeed = 2
-        else:
-            dp = 3
-            dpfeed = 1
-
-        g_target = lambda s: sys.stdout.write(s + "\n")
-        g = Gcode(safetyheight=SafeZ,
-                  tolerance=Acc,
-                  target=lambda s: self.gcode.append(s),
-                  arc_fit=self.arc_fit.get())
-
-        g.dp = dp
-        g.dpfeed = dpfeed
-        g.set_plane(17)
-
-        if not self.var_dis.get():
-            FORMAT = '#1 = %%.%df  ( Safe Z )' % (dp)
-            self.gcode.append(FORMAT % (SafeZ))
-            FORMAT = '#2 = %%.%df  ( Engraving Depth Z )' % (dp)
-            self.gcode.append(FORMAT % (Depth))
-            safe_val = '#1'
-            depth_val = '#2'
-        else:
-            FORMAT = '%%.%df' % (dp)
-            safe_val = FORMAT % (SafeZ)
-            depth_val = FORMAT % (Depth)
-
-        # G90        ; Sets absolute distance mode
-        self.gcode.append('G90')
-        # G91.1      ; Sets Incremental Distance Mode for I, J & K arc offsets.
-        if self.arc_fit.get() == "center":
-            self.gcode.append('G91.1')
-        if self.units.get() == "in":
-            # G20 ; sets units to inches
-            self.gcode.append('G20')
-        else:
-            # G21 ; sets units to mm
-            self.gcode.append('G21')
-
-        for line in self.gpre.get().split('|'):
-            self.gcode.append(line)
-
-        FORMAT = '%%.%df' % (dpfeed)
-        feed_str = FORMAT % (float(self.FEED.get()))
-        plunge_str = FORMAT % (float(self.PLUNGE.get()))
-        zero_feed = FORMAT % (float(0.0))
-
-        # Set Feed rate
-        self.gcode.append("F%s" % feed_str)
-
-        if plunge_str == zero_feed:
-            plunge_str = feed_str
-
-        oldx = oldy = -99990.0
-
-        # Set up variables for multipass cutting
-        maxDZ = float(self.v_max_cut.get())
-        rough_stock = float(self.v_rough_stk.get())
-        zmin = 0.0
-
-        first_stroke = True
-        roughing = True
-        rough_again = False
-
-        if self.cut_type.get() == "engrave" or self.bit_shape.get() == "FLAT":
-
-            ecoords = []
-
-            if (self.bit_shape.get() == "FLAT") and (self.cut_type.get() != "engrave"):
-                Acc = float(self.v_step_len.get()) * 1.5  # fudge factor
-                ###################################
-                ###   Create Flat Cut ECOORDS   ###
-                ###################################
-                if self.model.number_of_v_segments() > 0:
-                    rbit = self.calc_vbit_dia() / 2.0
-                    loopa_old = self.model.vcoords[0][3]
-                    loop = 0
-                    for i in range(1, self.model.number_of_v_segments()):
-                        xa = self.model.vcoords[i][0]
-                        ya = self.model.vcoords[i][1]
-                        ra = self.model.vcoords[i][2]
-                        loopa = self.model.vcoords[i][3]
-
-                        if (loopa_old != loopa):
-                            loop = loop + 1
-                        if ra >= rbit:
-                            ecoords.append([xa, ya, loop])
-                            loopa_old = loopa
-                        else:
-                            loop = loop + 1
-                Depth = float(self.maxcut.get())
-                if rough_stock > 0:
-                    rough_again = True
-                if (rough_stock > 0 and -maxDZ < rough_stock):
-                    rough_stock = -maxDZ
-
-            else:
-                ##########################
-                ###   Create ECOORDS   ###
-                ##########################
-                loop = 0
-                for line in self.model.coords:
-                    XY = line
-                    x1 = XY[0]
-                    y1 = XY[1]
-                    x2 = XY[2]
-                    y2 = XY[3]
-                    dx = oldx - x1
-                    dy = oldy - y1
-                    dist = sqrt(dx * dx + dy * dy)
-                    # check and see if we need to move to a new discontinuous start point
-                    if dist > Acc or first_stroke:
-                        loop += 1
-                        first_stroke = False
-                        ecoords.append([x1, y1, loop])
-                    ecoords.append([x2, y2, loop])
-                    oldx, oldy = x2, y2
-
-            order_out = sort_paths(ecoords)  # TODO
-
-            while rough_again or roughing:
-                if rough_again == False:
-                    roughing = False
-                    maxDZ = -99999
-                rough_again = False
-                zmin = zmin + maxDZ
-
-                z1 = Depth
-                if roughing:
-                    z1 = z1 + rough_stock
-                if z1 < zmin:
-                    z1 = zmin
-                    rough_again = True
-                zmax = zmin - maxDZ
-
-                if (self.bit_shape.get() == "FLAT") and (self.cut_type.get() != "engrave"):
-                    FORMAT = '%%.%df' % (dp)
-                    depth_val = FORMAT % (z1)
-
-                dist = 999
-                lastx = -999
-                lasty = -999
-                lastz = 0
-                z1 = 0
-                nextz = 0
-
-                # self.gcode.append("G0 Z%s" %(safe_val))
-                for line in order_out:
-                    temp = line
-                    if temp[0] > temp[1]:
-                        step = -1
-                    else:
-                        step = 1
-
-                    R_last = 999
-                    x_center_last = 999
-                    y_center_last = 999
-                    FLAG_arc = 0
-                    FLAG_line = 0
-                    code = " "
-
-                    loop_old = -1
-
-                    for i in range(temp[0], temp[1] + step, step):
-                        x1 = ecoords[i][0]
-                        y1 = ecoords[i][1]
-                        loop = ecoords[i][2]
-
-                        if (i + 1 < temp[1] + step):
-                            nextx = ecoords[i + 1][0]
-                            nexty = ecoords[i + 1][1]
-                            nextloop = ecoords[i + 1][2]
-                        else:
-                            nextx = 0
-                            nexty = 0
-                            nextloop = -99  # don't change this dummy number it is used below
-
-                        # check and see if we need to move to a new discontinuous start point
-                        if loop != loop_old:
-                            g.flush()
-                            dx = x1 - lastx
-                            dy = y1 - lasty
-                            dist = sqrt(dx * dx + dy * dy)
-                            if dist > Acc:
-                                # lift engraver
-                                self.gcode.append("G0 Z%s" % (safe_val))
-                                # rapid to current position
-
-                                FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
-                                self.gcode.append(FORMAT % (x1, y1))
-                                # drop cutter
-                                if (feed_str == plunge_str):
-                                    self.gcode.append('G1 Z%s' % (depth_val))
-                                else:
-                                    self.gcode.append('G1 Z%s F%s' % (depth_val, plunge_str))
-                                    g.set_feed(feed_str)
-                                lastx = x1
-                                lasty = y1
-                                g.cut(x1, y1)
-                        else:
-                            g.cut(x1, y1)
-                            lastx = x1
-                            lasty = y1
-
-                        loop_old = loop
-                    g.flush()
-                g.flush()
-            g.flush()
-        # END engraving
-        else:
-            # V-carve stuff
-            plunge_str = feed_str
-            ##########################
-            ###   find loop ends   ###
-            ##########################
-            Lbeg = []
-            Lend = []
-            Lbeg.append(0)
-            if self.model.number_of_v_segments() > 0:
-                loop_old = self.model.vcoords[0][3]
-                for i in range(1, self.model.number_of_v_segments()):
-                    loop = self.model.vcoords[i][3]
-                    if loop != loop_old:
-                        Lbeg.append(i)
-                        Lend.append(i - 1)
-                    loop_old = loop
-                Lend.append(i)
-                #####################################################
-                # Find new order based on distance to next begining #
-                #####################################################
-                order_out = []
-                order_out.append([Lbeg[0], Lend[0]])
-                inext = 0
-                total = len(Lbeg)
-                for i in range(total - 1):
-                    ii = Lend.pop(inext)
-                    Lbeg.pop(inext)
-                    Xcur = self.model.vcoords[ii][0]
-                    Ycur = self.model.vcoords[ii][1]
-
-                    dx = Xcur - self.model.vcoords[Lbeg[0]][0]
-                    dy = Ycur - self.model.vcoords[Lbeg[0]][1]
-                    min_dist = dx * dx + dy * dy
-
-                    inext = 0
-                    for j in range(1, len(Lbeg)):
-                        dx = Xcur - self.model.vcoords[Lbeg[j]][0]
-                        dy = Ycur - self.model.vcoords[Lbeg[j]][1]
-                        dist = dx * dx + dy * dy
-                        if dist < min_dist:
-                            min_dist = dist
-                            inext = j
-                    order_out.append([Lbeg[inext], Lend[inext]])
-                #####################################################
-                new_coords = []
-                for line in order_out:
-                    temp = line
-                    for i in range(temp[0], temp[1] + 1):
-                        new_coords.append(self.model.vcoords[i])
-
-                half_angle = radians(float(self.v_bit_angle.get()) / 2.0)
-                bit_radius = float(self.v_bit_dia.get()) / 2.0
-
-                ################################
-                # V-carve stuff
-                # maxDZ = float(self.v_max_cut.get())
-                # rough_stock =  float(self.v_rough_stk.get())
-                # zmin = 0.0
-                # roughing = True
-                # rough_again = False
-                if rough_stock > 0:
-                    rough_again = True
-                ################################
-                if (rough_stock > 0) and (-maxDZ < rough_stock):
-                    rough_stock = -maxDZ
-                while rough_again or roughing:
-                    if rough_again == False:
-                        roughing = False
-                        maxDZ = -99999
-                    rough_again = False
-                    zmin = zmin + maxDZ
-
-                    loop_old = -1
-                    R_last = 999
-                    x_center_last = 999
-                    y_center_last = 999
-                    FLAG_arc = 0
-                    FLAG_line = 0
-                    code = " "
-
-                    v_index = -1
-
-                    while v_index < len(new_coords) - 1:
-                        v_index = v_index + 1
-                        x1 = new_coords[v_index][0]
-                        y1 = new_coords[v_index][1]
-                        r1 = new_coords[v_index][2]
-                        loop = new_coords[v_index][3]
-
-                        if (v_index + 1) < len(new_coords):
-                            nextx = new_coords[v_index + 1][0]
-                            nexty = new_coords[v_index + 1][1]
-                            nextr = new_coords[v_index + 1][2]
-                            nextloop = new_coords[v_index + 1][3]
-                        else:
-                            nextx = 0
-                            nexty = 0
-                            nextr = 0
-                            nextloop = -99  # don't change this dummy number it is used below
-
-                        if self.bit_shape.get() == "VBIT":
-                            z1 = -r1 / tan(half_angle)
-                            nextz = -nextr / tan(half_angle)
-                            if self.inlay.get():
-                                inlay_depth = self.calc_r_inlay_depth()
-                                z1 = z1 + inlay_depth
-                                nextz = nextz + inlay_depth
-
-                        elif self.bit_shape.get() == "BALL":
-                            theta = acos(r1 / bit_radius)
-                            z1 = -bit_radius * (1 - sin(theta))
-
-                            next_theta = acos(nextr / bit_radius)
-                            nextz = -bit_radius * (1 - sin(next_theta))
-                        elif self.bit_shape.get() == "FLAT":
-                            # This case should have been caught in the
-                            # engraving section above
-                            pass
-                        else:
-                            pass
-
-                        if roughing:
-                            z1 = z1 + rough_stock
-                            nextz = nextz + rough_stock
-                        if z1 < zmin:
-                            z1 = zmin
-                            rough_again = True
-                        if nextz < zmin:
-                            nextz = zmin
-                            rough_again = True
-
-                        zmax = zmin - maxDZ  # + rough_stock
-                        if z1 > zmax and nextz > zmax and roughing:
-                            loop_old = -1
-                            continue
-                        # check and see if we need to move to a new discontinuous start point
-                        if loop != loop_old:
-                            g.flush()
-                            # lift engraver
-                            self.gcode.append("G0 Z%s" % (safe_val))
-                            # rapid to current position
-                            FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
-                            self.gcode.append(FORMAT % (x1, y1))
-                            # drop cutter to z depth
-                            FORMAT = 'G1 Z%%.%df' % (dp)
-                            self.gcode.append(FORMAT % (z1))
-
-                            lastx = x1
-                            lasty = y1
-                            lastz = z1
-                            g.cut(x1, y1, z1)
-                        else:
-                            g.cut(x1, y1, z1)
-                            lastx = x1
-                            lasty = y1
-                            lastz = z1
-                        loop_old = loop
-                    g.flush()
-                g.flush()
-            g.flush()
-            # End V-carve stuff
-
-        # Make Circle
-        XOrigin = float(self.xorigin.get())
-        YOrigin = float(self.yorigin.get())
-        Radius_plot = float(self.RADIUS_PLOT)
-        if Radius_plot != 0 and self.cut_type.get() == "engrave":
-            self.gcode.append('G0 Z%s' % (safe_val))
-
-            FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
-            self.gcode.append(FORMAT % (-Radius_plot - self.xzero + XOrigin, YOrigin - self.yzero))
-
-            if feed_str == plunge_str:
-                FEED_STRING = ""
-            else:
-                FEED_STRING = " F" + plunge_str
-                g.set_feed(feed_str)
-
-            self.gcode.append('G1 Z%s' % (depth_val) + FEED_STRING)
-
-            if feed_str == plunge_str:
-                FEED_STRING = ""
-            else:
-                FEED_STRING = " F" + feed_str
-
-            FORMAT = 'G2 I%%.%df J%%.%df' % (dp, dp)
-            self.gcode.append(FORMAT % (Radius_plot, 0.0) + FEED_STRING)
-        # End Circle
-
-        self.gcode.append('G0 Z%s' % (safe_val))  # final engraver up
-
-        for line in self.gpost.get().split('|'):
-            self.gcode.append(line)
+    # def write_gcode(self):
+    #     '''
+    #     Generate and write G-code
+    #     '''
+    #     self.gcode = []
+    #
+    #     SafeZ = float(self.ZSAFE.get())
+    #     Depth = float(self.ZCUT.get())
+    #     Acc = float(self.accuracy.get())
+    #
+    #     if self.batch.get():
+    #         String = self.default_text
+    #     else:
+    #         String = self.Input.get(1.0, END)
+    #
+    #     String_short = String
+    #     max_len = 40
+    #     if len(String)  >  max_len:
+    #         String_short = String[0:max_len] + '___'
+    #
+    #     if self.units.get() == "in":
+    #         dp = 4
+    #         dpfeed = 2
+    #     else:
+    #         dp = 3
+    #         dpfeed = 1
+    #
+    #     g_target = lambda s: sys.stdout.write(s + "\n")
+    #     g = Gcode(safetyheight=SafeZ,
+    #               tolerance=Acc,
+    #               target=lambda s: self.gcode.append(s),
+    #               arc_fit=self.arc_fit.get())
+    #
+    #     g.dp = dp
+    #     g.dpfeed = dpfeed
+    #     g.set_plane(17)
+    #
+    #     if not self.var_dis.get():
+    #         FORMAT = '#1 = %%.%df  ( Safe Z )' % (dp)
+    #         self.gcode.append(FORMAT % (SafeZ))
+    #         FORMAT = '#2 = %%.%df  ( Engraving Depth Z )' % (dp)
+    #         self.gcode.append(FORMAT % (Depth))
+    #         safe_val = '#1'
+    #         depth_val = '#2'
+    #     else:
+    #         FORMAT = '%%.%df' % (dp)
+    #         safe_val = FORMAT % (SafeZ)
+    #         depth_val = FORMAT % (Depth)
+    #
+    #     # G90        ; Sets absolute distance mode
+    #     self.gcode.append('G90')
+    #     # G91.1      ; Sets Incremental Distance Mode for I, J & K arc offsets.
+    #     if self.arc_fit.get() == "center":
+    #         self.gcode.append('G91.1')
+    #     if self.units.get() == "in":
+    #         # G20 ; sets units to inches
+    #         self.gcode.append('G20')
+    #     else:
+    #         # G21 ; sets units to mm
+    #         self.gcode.append('G21')
+    #
+    #     for line in self.gpre.get().split('|'):
+    #         self.gcode.append(line)
+    #
+    #     FORMAT = '%%.%df' % (dpfeed)
+    #     feed_str = FORMAT % (float(self.FEED.get()))
+    #     plunge_str = FORMAT % (float(self.PLUNGE.get()))
+    #     zero_feed = FORMAT % (float(0.0))
+    #
+    #     # Set Feed rate
+    #     self.gcode.append("F%s" % feed_str)
+    #
+    #     if plunge_str == zero_feed:
+    #         plunge_str = feed_str
+    #
+    #     oldx = oldy = -99990.0
+    #
+    #     # Set up variables for multipass cutting
+    #     maxDZ = float(self.v_max_cut.get())
+    #     rough_stock = float(self.v_rough_stk.get())
+    #     zmin = 0.0
+    #
+    #     first_stroke = True
+    #     roughing = True
+    #     rough_again = False
+    #
+    #     if self.cut_type.get() == "engrave" or self.bit_shape.get() == "FLAT":
+    #
+    #         ecoords = []
+    #
+    #         if (self.bit_shape.get() == "FLAT") and (self.cut_type.get() != "engrave"):
+    #             Acc = float(self.v_step_len.get()) * 1.5  # fudge factor
+    #             ###################################
+    #             ###   Create Flat Cut ECOORDS   ###
+    #             ###################################
+    #             if self.model.number_of_v_segments() > 0:
+    #                 rbit = self.calc_vbit_dia() / 2.0
+    #                 loopa_old = self.model.vcoords[0][3]
+    #                 loop = 0
+    #                 for i in range(1, self.model.number_of_v_segments()):
+    #                     xa = self.model.vcoords[i][0]
+    #                     ya = self.model.vcoords[i][1]
+    #                     ra = self.model.vcoords[i][2]
+    #                     loopa = self.model.vcoords[i][3]
+    #
+    #                     if (loopa_old != loopa):
+    #                         loop = loop + 1
+    #                     if ra >= rbit:
+    #                         ecoords.append([xa, ya, loop])
+    #                         loopa_old = loopa
+    #                     else:
+    #                         loop = loop + 1
+    #             Depth = float(self.maxcut.get())
+    #             if rough_stock > 0:
+    #                 rough_again = True
+    #             if (rough_stock > 0 and -maxDZ < rough_stock):
+    #                 rough_stock = -maxDZ
+    #
+    #         else:
+    #             ##########################
+    #             ###   Create ECOORDS   ###
+    #             ##########################
+    #             loop = 0
+    #             for line in self.model.coords:
+    #                 XY = line
+    #                 x1 = XY[0]
+    #                 y1 = XY[1]
+    #                 x2 = XY[2]
+    #                 y2 = XY[3]
+    #                 dx = oldx - x1
+    #                 dy = oldy - y1
+    #                 dist = sqrt(dx * dx + dy * dy)
+    #                 # check and see if we need to move to a new discontinuous start point
+    #                 if dist > Acc or first_stroke:
+    #                     loop += 1
+    #                     first_stroke = False
+    #                     ecoords.append([x1, y1, loop])
+    #                 ecoords.append([x2, y2, loop])
+    #                 oldx, oldy = x2, y2
+    #
+    #         order_out = sort_paths(ecoords)  # TODO sort_paths
+    #
+    #         while rough_again or roughing:
+    #             if rough_again == False:
+    #                 roughing = False
+    #                 maxDZ = -99999
+    #             rough_again = False
+    #             zmin = zmin + maxDZ
+    #
+    #             z1 = Depth
+    #             if roughing:
+    #                 z1 = z1 + rough_stock
+    #             if z1 < zmin:
+    #                 z1 = zmin
+    #                 rough_again = True
+    #             zmax = zmin - maxDZ
+    #
+    #             if (self.bit_shape.get() == "FLAT") and (self.cut_type.get() != "engrave"):
+    #                 FORMAT = '%%.%df' % (dp)
+    #                 depth_val = FORMAT % (z1)
+    #
+    #             dist = 999
+    #             lastx = -999
+    #             lasty = -999
+    #             lastz = 0
+    #             z1 = 0
+    #             nextz = 0
+    #
+    #             # self.gcode.append("G0 Z%s" %(safe_val))
+    #             for line in order_out:
+    #                 temp = line
+    #                 if temp[0] > temp[1]:
+    #                     step = -1
+    #                 else:
+    #                     step = 1
+    #
+    #                 R_last = 999
+    #                 x_center_last = 999
+    #                 y_center_last = 999
+    #                 FLAG_arc = 0
+    #                 FLAG_line = 0
+    #                 code = " "
+    #
+    #                 loop_old = -1
+    #
+    #                 for i in range(temp[0], temp[1] + step, step):
+    #                     x1 = ecoords[i][0]
+    #                     y1 = ecoords[i][1]
+    #                     loop = ecoords[i][2]
+    #
+    #                     if (i + 1 < temp[1] + step):
+    #                         nextx = ecoords[i + 1][0]
+    #                         nexty = ecoords[i + 1][1]
+    #                         nextloop = ecoords[i + 1][2]
+    #                     else:
+    #                         nextx = 0
+    #                         nexty = 0
+    #                         nextloop = -99  # don't change this dummy number it is used below
+    #
+    #                     # check and see if we need to move to a new discontinuous start point
+    #                     if loop != loop_old:
+    #                         g.flush()
+    #                         dx = x1 - lastx
+    #                         dy = y1 - lasty
+    #                         dist = sqrt(dx * dx + dy * dy)
+    #                         if dist > Acc:
+    #                             # lift engraver
+    #                             self.gcode.append("G0 Z%s" % (safe_val))
+    #                             # rapid to current position
+    #
+    #                             FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
+    #                             self.gcode.append(FORMAT % (x1, y1))
+    #                             # drop cutter
+    #                             if (feed_str == plunge_str):
+    #                                 self.gcode.append('G1 Z%s' % (depth_val))
+    #                             else:
+    #                                 self.gcode.append('G1 Z%s F%s' % (depth_val, plunge_str))
+    #                                 g.set_feed(feed_str)
+    #                             lastx = x1
+    #                             lasty = y1
+    #                             g.cut(x1, y1)
+    #                     else:
+    #                         g.cut(x1, y1)
+    #                         lastx = x1
+    #                         lasty = y1
+    #
+    #                     loop_old = loop
+    #                 g.flush()
+    #             g.flush()
+    #         g.flush()
+    #     # END engraving
+    #     else:
+    #         # V-carve stuff
+    #         plunge_str = feed_str
+    #         ##########################
+    #         ###   find loop ends   ###
+    #         ##########################
+    #         Lbeg = []
+    #         Lend = []
+    #         Lbeg.append(0)
+    #         if self.model.number_of_v_segments() > 0:
+    #             loop_old = self.model.vcoords[0][3]
+    #             for i in range(1, self.model.number_of_v_segments()):
+    #                 loop = self.model.vcoords[i][3]
+    #                 if loop != loop_old:
+    #                     Lbeg.append(i)
+    #                     Lend.append(i - 1)
+    #                 loop_old = loop
+    #             Lend.append(i)
+    #             #####################################################
+    #             # Find new order based on distance to next begining #
+    #             #####################################################
+    #             order_out = []
+    #             order_out.append([Lbeg[0], Lend[0]])
+    #             inext = 0
+    #             total = len(Lbeg)
+    #             for i in range(total - 1):
+    #                 ii = Lend.pop(inext)
+    #                 Lbeg.pop(inext)
+    #                 Xcur = self.model.vcoords[ii][0]
+    #                 Ycur = self.model.vcoords[ii][1]
+    #
+    #                 dx = Xcur - self.model.vcoords[Lbeg[0]][0]
+    #                 dy = Ycur - self.model.vcoords[Lbeg[0]][1]
+    #                 min_dist = dx * dx + dy * dy
+    #
+    #                 inext = 0
+    #                 for j in range(1, len(Lbeg)):
+    #                     dx = Xcur - self.model.vcoords[Lbeg[j]][0]
+    #                     dy = Ycur - self.model.vcoords[Lbeg[j]][1]
+    #                     dist = dx * dx + dy * dy
+    #                     if dist < min_dist:
+    #                         min_dist = dist
+    #                         inext = j
+    #                 order_out.append([Lbeg[inext], Lend[inext]])
+    #             #####################################################
+    #             new_coords = []
+    #             for line in order_out:
+    #                 temp = line
+    #                 for i in range(temp[0], temp[1] + 1):
+    #                     new_coords.append(self.model.vcoords[i])
+    #
+    #             half_angle = radians(float(self.v_bit_angle.get()) / 2.0)
+    #             bit_radius = float(self.v_bit_dia.get()) / 2.0
+    #
+    #             ################################
+    #             # V-carve stuff
+    #             # maxDZ = float(self.v_max_cut.get())
+    #             # rough_stock =  float(self.v_rough_stk.get())
+    #             # zmin = 0.0
+    #             # roughing = True
+    #             # rough_again = False
+    #             if rough_stock > 0:
+    #                 rough_again = True
+    #             ################################
+    #             if (rough_stock > 0) and (-maxDZ < rough_stock):
+    #                 rough_stock = -maxDZ
+    #             while rough_again or roughing:
+    #                 if rough_again == False:
+    #                     roughing = False
+    #                     maxDZ = -99999
+    #                 rough_again = False
+    #                 zmin = zmin + maxDZ
+    #
+    #                 loop_old = -1
+    #                 R_last = 999
+    #                 x_center_last = 999
+    #                 y_center_last = 999
+    #                 FLAG_arc = 0
+    #                 FLAG_line = 0
+    #                 code = " "
+    #
+    #                 v_index = -1
+    #
+    #                 while v_index < len(new_coords) - 1:
+    #                     v_index = v_index + 1
+    #                     x1 = new_coords[v_index][0]
+    #                     y1 = new_coords[v_index][1]
+    #                     r1 = new_coords[v_index][2]
+    #                     loop = new_coords[v_index][3]
+    #
+    #                     if (v_index + 1) < len(new_coords):
+    #                         nextx = new_coords[v_index + 1][0]
+    #                         nexty = new_coords[v_index + 1][1]
+    #                         nextr = new_coords[v_index + 1][2]
+    #                         nextloop = new_coords[v_index + 1][3]
+    #                     else:
+    #                         nextx = 0
+    #                         nexty = 0
+    #                         nextr = 0
+    #                         nextloop = -99  # don't change this dummy number it is used below
+    #
+    #                     if self.bit_shape.get() == "VBIT":
+    #                         z1 = -r1 / tan(half_angle)
+    #                         nextz = -nextr / tan(half_angle)
+    #                         if self.inlay.get():
+    #                             inlay_depth = self.calc_r_inlay_depth()
+    #                             z1 = z1 + inlay_depth
+    #                             nextz = nextz + inlay_depth
+    #
+    #                     elif self.bit_shape.get() == "BALL":
+    #                         theta = acos(r1 / bit_radius)
+    #                         z1 = -bit_radius * (1 - sin(theta))
+    #
+    #                         next_theta = acos(nextr / bit_radius)
+    #                         nextz = -bit_radius * (1 - sin(next_theta))
+    #                     elif self.bit_shape.get() == "FLAT":
+    #                         # This case should have been caught in the
+    #                         # engraving section above
+    #                         pass
+    #                     else:
+    #                         pass
+    #
+    #                     if roughing:
+    #                         z1 = z1 + rough_stock
+    #                         nextz = nextz + rough_stock
+    #                     if z1 < zmin:
+    #                         z1 = zmin
+    #                         rough_again = True
+    #                     if nextz < zmin:
+    #                         nextz = zmin
+    #                         rough_again = True
+    #
+    #                     zmax = zmin - maxDZ  # + rough_stock
+    #                     if z1 > zmax and nextz > zmax and roughing:
+    #                         loop_old = -1
+    #                         continue
+    #                     # check and see if we need to move to a new discontinuous start point
+    #                     if loop != loop_old:
+    #                         g.flush()
+    #                         # lift engraver
+    #                         self.gcode.append("G0 Z%s" % (safe_val))
+    #                         # rapid to current position
+    #                         FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
+    #                         self.gcode.append(FORMAT % (x1, y1))
+    #                         # drop cutter to z depth
+    #                         FORMAT = 'G1 Z%%.%df' % (dp)
+    #                         self.gcode.append(FORMAT % (z1))
+    #
+    #                         lastx = x1
+    #                         lasty = y1
+    #                         lastz = z1
+    #                         g.cut(x1, y1, z1)
+    #                     else:
+    #                         g.cut(x1, y1, z1)
+    #                         lastx = x1
+    #                         lasty = y1
+    #                         lastz = z1
+    #                     loop_old = loop
+    #                 g.flush()
+    #             g.flush()
+    #         g.flush()
+    #         # End V-carve stuff
+    #
+    #     # Make Circle
+    #     XOrigin = float(self.xorigin.get())
+    #     YOrigin = float(self.yorigin.get())
+    #     Radius_plot = float(self.RADIUS_PLOT)
+    #     if Radius_plot != 0 and self.cut_type.get() == "engrave":
+    #         self.gcode.append('G0 Z%s' % (safe_val))
+    #
+    #         FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
+    #         self.gcode.append(FORMAT % (-Radius_plot - self.xzero + XOrigin, YOrigin - self.yzero))
+    #
+    #         if feed_str == plunge_str:
+    #             FEED_STRING = ""
+    #         else:
+    #             FEED_STRING = " F" + plunge_str
+    #             g.set_feed(feed_str)
+    #
+    #         self.gcode.append('G1 Z%s' % (depth_val) + FEED_STRING)
+    #
+    #         if feed_str == plunge_str:
+    #             FEED_STRING = ""
+    #         else:
+    #             FEED_STRING = " F" + feed_str
+    #
+    #         FORMAT = 'G2 I%%.%df J%%.%df' % (dp, dp)
+    #         self.gcode.append(FORMAT % (Radius_plot, 0.0) + FEED_STRING)
+    #     # End Circle
+    #
+    #     self.gcode.append('G0 Z%s' % (safe_val))  # final engraver up
+    #
+    #     for line in self.gpost.get().split('|'):
+    #         self.gcode.append(line)
 
     #############################
     # Write Cleanup G-code File #
@@ -1763,7 +1761,7 @@ class Gui(Frame):
         if self.input_type.get() == "text":
             self.font = readers.readFontFile(self.settings)
         else:
-            readers.readImageFile(self.settings)
+            self.font = readers.read_image_file(self.settings)
         self.DoIt()
         try:
             win_id.withdraw()
@@ -2645,7 +2643,7 @@ class Gui(Frame):
 
     def useIMGsize_var_Callback(self):
         if self.input_type.get() != "text":
-            readers.readImageFile()
+            readers.read_image_file()
         try:
             ymx = max(self.font[key].get_ymax() for key in self.font)
             ymn = min(self.font[key].get_ymin() for key in self.font)
@@ -2776,9 +2774,10 @@ class Gui(Frame):
                                          initialdir=init_dir)
 
         if fileselect != '' and fileselect != ():
-            self.IMAGE_FILE = fileselect  # TODO settings
+            self.IMAGE_FILE = fileselect
             self.settings.set('IMAGE_FILE', fileselect)
-            readers.readImageFile(self.settings)
+            self.font = readers.read_image_file(self.settings)
+            self.input_type.set(self.settings.get('input_type')) # input_type may have been changed by read_image_file
             self.DoIt()
 
 
@@ -3091,7 +3090,7 @@ class Gui(Frame):
         if self.input_type.get() == "text":
             self.font = readers.readFontFile(self.settings)
         else:
-            readers.readImageFile(self.settings)
+            self.font = readers.read_image_file(self.settings)
 
         self.DoIt()
 
@@ -3812,22 +3811,22 @@ class Gui(Frame):
                 String = self.Input.get(1.0, END)
             else:
                 String = self.default_text
-
             Radius_in = float(self.TRADIUS.get())
         else:
             String = "F"
             Radius_in = 0.0
+
         try:
-            SegArc = float(self.segarc.get())
+            SegArc    = float(self.segarc.get())
             YScale_in = float(self.YSCALE.get() )
-            CSpaceP = float(self.CSPACE.get() )
-            WSpaceP = float(self.WSPACE.get() )
-            LSpace = float(self.LSPACE.get() )
-            Angle = float(self.TANGLE.get() )
-            Thick = float(self.STHICK.get() )
-            XOrigin = float(self.xorigin.get())
-            YOrigin = float(self.yorigin.get())
-            v_flop = bool(self.v_flop.get())
+            CSpaceP   = float(self.CSPACE.get() )
+            WSpaceP   = float(self.WSPACE.get() )
+            LSpace    = float(self.LSPACE.get() )
+            Angle     = float(self.TANGLE.get() )
+            Thick     = float(self.STHICK.get() )
+            XOrigin   = float(self.xorigin.get())
+            YOrigin   = float(self.yorigin.get())
+            v_flop    = bool(self.v_flop.get())
         except:
             self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
             self.statusbar.configure( bg='red' )
@@ -3840,8 +3839,8 @@ class Gui(Frame):
         line_maxy = []
         line_maxa = []
         line_mina = []
-        line_miny = []
         line_minx = []
+        line_miny = []
 
         maxx_tmp = -99991.0
         maxy_tmp = -99992.0
@@ -3851,41 +3850,40 @@ class Gui(Frame):
         minx_tmp =  99995.0
 
         font_word_space = 0
-        
         INF = 1e10
         font_line_height = -INF
-        font_char_width = -INF
+        font_char_width =  -INF
         font_used_height = -INF
-        font_used_width = -INF
-        font_used_depth = INF
+        font_used_width  = -INF
+        font_used_depth  =  INF
 
         ################################
         ##      Font Index Preview    ##
         ################################
-        if self.fontdex.get() == True:
-            Radius_in = 0.0
-            String = ""
-            for key in self.font:
-                if self.ext_char:
-                    String = String + unichr(key)
-                elif int(key) < 256:
-                    String = String + unichr(key)
-
-            Strings = sorted(String)
-            mcnt = 0
-            String = ""
-
-            if self.ext_char.get():
-                pcols = int(1.5 * sqrt(float(len(self.font))))
-            else:
-                pcols = 15
-
-            for char in Strings:
-                mcnt += 1
-                String += char
-                if mcnt > pcols:
-                    String = String + '\n'
-                    mcnt = 0
+        # if self.fontdex.get() == True:
+        #     Radius_in = 0.0
+        #     String = ""
+        #     for key in self.font:
+        #         if self.ext_char:
+        #             String = String + unichr(key)
+        #         elif int(key) < 256:
+        #             String = String + unichr(key)
+        #
+        #     Strings = sorted(String)
+        #     mcnt = 0
+        #     String = ""
+        #
+        #     if self.ext_char.get():
+        #         pcols = int(1.5 * sqrt(float(len(self.font))))
+        #     else:
+        #         pcols = 15
+        #
+        #     for char in Strings:
+        #         mcnt += 1
+        #         String += char
+        #         if mcnt > pcols:
+        #             String = String + '\n'
+        #             mcnt = 0
 
         ##################################
         ## Font Height/Width Calculation #
@@ -3904,13 +3902,13 @@ class Gui(Frame):
         elif self.H_CALC.get() == "max_use":
             font_line_height = font_used_height
             font_line_depth = font_used_depth
-            
+
         if font_line_height > -INF:
-            if self.useIMGsize.get() and self.input_type.get()=="image":
-                YScale = YScale_in/100.0
+            if self.useIMGsize.get() and self.input_type.get() == "image":
+                YScale = YScale_in / 100.0
             else:
                 try:
-                    YScale = (YScale_in-Thick)/(font_line_height-font_line_depth)
+                    YScale = (YScale_in - Thick) / (font_line_height - font_line_depth)
                 except:
                     YScale = .1
                 if YScale <= Zero:

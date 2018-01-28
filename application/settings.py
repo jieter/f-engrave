@@ -25,7 +25,6 @@ CAST_TYPES = {
     'bool': cast_boolean,
     'int': int,
     'str': cast_string,
-    'int': int,
     'float': float
 }
 
@@ -194,7 +193,7 @@ class Settings(object):
         # options: 'chr', 'all'
         'v_check_all': 'all',
 
-        # TODO
+        # TODO long name
         'v_rough_stk': 0.0,
         'v_max_cut': 0.0,
 
@@ -263,7 +262,6 @@ class Settings(object):
 
     def set(self, name, value):
         cast = CAST_TYPES[self.type(name)]
-
         self._settings[name] = cast(value)
 
     def get(self, name):

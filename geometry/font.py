@@ -57,13 +57,14 @@ class Font(object):
 
         return self.characters[key]
 
-    # TODO To be removed after testing has been completed
+    #TODO To be removed after testing has been completed
     def __str__(self):
         charstring = ''
         for char in self.characters:
             charstring = charstring + str(char) + ' '
 
         return charstring
+    #/TEST
 
     def add_character(self, char):
         self.characters[char.key] = char
