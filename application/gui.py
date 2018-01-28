@@ -682,6 +682,9 @@ class Gui(Frame):
         self.cut_type.set(self.settings.get('cut_type'))
         self.input_type.set(self.settings.get('input_type'))
 
+        self.gpre.set(self.settings.get('gcode_preamble'))
+        self.gpost.set(self.settings.get('gcode_postamble'))
+
         self.bit_shape.set(self.settings.get('bit_shape'))
         self.v_bit_angle.set(self.settings.get('v_bit_angle'))
         self.v_bit_dia.set(self.settings.get('v_bit_dia'))
@@ -762,7 +765,7 @@ class Gui(Frame):
         self.gcode = self.settings.to_gcode()
 
         config_filename = self.settings.get('config_filename')
-        configname_full = self.settings.get('home_dir')+ "/" + config_filename
+        configname_full = self.settings.get('HOME_DIR')+ "/" + config_filename
 
         win_id = self.grab_current()
         if (os.path.isfile(configname_full)):
@@ -2137,6 +2140,12 @@ class Gui(Frame):
 
     def Entry_Accuracy_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check())
+
+    def Entry_Gpre_Callback(self, varName, index, mode):
+        self.settings.set('gcode_preamble', self.gpre.get())
+
+    def Entry_Gpost_Callback(self, varName, index, mode):
+        self.settings.set('gcode_postamble', self.gpost.get())
 
     def Entry_BoxGap_Check(self):
         try:
@@ -3798,7 +3807,7 @@ class Gui(Frame):
 
         self.RADIUS_PLOT = 0
 
-        if len(self.font) == 0 and (not self.batch.get()):
+        if (self.font is None or len(self.font) == 0) and (not self.batch.get()):
             self.statusbar.configure( bg='red' )
             if self.input_type.get() == "text":
                 self.statusMessage.set("No Font Characters Loaded")
@@ -4630,6 +4639,7 @@ class Gui(Frame):
         self.Entry_Gpre = Entry(gen_settings, width="15")
         self.Entry_Gpre.place(x=xd_entry_L, y=D_Yloc, width=300, height=23)
         self.Entry_Gpre.configure(textvariable=self.gpre)
+        self.gpre.trace_variable("w", self.Entry_Gpre_Callback)
 
         D_Yloc = D_Yloc + D_dY
         self.Label_Gpost = Label(gen_settings, text="G Code Postscript")
@@ -4637,6 +4647,7 @@ class Gui(Frame):
         self.Entry_Gpost = Entry(gen_settings)
         self.Entry_Gpost.place(x=xd_entry_L, y=D_Yloc, width=300, height=23)
         self.Entry_Gpost.configure(textvariable=self.gpost)
+        self.gpost.trace_variable("w", self.Entry_Gpost_Callback)
 
         D_Yloc = D_Yloc + D_dY
         self.Label_var_dis = Label(gen_settings, text="Disable Variables")
