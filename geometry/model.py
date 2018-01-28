@@ -119,7 +119,7 @@ class Model():
         #TODO Use settings instead
         #
         not_b_carve = not bool(self.controller.bit_shape.get() == "BALL")
-        if (self.controller.v_pplot.get() == 1):
+        if self.controller.v_pplot.get() == 1:
             v_pplot = True
         else:
             v_pplot = False
@@ -144,7 +144,7 @@ class Model():
                     
         clean_dia = float(self.controller.clean_dia.get())
         r_inlay_top = self.controller.calc_r_inlay_top()
-        if (clean_flag != 1 ):
+        if clean_flag != 1 :
             rmax = rbit
         else:
             rmax = rbit + clean_dia/2
@@ -173,9 +173,9 @@ class Model():
         xN = xN_minus_1+1
         yN = yN_minus_1+1
 
-        if (xPartitionLength < Zero):
+        if xPartitionLength < Zero:
             xPartitionLength = 1
-        if (yPartitionLength < Zero):
+        if yPartitionLength < Zero:
             yPartitionLength = 1
             
         self.xPartitionLength = xPartitionLength
@@ -229,9 +229,9 @@ class Model():
             Yindex_max = max(Y1i,Y2i)
 
             check_points = []
-            if (Xindex_max > Xindex_min) and (abs(x2_G-x1_G) > Zero):
+            if Xindex_max > Xindex_min and abs(x2_G-x1_G) > Zero:
 
-                if (Yindex_max > Yindex_min) and (abs(y2_G-y1_G) > Zero):
+                if Yindex_max > Yindex_min and abs(y2_G-y1_G) > Zero:
                     check_points.append([X1i, Y1i])
                     check_points.append([X2i, Y2i])
                     
@@ -300,7 +300,7 @@ class Model():
         START_TIME = time()
 
         #Update canvas with modified paths
-        if (not self.batch):
+        if not self.batch:
             self.controller.plot_data()
 
         if TOT_LENGTH > 0.0:
@@ -327,7 +327,7 @@ class Model():
                     MIN_REMAIN = -1
                     MIN_TOTAL = -1
                     
-                if (not self.batch):
+                if not self.batch:
                     self.controller.statusMessage.set('%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' %( CUR_PCT, MIN_REMAIN, MIN_TOTAL ) )
                     self.controller.statusbar.configure( bg='yellow' )
                     self.controller.PreviewCanvas.update()
@@ -335,7 +335,7 @@ class Model():
                 if STOP_CALC != 0:
                     STOP_CALC=0
 
-                    if (clean_flag != 1 ):
+                    if clean_flag != 1:
                         self.vcoords = []
                     else:
                         self.clean_coords = []
@@ -373,7 +373,7 @@ class Model():
                     #char_num0=char_num  #V1.62
                     continue
                 
-                if (fabs(x1-x0) > Zero) or (fabs(y1-y0) > Zero) or (char_num != char_num0):
+                if fabs(x1-x0) > Zero or fabs(y1-y0) > Zero or char_num != char_num0:
                 #if char_num != char_num0:
                     New_Loop = 1
                     loop_cnt += 1
@@ -461,7 +461,7 @@ class Model():
                         self.controller.update_idletasks()
                         self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, self.plot_scale, "blue", rv, 0)
 
-                    if (New_Loop == 1 and cnt == 1):
+                    if New_Loop == 1 and cnt == 1:
                         xpta = xpt
                         ypta = ypt
                         phi2a = phi2
@@ -470,7 +470,7 @@ class Model():
                 #################################################
                 # Check to see if we need to close an open loop
                 #################################################
-                if (abs(x2-xa) < self.accuracy and abs(y2-ya) < self.accuracy):
+                if abs(x2-xa) < self.accuracy and abs(y2-ya) < self.accuracy:
                     xtmp1 = (xb-xa) * seg_cos0 - (yb-ya) * seg_sin0
                     ytmp1 = (xb-xa) * seg_sin0 + (yb-ya) * seg_cos0
                     Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
@@ -568,13 +568,13 @@ class Model():
             xmint = min(XYc[0],XYc[2]) - rmin*2
             ymaxt = max(XYc[1],XYc[3]) + rmin*2
             ymint = min(XYc[1],XYc[3]) - rmin*2
-            if (xpt >= xmint and  ypt >= ymint and xpt <= xmaxt and  ypt <= ymaxt):
+            if xpt >= xmint and ypt >= ymint and xpt <= xmaxt and ypt <= ymaxt:
                 logic_full = True
             else:
                 logic_full = False
                 continue
 
-            if (CHK_STRING == "chr"):
+            if CHK_STRING == "chr":
                 logic_full = logic_full and (char_num == int(XYc[5]))
 
             if corner == 1:
@@ -667,7 +667,7 @@ class Model():
                 dist = sqrt((oldx - x1)**2 + (oldy - y1)**2)
                 # check and see if we need to move
                 # to a new discontinuous start point
-                if (dist > Zero):
+                if dist > Zero:
                     Lend.append(cnt)
                     cnt = cnt+1
                     ecoords.append([x1,y1])
@@ -678,7 +678,7 @@ class Model():
 
         Lend.append(cnt)
 
-        if (not self.batch):
+        if not self.batch:
             self.controller.statusMessage.set('Checking Input Image Data')
             self.controller.master.update()
 
@@ -810,7 +810,7 @@ class Model():
         ###########################################
         ###   Determine loop directions CW/CCW  ###
         ###########################################
-        if (not self.batch):
+        if not self.batch:
             self.controller.statusMessage.set('Calculating Initial Loop Directions (CW/CCW)')
             self.controller.master.update()
 
@@ -850,7 +850,7 @@ class Model():
         #####################################################
         for iloop in range(Nloops):
             CUR_PCT = float(iloop)/Nloops*100.0
-            if (not self.batch):
+            if not self.batch:
                 self.controller.statusMessage.set('Determining Which Side of Loop to Cut: %d of %d' %(iloop+1,Nloops))
                 self.controller.master.update()
                 
@@ -880,7 +880,7 @@ class Model():
         #################################################
         # Find new order based on distance to next beg  #
         #################################################
-        if (not self.batch):
+        if not self.batch:
             self.controller.statusMessage.set('Re-Ordering Loops')
             self.controller.master.update()
 
@@ -1035,7 +1035,7 @@ class Model():
                         X = X+DX
                         x1 = X
                         x2 = X
-                    elif (x1 == x1_old) and (x2 == x2_old):
+                    elif x1 == x1_old and x2 == x2_old:
                         loop_cnt += 1
                         Xclean_coords.append([x1, Y, loop_cnt])
                         Xclean_coords.append([x2, Y, loop_cnt])
@@ -1097,7 +1097,7 @@ class Model():
                         X = X+DX
                         x1 = X
                         x2 = X
-                    elif (x1 == x1_old) and (x2 == x2_old):
+                    elif x1 == x1_old and x2 == x2_old:
                         loop_cnt += 1
                         Xclean_coords.append([x1, Y, loop_cnt])
                         Xclean_coords.append([x2, Y, loop_cnt])
@@ -1143,7 +1143,7 @@ class Model():
         # Clean coords format ([xnormv, ynormv, rout, loop_cnt]) - self.clean_coords
         # Path coords format  ([x1,y1,x2,y2,line_cnt,char_cnt])  - self.coords
         for i in range(1,len(clean_coords_in)):
-            if (clean_coords_in[i][3] == clean_coords_in[i-1][3]):
+            if clean_coords_in[i][3] == clean_coords_in[i-1][3]:
                 path_coords_out.append( [   clean_coords_in[i-1][0],
                                             clean_coords_in[i-1][1],
                                             clean_coords_in[i  ][0],
@@ -1205,7 +1205,7 @@ class Model():
             for line in self.clean_coords:
                 XY = line
                 R = XY[2] - Radjust
-                if (R > 0.0) and (R < flat_clean_r - offset - Zero):
+                if R > 0.0 and R < flat_clean_r - offset - Zero:
                     check_coords.append(XY)
 
         clean_coords_out = []
@@ -1238,9 +1238,9 @@ class Model():
                 for line in self.clean_coords:
                     XY = line
                     R = XY[2]
-                    if (R >= Rperimeter-Zero):
+                    if R >= Rperimeter-Zero:
                         check_coords.append(XY)
-                    elif (len(check_coords) > 0):
+                    elif len(check_coords) > 0:
                         junk=junk-1
                         check_coords.append([None, None, None, junk])
                         #check_coords[len(check_coords)-1][3]=junk
@@ -1262,7 +1262,7 @@ class Model():
                     Ln_last = loop_coords[0][4]
                     for i in range(len(loop_coords)):
                         Ln = loop_coords[i][4]
-                        if (Ln != Ln_last):
+                        if Ln != Ln_last:
                             for move, (x, y, z), cent in douglas(cuts, tolerance=0.0001, plane=None):
                                 P_coords.append([x,y,clean_dia/2,Ln_last])
                             cuts=[]
@@ -1288,54 +1288,54 @@ class Model():
                     y_pmax = max(y_pmax, P_coords[i][1])
                 loop_cnt_out = loop_cnt_out + MaxLoop
 
-                if (self.clean_P.get() == 1):
+                if self.clean_P.get() == 1:
                     clean_coords_out = P_coords
 
-                offset = DX/2.0
-                if (self.clean_X.get() == 1):                    
-                    y_pmax = y_pmax-offset
-                    y_pmin = y_pmin+offset
+                offset = DX / 2.0
+                if self.clean_X.get() == 1:
+                    y_pmax = y_pmax - offset
+                    y_pmin = y_pmin + offset
                     Ysize = y_pmax - y_pmin
-                    Ysteps = ceil( Ysize /(clean_dia*clean_step) )
-                    if (Ysteps>0):
+                    Ysteps = ceil(Ysize / (clean_dia * clean_step))
+                    if Ysteps > 0:
                         dY = Ysize / Ysteps
-                        for iY in range(0,int(Ysteps+1)):
-                            y = y_pmin + iY/Ysteps * (y_pmax-y_pmin)
-                            intXYlist=[]
-                            intXYlist = detect_intersect([x_pmin-1,y],[x_pmax+1,y],loop_coords,XY_T_F=True)
+                        for iY in range(0, int(Ysteps + 1)):
+                            y = y_pmin + iY / Ysteps * (y_pmax - y_pmin)
+                            intXYlist = []
+                            intXYlist = detect_intersect([x_pmin - 1, y], [x_pmax + 1, y], loop_coords, XY_T_F=True)
                             intXY_len = len(intXYlist)
 
-                            for i in range(edge,intXY_len-1-edge,2):
+                            for i in range(edge, intXY_len - 1 - edge, 2):
                                 x1 = intXYlist[i][0]
                                 y1 = intXYlist[i][1]
-                                x2 = intXYlist[i+1][0]
-                                y2 = intXYlist[i+1][1]
-                                if ((x2-x1) > offset*2):
-                                    loop_cnt=loop_cnt+1
-                                    Xclean_coords.append([x1+offset,y1,loop_cnt])
-                                    Xclean_coords.append([x2-offset,y2,loop_cnt])
-                            
-                if (self.clean_Y.get() == 1):                    
-                    x_pmax = x_pmax-offset
-                    x_pmin = x_pmin+offset
+                                x2 = intXYlist[i + 1][0]
+                                y2 = intXYlist[i + 1][1]
+                                if x2 - x1 > offset * 2:
+                                    loop_cnt = loop_cnt + 1
+                                    Xclean_coords.append([x1 + offset, y1, loop_cnt])
+                                    Xclean_coords.append([x2 - offset, y2, loop_cnt])
+
+                if self.clean_Y.get() == 1:
+                    x_pmax = x_pmax - offset
+                    x_pmin = x_pmin + offset
                     Xsize = x_pmax - x_pmin
-                    Xsteps = ceil( Xsize /(clean_dia*clean_step) )
-                    if (Xsteps>0):
+                    Xsteps = ceil(Xsize / (clean_dia * clean_step))
+                    if Xsteps > 0:
                         dX = Xsize / Xsteps
-                        for iX in range(0,int(Xsteps+1)):
-                            x = x_pmin + iX/Xsteps * (x_pmax-x_pmin)
-                            intXYlist=[]
-                            intXYlist = detect_intersect([x,y_pmin-1],[x,y_pmax+1],loop_coords,XY_T_F=True)
+                        for iX in range(0, int(Xsteps + 1)):
+                            x = x_pmin + iX / Xsteps * (x_pmax - x_pmin)
+                            intXYlist = []
+                            intXYlist = detect_intersect([x, y_pmin - 1], [x, y_pmax + 1], loop_coords, XY_T_F=True)
                             intXY_len = len(intXYlist)
-                            for i in range(edge,intXY_len-1-edge,2):
+                            for i in range(edge, intXY_len - 1 - edge, 2):
                                 x1 = intXYlist[i][0]
                                 y1 = intXYlist[i][1]
-                                x2 = intXYlist[i+1][0]
-                                y2 = intXYlist[i+1][1]
-                                if ((y2-y1) > offset*2):
-                                    loop_cnt=loop_cnt+1
-                                    Yclean_coords.append([x1,y1+offset,loop_cnt])
-                                    Yclean_coords.append([x2,y2-offset,loop_cnt])                
+                                x2 = intXYlist[i + 1][0]
+                                y2 = intXYlist[i + 1][1]
+                                if y2 - y1 > offset * 2:
+                                    loop_cnt = loop_cnt + 1
+                                    Yclean_coords.append([x1, y1 + offset, loop_cnt])
+                                    Yclean_coords.append([x2, y2 - offset, loop_cnt])
             ## END NEW STUFF FOR STRAIGHT BIT ##
 
             #######################################
@@ -1356,7 +1356,7 @@ class Model():
                 #######################################################
                 # Find new order based on distance                    #
                 #######################################################
-                if (self.v_clean_P.get() == 1):
+                if self.v_clean_P.get() == 1:
                     ########################################
                     ecoords=[]
                     for line in Xclean_perimeter:
@@ -1469,16 +1469,16 @@ class Model():
                         step = -1
                     else:
                         step = 1
-                    for i in range(temp[0],temp[1]+step,step):
+                    for i in range(temp[0], temp[1] + step, step):
                         x1 = Yclean_coords[i][0]
                         y1 = Yclean_coords[i][1]
                         loop = Yclean_coords[i][2]
-                        dx = x1-x_old
-                        dy = y1-y_old
-                        dist = sqrt(dx*dx + dy*dy)
+                        dx = x1 - x_old
+                        dy = y1 - y_old
+                        dist = sqrt(dx * dx + dy * dy)
                         if dist > MAXD and loop != loop_old:
-                            loop_cnt_out=loop_cnt_out+1
-                        clean_coords_out.append([x1,y1,clean_dia/2,loop_cnt_out])
+                            loop_cnt_out = loop_cnt_out + 1
+                        clean_coords_out.append([x1, y1, clean_dia / 2, loop_cnt_out])
                         x_old = x1
                         y_old = y1
                         loop_old = loop

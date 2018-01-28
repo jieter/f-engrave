@@ -43,6 +43,7 @@ OLD_SETTING_NAMES = {
     'v_drv_crner': 'v_drv_corner',
     'v_stp_crner': 'v_step_corner',
     'FEED': 'feedrate',
+    'PLUNGE': 'plunge_rate',
     'WSPACE': 'word_space',
     'CSPACE': 'char_space',
     'LSPACE': 'line_space',

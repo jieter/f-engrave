@@ -25,12 +25,10 @@ def get_angle(s, c):
     '''
     routine takes a sin and cos and returns the angle (between 0 and 360)
     '''
-    angle = 90.0 - degrees(atan2(s, c))
+    angle = 90.0 - degrees(atan2(c, s))
 
     if angle < 0:
         angle = 360 + angle
-
-    return angle
 
     return angle
 
@@ -39,7 +37,7 @@ def rotation(x, y, angle, radius):
     '''
     routine takes an x and y the point is rotated by angle returns new x,y,alpha
     '''
-    if 0.0 > radius > 0.0:
+    if radius > 0.0 or radius < 0.0:
         alpha = x / radius
         xx = (radius + y) * sin(alpha)
         yy = (radius + y) * cos(alpha)

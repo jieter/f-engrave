@@ -7,6 +7,7 @@ def line_arc_fit(lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz, FLAG_arc,
     '''
     Line fit and arc fit (curve fit)
     '''
+    # TODO make WRITE and FLAG_line booleans
 
     # print lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz
     # print FLAG_arc, code, R_last, x_center_last, y_center_last, FLAG_line, accuracy

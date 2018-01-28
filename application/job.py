@@ -281,7 +281,7 @@ class Job(object):
             self.coords[i][2] = line[2] - x_zero + xorigin
             self.coords[i][3] = line[3] - y_zero + yorigin
 
-        self.xzero = x_zero
+        self.zero = x_zero
         self.yzero = y_zero
 
     def vcarve(self):

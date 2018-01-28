@@ -103,7 +103,6 @@ def engrave_gcode(job):
 
     order_out = sort_paths(ecoords)
 
-    ###########################
     dist = 999
     lastx = -999
     lasty = -999
