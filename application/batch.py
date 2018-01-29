@@ -16,9 +16,9 @@ class Batch(object):
             pass
             # self.read_image_file(self.settings)
 
-        # self.DoIt()
+        # self.do_it()
         # if self.cut_type.get() == "v-carve":
-            # self.V_Carve_It()
+            # self.v_carve_it()
         # self.WriteGCode()
         # self.WriteSVG()
 

@@ -1,6 +1,7 @@
 import getopt
 from time import time
 from math import *
+import webbrowser
 
 from util import *
 from tooltip import ToolTip
@@ -29,8 +30,8 @@ class Gui(Frame):
         self.master = master
         self.x = -1
         self.y = -1
-        self.initComplete = 0
-        self.delay_calc = 0
+        self.initComplete = False
+        self.delay_calc = False
 
         self.settings = settings
         self.model = Model(controller=self, settings=self.settings)
@@ -40,8 +41,7 @@ class Gui(Frame):
 
     def f_engrave_init(self):
         self.master.update()
-        self.initComplete = 1
-        #self.delay_calc = 0
+        self.initComplete = True
         self.menu_mode_change()
 
     def bind_keys(self):
@@ -166,7 +166,7 @@ class Gui(Frame):
         self.current_input_file.set(" ")
         self.bounding_box.set(" ")
 
-        self.pscale = 0
+        self.plot_scale = 0
         # PAN and ZOOM STUFF
         self.panx = 0
         self.panx = 0
@@ -254,11 +254,14 @@ class Gui(Frame):
             else:
                 readers.read_image_file(self.settings)
 
-            self.DoIt()
+            self.do_it()
 
             if self.cut_type.get() == "v-carve":
-                self.V_Carve_It()
-            self.write_gcode()
+                self.v_carve_it()
+
+            #self.write_gcode()
+            self.coords = self.model.coords
+            self.gcode = engrave_gcode(self)
 
             for line in self.gcode:
                 try:
@@ -1501,7 +1504,7 @@ class Gui(Frame):
     def WriteDXF(self,close_loops=False):
         '''Write G-Code DXF'''
         if close_loops:
-            self.V_Carve_It(clean_flag=0,DXF_FLAG = close_loops)
+            self.v_carve_it(clean_flag=0,DXF_FLAG = close_loops)
         
         dxf_code = []
         # Create a header section just in case the reading software needs it
@@ -1681,7 +1684,8 @@ class Gui(Frame):
     def WriteToAxis(self):
         if self.Check_All_Variables() > 0:
             return
-        self.write_gcode()
+        self.coords = self.model.coords
+        self.gcode = engrave_gcode(self)
         for line in self.gcode:
             try:
                 sys.stdout.write(line+'\n')
@@ -1757,7 +1761,7 @@ class Gui(Frame):
         self.pany = event.y
 
     def Recalculate_Click(self, event):
-        self.DoIt()
+        self.do_it()
 
     def Settings_ReLoad_Click(self, event, arg1="", arg2=""):
         win_id = self.grab_current()
@@ -1765,7 +1769,7 @@ class Gui(Frame):
             self.font = readers.readFontFile(self.settings)
         else:
             self.font = readers.read_image_file(self.settings)
-        self.DoIt()
+        self.do_it()
         try:
             win_id.withdraw()
             win_id.deiconify()
@@ -2171,6 +2175,9 @@ class Gui(Frame):
         except:
             pass
 
+    def Entry_v_pplot_Callback(self, varName, index, mode):
+        self.settings.set('v_pplot', self.v_pplot.get())
+
     def Entry_Box_Callback(self, varName, index, mode):
         try:
             self.Entry_BoxGap_Callback(varName, index, mode)
@@ -2555,7 +2562,7 @@ class Gui(Frame):
             except:
                 pass
 
-        self.V_Carve_It()
+        self.v_carve_it()
         self.menu_View_Refresh()
         vcalc_status.grab_release()
         try:
@@ -2597,7 +2604,7 @@ class Gui(Frame):
                     pass
 
             clean_cut = 1
-            self.V_Carve_It(clean_cut)
+            self.v_carve_it(clean_cut)
             vcalc_status.grab_release()
             try:
                 vcalc_status.destroy()
@@ -2683,7 +2690,7 @@ class Gui(Frame):
         self.settings.set('fontfile', self.fontfile.get())
 
         self.font = readers.readFontFile(self.settings)
-        self.DoIt()
+        self.do_it()
 
     def Listbox_Key_Up(self, event):
         try:
@@ -2700,7 +2707,7 @@ class Gui(Frame):
         self.settings.set('fontfile', self.fontfile.get())
 
         self.font = readers.readFontFile(self.settings)
-        self.DoIt()
+        self.do_it()
 
     def Listbox_Key_Down(self, event):
         try:
@@ -2717,7 +2724,7 @@ class Gui(Frame):
         self.settings.set('fontfile', self.fontfile.get())
 
         self.font = readers.readFontFile(self.settings)
-        self.DoIt()
+        self.do_it()
 
     def Entry_fontdir_Callback(self, varName, index, mode):
         self.Listbox_1.delete(0, END)
@@ -2787,12 +2794,12 @@ class Gui(Frame):
             self.settings.set('IMAGE_FILE', fileselect)
             self.font = readers.read_image_file(self.settings)
             self.input_type.set(self.settings.get('input_type')) # input_type may have been changed by read_image_file
-            self.DoIt()
+            self.do_it()
 
 
     def Open_G_Code_File(self, filename):
 
-        self.delay_calc = 1
+        self.delay_calc = True
         boxsize = "0"
         try:
             fin = open(filename, 'r')
@@ -2854,8 +2861,8 @@ class Gui(Frame):
         temp_name, fileExtension = os.path.splitext(filename)
         file_base = os.path.basename(temp_name)
 
-        self.delay_calc = 0
-        if self.initComplete == 1:
+        self.delay_calc = False
+        if self.initComplete:
             self.NGC_FILE = filename
             self.menu_mode_change()
 
@@ -3082,7 +3089,7 @@ class Gui(Frame):
         self.menu_View_Refresh()
 
     def menu_View_Refresh(self):
-        if (not self.batch.get()) and self.initComplete == 1 and self.delay_calc != 1:
+        if (not self.batch.get()) and self.initComplete and (not self.delay_calc):
             dummy_event = Event()
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, 1)
@@ -3091,20 +3098,20 @@ class Gui(Frame):
         self.menu_View_Refresh()
 
     def menu_mode_change(self):
-        self.delay_calc = 1
+        self.delay_calc = True
         dummy_event = Event()
         dummy_event.widget = self.master
         self.Master_Configure(dummy_event, 1)
-        self.delay_calc = 0
+        self.delay_calc = False
         if self.input_type.get() == "text":
             self.font = readers.readFontFile(self.settings)
         else:
             self.font = readers.read_image_file(self.settings)
 
-        self.DoIt()
+        self.do_it()
 
     def menu_View_Recalculate(self):
-        self.DoIt()
+        self.do_it()
 
     def menu_Help_About(self):
         about = "F-Engrave by Scorch.\n\n"
@@ -3532,23 +3539,23 @@ class Gui(Frame):
         newy = y * yscale
         return newx, newy
 
-    def plot_line(self, XX1, YY1, XX2, YY2, midx, midy, cszw, cszh, plot_scale, col, radius=0):
-        x1 = cszw / 2 + (XX1 - midx) / plot_scale
-        x2 = cszw / 2 + (XX2 - midx) / plot_scale
-        y1 = cszh / 2 - (YY1 - midy) / plot_scale
-        y2 = cszh / 2 - (YY2 - midy) / plot_scale
+    def plot_line(self, XX1, YY1, XX2, YY2, midx, midy, cszw, cszh, col, radius=0):
+        x1 = cszw / 2 + (XX1 - midx) / self.plot_scale
+        x2 = cszw / 2 + (XX2 - midx) / self.plot_scale
+        y1 = cszh / 2 - (YY1 - midy) / self.plot_scale
+        y2 = cszh / 2 - (YY2 - midy) / self.plot_scale
         if radius == 0:
             thick = 0
         else:
-            thick = radius * 2 / plot_scale
+            thick = radius * 2 / self.plot_scale
         self.segID.append(self.PreviewCanvas.create_line(x1, y1, x2, y2, fill=col, capstyle="round", width=thick))
 
-    def plot_circle(self, XX1, YY1, midx, midy, cszw, cszh, plot_scale, color, Rad, fill):
+    def plot_circle(self, XX1, YY1, midx, midy, cszw, cszh, color, Rad, fill):
         dd = Rad
-        x1 = cszw / 2 + (XX1 - dd - midx) / plot_scale
-        x2 = cszw / 2 + (XX1 + dd - midx) / plot_scale
-        y1 = cszh / 2 - (YY1 - dd - midy) / plot_scale
-        y2 = cszh / 2 - (YY1 + dd - midy) / plot_scale
+        x1 = cszw / 2 + (XX1 - dd - midx) / self.plot_scale
+        x2 = cszw / 2 + (XX1 + dd - midx) / self.plot_scale
+        y1 = cszh / 2 - (YY1 - dd - midy) / self.plot_scale
+        y2 = cszh / 2 - (YY1 + dd - midy) / self.plot_scale
         if fill == 0:
             self.segID.append(self.PreviewCanvas.create_oval(x1, y1, x2, y2, outline=color, fill=None, width=1))
         else:
@@ -3562,19 +3569,19 @@ class Gui(Frame):
     def Recalculate_RQD_Click(self, event):
         self.statusbar.configure(bg='yellow')
         self.statusMessage.set(" Recalculation required.")
-        self.DoIt()
+        self.do_it()
 
     def Recalc_RQD(self):
         self.statusbar.configure(bg='yellow')
         self.statusMessage.set(" Recalculation required.")
-        self.DoIt()
+        self.do_it()
 
 
     def plot_data(self):
         '''
         Canvas plotting stuff
         '''
-        if self.delay_calc == 1 or self.delay_calc == 1:
+        if self.delay_calc:
             return
 
         self.master.update_idletasks()
@@ -3607,8 +3614,7 @@ class Gui(Frame):
         plot_scale = max((maxx-minx+Thick)/(cszw-buff), (maxy-miny+Thick)/(cszh-buff))
         if plot_scale <= 0:
             plot_scale = 1.0
-        self.pscale = plot_scale
-        self.model.set_plot_scale(plot_scale)
+        self.plot_scale = plot_scale
 
         Radius_plot = 0
         if self.plotbox.get() and self.cut_type.get() == "engrave":
@@ -3685,12 +3691,12 @@ class Gui(Frame):
                 rbit = self.calc_vbit_dia()/2.0
                 if self.bit_shape.get() == "FLAT":
                     if r >= rbit:
-                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, plot_scale, color, r, 1)
+                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, color, r, 1)
                 else:
                     if self.inlay.get():
-                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, plot_scale, color, r-r_inlay_top, 1)
+                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, color, r-r_inlay_top, 1)
                     else:
-                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, plot_scale, color, r, 1)
+                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, color, r, 1)
 
             loop_old = -1
             rold = -1
@@ -3710,7 +3716,7 @@ class Gui(Frame):
                     plot_flat = True
 
                 if loop == loop_old and plot_flat:
-                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, plot_scale, color)
+                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, color)
                 loop_old = loop
                 rold = r
                 xold = x1
@@ -3729,7 +3735,7 @@ class Gui(Frame):
                 loop = XY[3]
                 color = "brown"
                 if loop == loop_old:
-                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, plot_scale, color, r)
+                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, color, r)
                 loop_old = loop
                 xold = x1
                 yold = y1
@@ -3743,7 +3749,7 @@ class Gui(Frame):
                 color = "white"
                 # check and see if we need to move to a new discontinuous start point
                 if loop == loop_old:
-                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, plot_scale, color)
+                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, color)
                 loop_old = loop
                 xold = x1
                 yold = y1
@@ -3757,7 +3763,7 @@ class Gui(Frame):
                 loop = XY[3]
                 color = "yellow"
                 if loop == loop_old:
-                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, plot_scale, color)
+                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, color)
                 loop_old = loop
                 xold = x1
                 yold = y1
@@ -3775,11 +3781,11 @@ class Gui(Frame):
                                                                   axis_x1, axis_y2,
                                                                   fill='green', width=0))
 
-    def DoIt(self):
+    def do_it(self):
         '''
         Perform  Calculations
         '''
-        if self.delay_calc == 1:
+        if self.delay_calc:
             return
 
         self.menu_View_Refresh()
@@ -4339,7 +4345,7 @@ class Gui(Frame):
                 v_flop = not(v_flop)
         return v_flop
 
-    def V_Carve_It(self, clean_flag=0, DXF_FLAG=False):
+    def v_carve_it(self, clean_flag=0, DXF_FLAG=False):
 
         global STOP_CALC
         self.master.unbind("<Configure>")
@@ -4356,7 +4362,7 @@ class Gui(Frame):
             return
             
         if clean_flag != 1:
-            self.DoIt()
+            self.do_it()
             self.model.init_clean_coords()
 
         elif self.model.clean_coords_sort != [] or self.model.v_clean_coords_sort != []:
@@ -4381,14 +4387,13 @@ class Gui(Frame):
                     self.plot_data()
 
             if (self.input_type.get() == "image" and clean_flag == 0):
-                #self.model.coords = self.model.sortForVCarve(self.model.coords)
-                self.model.sortForVCarve()
+                #self.model.coords = self.model.sort_for_v_carve(self.model.coords)
+                self.model.sort_for_v_carve()
 
             if DXF_FLAG:
                 return
 
-            self.model.set_plot_scale(self.pscale)
-            done = self.model.vCarve(self.get_flop_status(), clean_flag, DXF_FLAG)
+            done = self.model.v_carve(self.get_flop_status(), clean_flag, DXF_FLAG)
 
             #Reset Entry Fields in V-Carve Settings
             if not self.batch.get():
@@ -4713,6 +4718,7 @@ class Gui(Frame):
         self.Checkbutton_v_pplot = Checkbutton(gen_settings, text="", anchor=W)
         self.Checkbutton_v_pplot.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
         self.Checkbutton_v_pplot.configure(variable=self.v_pplot)
+        self.v_pplot.trace_variable("w", self.Entry_v_pplot_Callback)
 
         D_Yloc = D_Yloc + D_dY + 10
         self.Label_SaveConfig = Label(gen_settings, text="Configuration File")

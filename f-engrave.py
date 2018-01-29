@@ -10,15 +10,13 @@
               DXF2GCODE (http://code.google.com/p/dfxf2gcode/)
 """
 
-version = '1.40'
+version = '1.65'
 
 #TODO insert psyco / pypy
 
 from application.settings import Settings
 
 settings = Settings(autoload=True)
-
-#TODO: parse command line options.
 
 if settings.get('batch'):
     # batch processing

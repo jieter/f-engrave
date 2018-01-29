@@ -48,7 +48,9 @@ def read_image_file(settings):
             if settings.get('bmp_longcurve'):
                 cmd.extend(("-O", settings.get('bmp_opttolerance')))
 
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            cmd = ' '.join(map(str, cmd))
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+
             stdout, stderr = p.communicate()
             if VERSION == 3:
                 dxf_file = bytes.decode(stdout).split("\n")
@@ -56,9 +58,11 @@ def read_image_file(settings):
                 dxf_file = stdout.split("\n")
 
             # build stroke lists from font file
-            font, DXF_source = dxf.parse_dxf(dxf_file, segarc, new_origin)
+            font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
             #font['DXF_source'] = DXF_source
+
             settings.set('input_type', 'image')
+
         except:
             fmessage("Unable To create path data from bitmap File.")
     else:

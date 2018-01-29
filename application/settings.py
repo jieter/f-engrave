@@ -124,7 +124,7 @@ class Settings(object):
         'v_clean_X': True,
         'v_clean_Y': False,
 
-        'yscale': 2.0,
+        'yscale': 50.0,
         'xscale': 100.0,
         'line_space': 1.1,
         'char_space': 25,
@@ -132,12 +132,12 @@ class Settings(object):
         'text_angle': 0.0,
 
         # safe height [GCODE]
-        'zsafe': 0.25,
+        'zsafe': 5.0,
 
         # engraving depth [GCODE]
-        'zcut': -0.005,
+        'zcut': -0.1,
 
-        'line_thickness': 0.01,
+        'line_thickness': 0.25,
 
         # options:  "Default",
         # "Top-Left", "Top-Center", "Top-Right",
@@ -152,9 +152,10 @@ class Settings(object):
         'units': 'mm',
 
         # horizontal feedrate [GCODE]
-        'feedrate': 5.0,
+        'feedrate': 60.0,
 
-        'plunge_rate': 0.0,
+        # feedrate for plunging into stock [GCODE]
+        'plunge_rate': 10.0,
 
         # which bounding boxes are used to calculate line height
         # options: 'max_all', 'max_use'
@@ -177,7 +178,7 @@ class Settings(object):
         'input_type': 'text',
 
         # v-cutter parameters
-        'v_bit_angle': 90,
+        'v_bit_angle': 60,
         'v_bit_dia': 3.0,
 
         'v_depth_lim': 0.0,
@@ -207,12 +208,13 @@ class Settings(object):
         'xorigin': 0.0,
         'yorigin': 0.0,
         'segarc': 5.0,
+
         'accuracy': 0.001,
 
         'clean_w': 2.0,
         'clean_v': 0.05,
         # diameter of the cleanup bit
-        'clean_dia': 0.25,
+        'clean_dia': 3.0,
 
         # Clean-up step-over as percent of clean-up bit diameter
         'clean_step': 50,
