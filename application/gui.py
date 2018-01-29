@@ -43,6 +43,7 @@ class Gui(Frame):
         self.master.update()
         self.initComplete = True
         self.menu_mode_change()
+        self.STOP_CALC = False
 
     def bind_keys(self):
         self.master.bind("<Configure>", self.Master_Configure)
@@ -1868,8 +1869,8 @@ class Gui(Frame):
         win_id.destroy()
 
     def Stop_Click(self, event):
-        global STOP_CALC
-        STOP_CALC = 1
+        STOP_CALC = True
+        self.model.stop_calc()
 
     def calc_vbit_dia(self):
         bit_dia = float(self.v_bit_dia.get())
@@ -4347,9 +4348,8 @@ class Gui(Frame):
 
     def v_carve_it(self, clean_flag=0, DXF_FLAG=False):
 
-        global STOP_CALC
         self.master.unbind("<Configure>")
-        STOP_CALC=0
+        self.STOP_CALC = False
 
         if self.units.get() == "mm":
             if float( self.v_step_len.get() ) < .01:

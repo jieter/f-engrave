@@ -6,9 +6,6 @@ from font import *
 
 Zero = 1e-6
 
-STOP_CALC = 0
-
-
 def transform(x, y, angle):
     '''
     routine takes an x and a y coords and does a coordinate transformation

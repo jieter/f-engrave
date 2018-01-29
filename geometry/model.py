@@ -12,9 +12,9 @@ class Model():
         self.settings = settings
         self.init_coords()
 
-        #TODO remove batch flag (use batch | gui)
         self.batch = self.settings.get('batch')
         self.accuracy = self.settings.get('accuracy')
+        self.STOP_CALC = False
 
         self.setMaxX(0)
         self.setMinX(0)
@@ -31,6 +31,9 @@ class Model():
         self.clean_coords_sort = []
         self.v_clean_coords_sort = []
         self.clean_segment = []
+
+    def stop_calc(self):
+        self.STOP_CALC = True
 
     def setMaxX(self, x):
         self.maxX = x
@@ -77,8 +80,6 @@ class Model():
     # V-Carve Stuff
     #########################################
     def v_carve(self, v_flop, clean_flag=0, DXF_FLAG=False):
-
-        global STOP_CALC
 
         #set variable for first point in loop
         xa = 9999
@@ -328,8 +329,9 @@ class Model():
                     self.controller.statusbar.configure( bg='yellow' )
                     self.controller.PreviewCanvas.update()
 
-                if STOP_CALC != 0:
-                    STOP_CALC=0
+                if self.STOP_CALC:
+
+                    self.STOP_CALC = False
 
                     if clean_flag != 1:
                         self.vcoords = []
