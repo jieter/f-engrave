@@ -1505,7 +1505,7 @@ class Gui(Frame):
     def WriteDXF(self,close_loops=False):
         '''Write G-Code DXF'''
         if close_loops:
-            self.v_carve_it(clean_flag=0,DXF_FLAG = close_loops)
+            self.v_carve_it(clean_flag=False, DXF_FLAG=close_loops)
         
         dxf_code = []
         # Create a header section just in case the reading software needs it
@@ -1869,8 +1869,12 @@ class Gui(Frame):
         win_id.destroy()
 
     def Stop_Click(self, event):
-        STOP_CALC = True
+        self.STOP_CALC = True
         self.model.stop_calc()
+
+    def v_pplot_Click(self, event):
+        self.settings.set('v_pplot', self.v_pplot.get())
+        self.model.refresh_v_pplot()
 
     def calc_vbit_dia(self):
         bit_dia = float(self.v_bit_dia.get())
@@ -2547,6 +2551,7 @@ class Gui(Frame):
         self.Checkbutton_v_pplot = Checkbutton(vcalc_status, text="Plot During V-Carve Calculation", anchor=W)
         self.Checkbutton_v_pplot.place(x=130 + 12 + 12, y=34, width=300, height=23)
         self.Checkbutton_v_pplot.configure(variable=self.v_pplot)
+        self.Checkbutton_v_pplot.bind("<ButtonRelease-1>", self.v_pplot_Click)
 
         vcalc_status.resizable(0, 0)
         vcalc_status.title('Executing V-Carve')
@@ -4346,7 +4351,7 @@ class Gui(Frame):
                 v_flop = not(v_flop)
         return v_flop
 
-    def v_carve_it(self, clean_flag=0, DXF_FLAG=False):
+    def v_carve_it(self, clean_flag=False, DXF_FLAG=False):
 
         self.master.unbind("<Configure>")
         self.STOP_CALC = False
@@ -4361,7 +4366,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
             
-        if clean_flag != 1:
+        if clean_flag == False:
             self.do_it()
             self.model.init_clean_coords()
 
@@ -4386,7 +4391,7 @@ class Gui(Frame):
                 if self.v_pplot.get() == 1:
                     self.plot_data()
 
-            if (self.input_type.get() == "image" and clean_flag == 0):
+            if (self.input_type.get() == "image" and clean_flag == False):
                 #self.model.coords = self.model.sort_for_v_carve(self.model.coords)
                 self.model.sort_for_v_carve()
 

@@ -14,6 +14,7 @@ class Model():
 
         self.batch = self.settings.get('batch')
         self.accuracy = self.settings.get('accuracy')
+        self.v_pplot = self.settings.get('v_pplot')
         self.STOP_CALC = False
 
         self.setMaxX(0)
@@ -34,6 +35,9 @@ class Model():
 
     def stop_calc(self):
         self.STOP_CALC = True
+
+    def refresh_v_pplot(self):
+        self.v_pplot = self.settings.get('v_pplot')
 
     def setMaxX(self, x):
         self.maxX = x
@@ -67,7 +71,7 @@ class Model():
             x2 = line[i_x2]
             y2 = line[i_y2]
             length = sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) )
-            if clean_flag == 1:
+            if clean_flag:
                 if self.clean_segment[idx] != 0:
                     total_length += length
             else:
@@ -79,7 +83,7 @@ class Model():
     #########################################
     # V-Carve Stuff
     #########################################
-    def v_carve(self, v_flop, clean_flag=0, DXF_FLAG=False):
+    def v_carve(self, v_flop, clean_flag=False, DXF_FLAG=False):
 
         #set variable for first point in loop
         xa = 9999
@@ -112,8 +116,7 @@ class Model():
             i_x2 = 2
             i_y2 = 3
 
-        not_b_carve = not bool(self.settings.get('v_pplot') == "BALL")
-        v_pplot = self.settings.get('v_pplot')
+        not_b_carve = not bool(self.settings.get('bit_shape') == "BALL")
 
         CHK_STRING = self.settings.get('v_check_all')
         #TODO is check not set before, else add set check in settings
@@ -140,10 +143,10 @@ class Model():
         #TODO get rid of controller dependency
         clean_dia = float(self.controller.clean_dia.get())
         r_inlay_top = self.controller.calc_r_inlay_top()
-        if clean_flag != 1 :
-            rmax = rbit
-        else:
+        if clean_flag:
             rmax = rbit + clean_dia/2
+        else:
+            rmax = rbit
 
         midx = (self.maxX+self.minX)/2
         midy = (self.maxY+self.minY)/2
@@ -308,7 +311,7 @@ class Model():
 
                 CUR_CNT += 1
 
-                if clean_flag == 0:
+                if clean_flag == False:
                     self.clean_segment.append(0)
                 elif self.number_of_clean_segments() != self.number_of_segments():
                     fmessage("Need to Recalculate V-Carve Path")
@@ -333,11 +336,11 @@ class Model():
 
                     self.STOP_CALC = False
 
-                    if clean_flag != 1:
-                        self.vcoords = []
-                    else:
+                    if clean_flag:
                         self.clean_coords = []
                         calc_flag = 0
+                    else:
+                        self.vcoords = []
                     break
 
                 v_index = v_index + v_inc
@@ -393,7 +396,7 @@ class Model():
                     d_seg_cos = xtmp1/Ltmp
                     delta = get_angle(d_seg_sin, d_seg_cos)
 
-                if delta < float(v_drv_corner) and bit_angle !=0 and not_b_carve and clean_flag != 1:
+                if delta < float(v_drv_corner) and bit_angle !=0 and not_b_carve and clean_flag == False:
                     #drive to corner
                     self.vcoords.append([x1, y1, 0.0, loop_cnt])
 
@@ -416,7 +419,7 @@ class Model():
 
                        self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
 
-                       if (not self.batch) and v_pplot and clean_flag != 1:
+                       if (not self.batch) and self.v_pplot and clean_flag == False:
                            self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, "blue", rv, 0)
 
                 theta = phi
@@ -454,7 +457,7 @@ class Model():
 
                     self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
 
-                    if v_pplot and (not self.batch) and (clean_flag != 1 ):
+                    if self.v_pplot and (not self.batch) and clean_flag == False:
                         #self.master.update_idletasks()
                         self.controller.update_idletasks()
                         self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, "blue", rv, 0)
@@ -475,7 +478,7 @@ class Model():
                     d_seg_sin = ytmp1/Ltmp
                     d_seg_cos = xtmp1/Ltmp
                     delta = get_angle(d_seg_sin,d_seg_cos)
-                    if delta < v_drv_corner and clean_flag != 1:
+                    if delta < v_drv_corner and clean_flag == False:
                         #drive to corner
                         self.vcoords.append([xa, ya, 0.0, loop_cnt])
 
@@ -494,7 +497,7 @@ class Model():
                             rout = self.find_max_circle(xa, ya, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
                             xv, yv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt, clean_flag)
                             self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
-                            if v_pplot and (not self.batch) and (clean_flag != 1 ):
+                            if self.v_pplot and (not self.batch) and clean_flag == False:
                                 self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, "blue", rv, 0)
 
                         xv, yv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean_flag)
@@ -521,13 +524,13 @@ class Model():
         ynormv = y1+Ly
         need_clean = 0
 
-        if int(clean_flag) != 1:
-            self.vcoords.append([xnormv, ynormv, rout, loop_cnt]) 
-            if abs(rbit-rout) <= Zero:
-                need_clean = 1
-        else:
+        if clean_flag:
             if rout >= rbit:
                 self.clean_coords.append([xnormv, ynormv, rout, loop_cnt])
+        else:
+            self.vcoords.append([xnormv, ynormv, rout, loop_cnt])
+            if abs(rbit-rout) <= Zero:
+                need_clean = 1
 
         return xnormv, ynormv, rout, need_clean
                
