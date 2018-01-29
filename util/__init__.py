@@ -14,11 +14,12 @@ if VERSION == 3:
     from tkinter import *
     from tkinter.filedialog import *
     import tkinter.messagebox
+    MAXINT = sys.maxsize
 else:
     from Tkinter import *
     from tkFileDialog import *
     import tkMessageBox
-
+    MAXINT = sys.maxint
 
 def fmessage(text, newline=True):
     if IN_AXIS or QUIET:

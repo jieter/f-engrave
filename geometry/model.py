@@ -54,7 +54,7 @@ class Model():
     def number_of_clean_segments(self):
         return len(self.clean_segment)
 
-    def number_of_v_segments(self):
+    def number_of_v_coords(self):
         return len(self.vcoords)
 
     def number_of_segments(self):

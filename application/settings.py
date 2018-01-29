@@ -102,16 +102,18 @@ class Settings(object):
         # ball carve (ball nose cutter)
         'b_carve': False,
 
-        # options: "VBIT", "FLAT"
+        # TODO is "BALL" shape valid, or is this covered by b_carve?
+        # options: "VBIT", "FLAT", "BALL"
         'bit_shape': 'VBIT',
 
         # plot during v-carve calculation [GUI]
-        'v_pplot': True,
+        'v_pplot': False,
 
         'inlay': False,
         'no_comments': True,
 
-        'arc_fit': True,
+        # arc fitting, options "none", "center", "radius"
+        'arc_fit': 'none',
         'ext_char': False,
 
         # disable variables in gcode [GCODE]
@@ -237,7 +239,8 @@ class Settings(object):
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
 
-        'default_text': 'F-engrave'
+        # 'default_text': 'F-engrave'
+        'default_text': 'F' #TEST
     }
 
     def __init__(self, filename=None, autoload=False):
