@@ -1,16 +1,14 @@
 import getopt
 from time import time
-from math import *
 import webbrowser
 
 from util import *
 from tooltip import ToolTip
 
-from geometry import *
 from geometry.model import Model
 
 import readers
-from writers import gcode
+from writers import *
 
 if VERSION == 3:
     from tkinter import *
@@ -261,8 +259,7 @@ class Gui(Frame):
                 self.v_carve_it()
 
             #self.write_gcode()
-            self.coords = self.model.coords
-            self.gcode = gcode(self)
+            self.gcode = gcode(self.model)
 
             for line in self.gcode:
                 try:
@@ -401,7 +398,7 @@ class Gui(Frame):
         self.Checkbutton_flip.configure(variable=self.flip)
         self.flip.trace_variable("w", self.Entry_recalc_var_Callback)
         self.Label_flip_ToolTip = ToolTip(self.Label_flip, text= \
-            'Selecting Flip Text/Image mirrors the design about a horizontal line')
+            'Selecting Flip Text/Image mirrors the design about a horizontal line.')
 
         self.Label_mirror = Label(self.master, text="Mirror Text")
         self.Checkbutton_mirror = Checkbutton(self.master, text=" ", anchor=W)
@@ -800,10 +797,9 @@ class Gui(Frame):
             win_id.withdraw()
             win_id.deiconify()
         except:
-            pass0
+            pass
 
-
-    #TODO move to Writers
+    # TODO move to Writers
     def WriteSVG(self):
         '''Write SVG'''
         if self.cut_type.get() == "v-carve":
@@ -811,7 +807,7 @@ class Gui(Frame):
         else:
             Thick = float(self.STHICK.get())
 
-        dpi=100
+        dpi = 100
 
         maxx = -99919.0
         maxy = -99929.0
@@ -1054,11 +1050,9 @@ class Gui(Frame):
         self.clipboard_clear()
         if self.Check_All_Variables() > 0:
             return
-        #self.write_gcode()
-        self.coords = self.model.coords
-        self.gcode = gcode(self)
+        self.gcode = gcode(self.model)
         for line in self.gcode:
-            self.clipboard_append(line+'\n')
+            self.clipboard_append(str(line)+'\n')
 
     def CopyClipboard_SVG(self):
         self.clipboard_clear()
@@ -1069,8 +1063,7 @@ class Gui(Frame):
     def WriteToAxis(self):
         if self.Check_All_Variables() > 0:
             return
-        self.coords = self.model.coords
-        self.gcode = gcode(self)
+        self.gcode = gcode(self.model)
         for line in self.gcode:
             try:
                 sys.stdout.write(line+'\n')
@@ -1180,7 +1173,7 @@ class Gui(Frame):
             message_box("Cleanup Info", mess)
         else:
             stop = self.Clean_Calc_Click("straight")
-            if stop != 1:
+            if not stop:
                 self.Clean_Calc_Click("v-bit")
             self.plot_data()
 
@@ -1284,6 +1277,7 @@ class Gui(Frame):
                 R = bit_dia / 2.0
             else:
                 pass
+
         return bit_dia
 
     def calc_depth_limit(self):
@@ -1502,7 +1496,7 @@ class Gui(Frame):
 
     def Entry_Xoffset_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check())
-        #TODO settings
+        self.settings.set('xorigin', self.xorigin.get())
 
     def Entry_Yoffset_Check(self):
         try:
@@ -1513,6 +1507,7 @@ class Gui(Frame):
 
     def Entry_Yoffset_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check())
+        self.settings.set('yorigin', self.yorigin.get())
 
     def Entry_ArcAngle_Check(self):
         try:
@@ -1523,6 +1518,7 @@ class Gui(Frame):
 
     def Entry_ArcAngle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check())
+        self.settings.set('segarc', self.segarc.get())
 
     def Entry_Accuracy_Check(self):
         try:
@@ -1533,12 +1529,16 @@ class Gui(Frame):
 
     def Entry_Accuracy_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check())
+        self.settings.set('accuracy', self.accuracy.get())
 
     def Entry_Gpre_Callback(self, varName, index, mode):
         self.settings.set('gcode_preamble', self.gpre.get())
 
     def Entry_Gpost_Callback(self, varName, index, mode):
         self.settings.set('gcode_postamble', self.gpost.get())
+
+    def Checkbutton_var_dis_Callback(self, varName, index, mode):
+        self.settings.set('var_dis', self.var_dis.get())
 
     def Entry_BoxGap_Check(self):
         try:
@@ -1566,6 +1566,7 @@ class Gui(Frame):
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
+        self.model.refresh_v_pplot() #TODO only needed when plotting
 
     def Entry_Box_Callback(self, varName, index, mode):
         try:
@@ -1616,6 +1617,7 @@ class Gui(Frame):
 
     def Entry_Vbitdia_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check() )
+        self.settings.set('vbit_dia', self.vbit_dia.get())
         self.calc_depth_limit()
 
     def Entry_VDepthLimit_Check(self):
@@ -1630,6 +1632,7 @@ class Gui(Frame):
 
     def Entry_VDepthLimit_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check() )
+        self.settings.set('vbit_dia', self.v_depth_lim.get())
         self.calc_depth_limit()
 
     def Entry_InsideAngle_Check(self):
@@ -1670,6 +1673,7 @@ class Gui(Frame):
 
     def Entry_StepSize_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check() )
+        self.settings.set('v_step-len', self.v_step_len.get())
 
     def Entry_Allowance_Check(self):
         try:
@@ -1683,6 +1687,7 @@ class Gui(Frame):
 
     def Entry_Allowance_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check() )
+        self.settings.set('allowance', self.allowance.get())
 
     def Entry_Prismatic_Callback(self, varName, index, mode):
         try:
@@ -1696,6 +1701,7 @@ class Gui(Frame):
                 self.Label_Allowance_u.configure(state="normal")
         except:
             pass
+        self.settings.set('inlay', self.inlay.get())
         self.Recalc_RQD()
         
     def Entry_v_max_cut_Check(self):
@@ -1710,6 +1716,7 @@ class Gui(Frame):
 
     def Entry_v_max_cut_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check() )
+        self.settings.set('v_max_cut', self.v_max_cut.get())
 
     def Entry_v_rough_stk_Check(self):
         try:
@@ -1734,6 +1741,7 @@ class Gui(Frame):
 
     def Entry_v_rough_stk_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check() )
+        self.settings.set('v_rough_stk', self.v_rough_stk.get())
 
     def Entry_V_CLEAN_Check(self):
         try:
@@ -1747,6 +1755,7 @@ class Gui(Frame):
 
     def Entry_V_CLEAN_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check() )
+        self.settings.set('clean_v', self.clean_v.get())
 
     def Entry_CLEAN_DIA_Check(self):
         try:
@@ -1760,6 +1769,7 @@ class Gui(Frame):
 
     def Entry_CLEAN_DIA_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check() )
+        self.settings.set('clean_dia', self.clean_dia.get())
         self.model.clean_coords=[]
         self.model.v_clean_coords=[]
 
@@ -1775,6 +1785,15 @@ class Gui(Frame):
 
     def Entry_STEP_OVER_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check() )
+
+    def Checkbutton_clean_P_Callback(self, varName, index, mode):
+        self.settings.set('clean_P', self.clean_P.get())
+
+    def Checkbutton_clean_X_Callback(self, varName, index, mode):
+        self.settings.set('clean_X', self.clean_X.get())
+
+    def Checkbutton_clean_Y_Callback(self, varName, index, mode):
+        self.settings.set('clean_Y', self.clean_Y.get())
 
     def Entry_Bit_Shape_Check(self):
         self.calc_depth_limit()
@@ -1804,6 +1823,7 @@ class Gui(Frame):
             pass
 
     def Entry_Bit_Shape_var_Callback(self, varName, index, mode):
+        self.settings.set('bit_shape', self.bit_shape.get())
         self.Entry_Bit_Shape_Check()
 
     ######################################
@@ -1960,12 +1980,13 @@ class Gui(Frame):
         except:
             pass
 
-    def Clean_Calc_Click(self,bit_type="straight"):
+    def Clean_Calc_Click(self, bit_type="straight"):
 
         if self.Check_All_Variables() > 0:
-            return 1
+            return True # stop
 
         if self.model.clean_coords == []:
+
             vcalc_status = Toplevel(width=525, height=50)
             # Use grab_set to prevent user input in the main window during calculations
             vcalc_status.grab_set()
@@ -2001,12 +2022,13 @@ class Gui(Frame):
             except:
                 pass
 
-        self._clean_path_calc(bit_type)
+        rbit = self.calc_vbit_dia() / 2.0
+        self.model.clean_path_calc(rbit, bit_type)
 
-        if self.clean_coords == []:
-            return 1
+        if self.model.clean_coords == []:
+            return True # stop
         else:
-            return 0
+            return False
 
     ######################################
     #    General Settings Call Backs     #
@@ -2022,8 +2044,10 @@ class Gui(Frame):
         elif self.units.get() == 'mm' and self.funits.get() == 'in/min':
             self.Scale_Linear_Inputs(25.4)
             self.funits.set('mm/min')
+        self.settings.set('units', self.units.get())
         self.Recalc_RQD()
 
+    #TODO update settings? or is this taken care of by the Tk callback?
     def Scale_Linear_Inputs(self, factor=1.0):
         try:
             self.YSCALE.set(     '%.3g' %(float(self.YSCALE.get()     )*factor) )
@@ -2143,6 +2167,7 @@ class Gui(Frame):
 
     # End General Settings Callbacks
 
+
     def menu_File_Open_G_Code_File(self):
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -2153,6 +2178,7 @@ class Gui(Frame):
 
         if fileselect != '' and fileselect != ():
             self.Open_G_Code_File(fileselect)
+
 
     def menu_File_Open_DXF_File(self):
         init_dir = os.path.dirname(self.IMAGE_FILE)  # TODO  settings
@@ -2257,6 +2283,7 @@ class Gui(Frame):
             self.NGC_FILE = filename
             self.menu_mode_change()
 
+
     def menu_File_Save_Settings_File(self):
 
         gcode = self.settings.to_gcode()
@@ -2295,6 +2322,7 @@ class Gui(Frame):
             self.statusMessage.set("File Saved: %s" % (filename))
             self.statusbar.configure(bg='white')
 
+
     def menu_File_Save_G_Code_File(self):
 
         if self.Check_All_Variables() > 0:
@@ -2309,7 +2337,6 @@ class Gui(Frame):
                 return
 
         #self.write_gcode()
-        #self.coords = self.model.coords
         self.gcode = gcode(self.model)
 
         init_dir = os.path.dirname(self.NGC_FILE)
@@ -2335,7 +2362,7 @@ class Gui(Frame):
             try:
                 fout = open(filename, 'w')
             except:
-                self.statusMessage.set("Unable to open file for writing: %s" % (filename))
+                self.statusMessage.set("Unable to open file for writing: %s" % filename)
                 self.statusbar.configure(bg='red')
                 return
             for line in self.gcode:
@@ -2344,8 +2371,9 @@ class Gui(Frame):
                 except:
                     fout.write('(skipping line)\n')
             fout.close()
-            self.statusMessage.set("File Saved: %s" % (filename))
+            self.statusMessage.set("File Saved: %s" % filename)
             self.statusbar.configure(bg='white')
+
 
     def menu_File_Save_clean_G_Code_File(self, bit_type="straight"):
 
@@ -2396,6 +2424,7 @@ class Gui(Frame):
             self.statusMessage.set("File Saved: %s" % (filename))
             self.statusbar.configure(bg='white')
 
+
     def menu_File_Save_SVG_File(self):
         self.WriteSVG()
 
@@ -2433,8 +2462,10 @@ class Gui(Frame):
             self.statusMessage.set("File Saved: %s" % (filename))
             self.statusbar.configure(bg='white')
 
+
     def menu_File_Save_DXF_File_close_loops(self):
         self.menu_File_Save_DXF_File(close_loops=True)
+
 
     def menu_File_Save_DXF_File(self, close_loops=False):
 
@@ -2473,12 +2504,15 @@ class Gui(Frame):
             self.statusMessage.set("File Saved: %s" % (filename))
             self.statusbar.configure(bg='white')
 
+
     def menu_File_Quit(self):
         if message_ask_ok_cancel("Exit", "Exiting F-Engrave...."):
             self.Quit_Click(None)
 
+
     def menu_View_Refresh_Callback(self, varName, index, mode):
         self.menu_View_Refresh()
+
 
     def menu_View_Refresh(self):
         if (not self.batch.get()) and self.initComplete and (not self.delay_calc):
@@ -2486,8 +2520,10 @@ class Gui(Frame):
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, 1)
 
+
     def menu_mode_change_Callback(self, varName, index, mode):
         self.menu_View_Refresh()
+
 
     def menu_mode_change(self):
         self.delay_calc = True
@@ -3725,17 +3761,6 @@ class Gui(Frame):
         if not self.batch.get():
             self.plot_data()
 
-    def get_flop_status(self, CLEAN_FLAG=False):
-        v_flop = bool(self.v_flop.get())
-
-        if self.input_type.get() == "text" and CLEAN_FLAG == False:
-            if self.plotbox.get():
-                v_flop = not(v_flop) 
-            if self.mirror.get():
-                v_flop = not(v_flop)
-            if self.flip.get():
-                v_flop = not(v_flop)
-        return v_flop
 
     def v_carve_it(self, clean_flag=False, DXF_FLAG=False):
 
@@ -3752,7 +3777,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
             
-        if clean_flag == False:
+        if not clean_flag:
             self.do_it()
             self.model.init_clean_coords()
         elif self.model.clean_coords_sort != [] or self.model.v_clean_coords_sort != []:
@@ -3783,7 +3808,7 @@ class Gui(Frame):
             if DXF_FLAG:
                 return
 
-            done = self.model.v_carve(self.get_flop_status(), clean_flag, DXF_FLAG)
+            done = self.model.v_carve(clean_flag, DXF_FLAG)
 
             #Reset Entry Fields in V-Carve Settings
             if not self.batch.get():
@@ -3805,16 +3830,18 @@ class Gui(Frame):
                 
         self.master.bind("<Configure>", self.Master_Configure)
 
-    ################################################################################
-    #                         Bitmap Settings Window                              #
-    ################################################################################
-    #Algorithm options:
-    # -z, --turnpolicy policy    - how to resolve ambiguities in path decomposition
-    # -t, --turdsize n           - suppress speckles of up to this size (default 2)
-    # -a, --alphama n           - corner threshold parameter (default 1)
-    # -n, --longcurve            - turn off curve optimization
-    # -O, --opttolerance n       - curve optimization tolerance (default 0.2)
     def PBM_Settings_Window(self):
+        '''
+        ################################################################################
+        #                         Bitmap Settings Window                               #
+        ################################################################################
+        Algorithm options:
+        -z, --turnpolicy policy    - how to resolve ambiguities in path decomposition
+        -t, --turdsize n           - suppress speckles of up to this size (default 2)
+        -a, --alphama n           - corner threshold parameter (default 1)
+        -n, --longcurve            - turn off curve optimization
+        -O, --opttolerance n       - curve optimization tolerance (default 0.2)
+        '''
         pbm_settings = Toplevel(width=525, height=250)
         pbm_settings.grab_set() # Use grab_set to prevent user input in the main window during calculations
         pbm_settings.resizable(0,0)
@@ -3836,13 +3863,13 @@ class Gui(Frame):
         self.Label_BMPturnpol.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
 
         self.BMPturnpol_OptionMenu = OptionMenu(pbm_settings, self.bmp_turnpol,
-                                                    "black",
-                                                    "white",
-                                                    "right",
-                                                     "left",
-                                                     "minority",
-                                                     "majority",
-                                                     "random")
+                                                "black",
+                                                "white",
+                                                "right",
+                                                "left",
+                                                "minority",
+                                                "majority",
+                                                "random")
         self.BMPturnpol_OptionMenu.place(x=xd_entry_L, y=D_Yloc, width=w_entry+40, height=23)
 
         D_Yloc = D_Yloc+D_dY
@@ -4047,9 +4074,12 @@ class Gui(Frame):
         D_Yloc = D_Yloc + D_dY
         self.Label_var_dis = Label(gen_settings, text="Disable Variables")
         self.Label_var_dis.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
+        self.Label_var_dis_ToolTip = ToolTip(self.Label_var_dis, text= \
+            'Disable the use of variables in the generated G-Code.')
         self.Checkbutton_var_dis = Checkbutton(gen_settings, text="", anchor=W)
         self.Checkbutton_var_dis.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
         self.Checkbutton_var_dis.configure(variable=self.var_dis)
+        self.var_dis.trace_variable("w", self.Checkbutton_var_dis_Callback)
 
         D_Yloc = D_Yloc + D_dY
         font_entry_width = 215
@@ -4101,6 +4131,9 @@ class Gui(Frame):
         self.Label_BoxGap_u = Label(gen_settings, textvariable=self.units, anchor=W)
         self.Label_BoxGap_u.place(x=w_label + x_radio_offset + 230, y=D_Yloc, width=100, height=21)
         self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
+
+        #TODO Tkinter Checkbutton default values are 0/1, this seems to go with False and True, as used in settings.
+        #TODO Find out whether it is better to explicitly set on/off value to True respectively False
 
         D_Yloc = D_Yloc + D_dY
         self.Label_v_pplot = Label(gen_settings, text="Plot During V-Carve Calculation")
@@ -4413,12 +4446,19 @@ class Gui(Frame):
         self.Checkbutton_clean_P = Checkbutton(vcarve_settings, text="P", anchor=W)
         self.Checkbutton_clean_P.configure(variable=self.clean_P)
         self.Checkbutton_clean_P.place(x=xd_entry_L, y=D_Yloc, width=w_entry + 40, height=23)
+        self.Checkbutton_clean_P_ToolTip = ToolTip(self.Checkbutton_clean_P, text= \
+            'Cut the perimeter of the uncut area.')
+        self.clean_P.trace_variable("w", self.Checkbutton_clean_P_Callback)
+
         self.Checkbutton_clean_X = Checkbutton(vcarve_settings, text="X", anchor=W)
         self.Checkbutton_clean_X.configure(variable=self.clean_X)
         self.Checkbutton_clean_X.place(x=xd_entry_L + check_delta, y=D_Yloc, width=w_entry + 40, height=23)
+        self.clean_X.trace_variable("w", self.Checkbutton_clean_X_Callback)
+
         self.Checkbutton_clean_Y = Checkbutton(vcarve_settings, text="Y", anchor=W)
         self.Checkbutton_clean_Y.configure(variable=self.clean_Y)
         self.Checkbutton_clean_Y.place(x=xd_entry_L + check_delta * 2, y=D_Yloc, width=w_entry + 40, height=23)
+        self.clean_Y.trace_variable("w", self.Checkbutton_clean_Y_Callback)
 
         D_Yloc = D_Yloc + 12
 

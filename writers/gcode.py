@@ -1,10 +1,11 @@
+import sys
 from math import hypot, tan, radians, sqrt
 
 from geometry import *
 from geometry.pathsorter import sort_paths
 from geometry.linearcfitter import line_arc_fit
 
-from util import fmessage
+from util import fmessage, icon
 
 
 def gcode(job):
@@ -12,7 +13,7 @@ def gcode(job):
 
     code = []
 
-    code.append(settings.to_gcode())
+    code += settings.to_gcode()
 
     code.append("(#########################################################)")
 
@@ -33,9 +34,7 @@ def gcode(job):
     for line in settings.get('gcode_preamble').split('|'):
         code.append(line)
 
-    print 'cut_type: ', settings.get('cut_type')
-
-    # The actual cutting is done here.
+    # The actual cutting is done here:
     if settings.get('cut_type') == "engrave":
         code.extend(engrave_gcode(job))
     else:
@@ -65,7 +64,7 @@ def engrave_gcode(job):
     SafeZ = settings.get('zsafe')
     Depth = settings.get('zcut')
 
-    if not settings.get('var_dis'):
+    if settings.get('var_dis'):
         FORMAT = '%%.%df' % dp
         safe_val = FORMAT % SafeZ
         depth_val = FORMAT % Depth
@@ -152,10 +151,11 @@ def engrave_gcode(job):
                 if dist > accuracy:
                     # lift engraver
                     code.append("G0 Z%s" % settings.get('zsafe'))
-                    # rapid to current position
 
+                    # rapid to current position
                     FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
                     code.append(FORMAT % (x1, y1))
+
                     # drop cutter
                     code.append('G1 Z%s' % (depth_val))
 
@@ -253,7 +253,7 @@ def vcarve_gcode(job):
     SafeZ = settings.get('zsafe')
     Depth = settings.get('zcut')
 
-    g_target = lambda s: sys.stdout.write(s + "\n")
+    #g_target = lambda s: sys.stdout.write(s + "\n")
 
     g = Gcode(safetyheight=SafeZ,
               tolerance=accuracy,
@@ -263,18 +263,22 @@ def vcarve_gcode(job):
     g.dpfeed = dpfeed
     g.set_plane(17)
 
-    if not settings.get('var_dis'):
+    if settings.get('var_dis'):
         FORMAT = '%%.%df' % dp
         safe_val = FORMAT % SafeZ
-        depth_val = FORMAT % Depth
+        # depth_val = FORMAT % Depth
     else:
-        raise Exception('Not implemented')
         FORMAT = '#1 = %%.%df  ( Safe Z )' % (dp)
         code.append(FORMAT % SafeZ)
         FORMAT = '#2 = %%.%df  ( Engraving Depth Z )' % (dp)
         code.append(FORMAT % Depth)
         safe_val = '#1'
-        depth_val = '#2'
+        # depth_val = '#2'
+
+    FORMAT = 'F%%.%df  ( Set Feed Rate )' % dpfeed
+    code.append("(#########################################################)")
+    code.append(FORMAT % settings.get('feedrate'))
+    code.append('G0 Z%s' % safe_val)
 
     #########################
     ###  find loop ends   ###
@@ -381,7 +385,7 @@ def vcarve_gcode(job):
                     z1 = -r1 / tan(half_angle)
                     nextz = -nextr / tan(half_angle)
                     if settings.get('inlay'):
-                        inlay_depth = calc_r_inlay_depth()
+                        inlay_depth = settings.get('inlay')
                         z1 = z1 + inlay_depth
                         nextz = nextz + inlay_depth
                 elif bit_shape == "BALL":
@@ -445,7 +449,7 @@ def vcarve_gcode(job):
     return code
 
 
-def write_clean_up(self):
+def write_clean_up(job):
     '''Write Cleanup G-code File'''
 
     settings = job.settings
@@ -458,11 +462,11 @@ def write_clean_up(self):
     # VBIT, BALL, or FLAT
     bit_shape = settings.get('bit_shape')
 
-    self.calc_depth_limit()
-    Depth = float(self.maxcut.get())
+    calc_depth_limit(job)
+    Depth = settings.get('v_max_cut')
 
     if settings.get('inlay'):
-        Depth = Depth + float(self.allowance.get())
+        Depth = Depth + settings.get('allowance')
 
     Units = settings.get('units')
 
@@ -477,7 +481,7 @@ def write_clean_up(self):
         code.append('( This file is a secondary operation for )')
         code.append('( cleaning up a V-carve. )')
 
-        #TODO is "BALL" shape an option for cleaning
+        #TODO is "BALL" shape an option for cleaning?
         if bit_shape == "FLAT":
             code.append('( The tool paths were calculated based )')
             code.append('( on using a bit with a )')
@@ -485,7 +489,7 @@ def write_clean_up(self):
         else:
             code.append('( The tool paths were calculated based )')
             code.append('( on using a v-bit with a)')
-            code.append('( angle of %.4f Degrees)' % (float(self.v_bit_angle.get())))
+            code.append('( angle of %.4f Degrees)' % settings.get('v_bit_angle'))
 
         code.append("(==========================================)")
 
@@ -649,10 +653,47 @@ def write_clean_up(self):
 
     code.append('G0 Z%s' % (safe_val))  # final engraver up
 
-    for line in self.gpost.get().split('|'):
-        code.append(line)
-
     return code
+
+
+def calc_depth_limit(job):
+    try:
+        settings = job.settings
+        bit_shape = settings.get('bit_shape')
+
+        if bit_shape == "VBIT":
+            half_angle = radians( settings.get('v_bit_angle') / 2.0 )
+            bit_depth = -settings.get('v_bit_dia') / 2.0 / tan(half_angle)
+        elif bit_shape == "BALL":
+            bit_depth = -settings.get('v_bit_dia') / 2.0
+        elif bit_shape() == "FLAT":
+            bit_depth = -settings.get('v_bit_dia') / 2.0
+        else:
+            pass
+
+        depth_lim = settings.get('v_depth_lim')
+        if bit_shape == "FLAT":
+            if depth_lim < 0.0:
+                # self.maxcut.set("%.3f" % (depth_lim))
+                settings.set('max_cut', "%.3f" % depth_lim)
+            else:
+                # self.maxcut.set("%.3f" % (bit_depth))
+                settings.set('max_cut', "%.3f" % bit_depth)
+        else:
+            if depth_lim < 0.0:
+                # self.maxcut.set("%.3f" % (max(bit_depth, depth_lim)))
+                settings.set('max_cut', "%.3f" % max(bit_depth, depth_lim))
+            else:
+                # self.maxcut.set("%.3f" % (bit_depth))
+                settings.set('max_cut', "%.3f" % bit_depth)
+
+        # TODO set maxcut in GUI (using settings)
+        # self.maxcut.set("%.3f" % (depth_lim))
+        # settings.get('max_cut')
+
+    except:
+        # self.maxcut.set("error")
+        settings.set('max_cut', "error")
 
 
 def calc_r_inlay_top(job):
@@ -660,11 +701,6 @@ def calc_r_inlay_top(job):
     inlay_depth = job.settings.get('inlay')
     r_inlay_top = tan(half_angle) * inlay_depth
     return r_inlay_top
-
-
-def calc_r_inlay_depth(self):
-    inlay_depth = job.settings.get('inlay')
-    return inlay_depth
 
 
 class Gcode:
@@ -728,11 +764,13 @@ class Gcode:
         self._move_common(x, y, z, gcode="G0")
 
     def _move_common(self, x=None, y=None, z=None, I=None, J=None, gcode="G0"):
-        '''G0 and G1 moves'''
+        '''
+        G0 and G1 moves
+        '''
         gcodestring = xstring = ystring = zstring = Istring = Jstring = Rstring = fstring = ""
-        if x == None: x = self.lastx
-        if y == None: y = self.lasty
-        if z == None: z = self.lastz
+        if x is None: x = self.lastx
+        if y is None: y = self.lasty
+        if z is None: z = self.lastz
 
         if (self.feed != self.lastf):
             fstring = self.feed

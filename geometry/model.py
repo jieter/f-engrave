@@ -1,8 +1,9 @@
 from time import time
 from math import fabs, floor, sqrt
-from geometry import *
-from util import fmessage
 
+from util import fmessage
+from geometry import *
+import writers
 
 class Model():
 
@@ -80,10 +81,8 @@ class Model():
         return total_length
 
 
-    #########################################
-    # V-Carve Stuff
-    #########################################
-    def v_carve(self, v_flop, clean_flag=False, DXF_FLAG=False):
+    def v_carve(self, clean_flag=False, DXF_FLAG=False):
+        '''V-Carve Stuff'''
 
         #set variable for first point in loop
         xa = 9999
@@ -101,6 +100,7 @@ class Model():
         theta = 9999.0
         loop_cnt = 0 # the number of loops in this model
 
+        v_flop = self.get_flop_status(clean_flag)
         if v_flop:
             v_inc = -1
             v_index = self.number_of_segments()
@@ -116,16 +116,16 @@ class Model():
             i_x2 = 2
             i_y2 = 3
 
-        not_b_carve = not bool(self.settings.get('bit_shape') == "BALL")
+        not_b_carve = not bool( self.settings.get('bit_shape') == "BALL" )
 
         CHK_STRING = self.settings.get('v_check_all')
-        #TODO is check not set before, else add set check in settings
+        #TODO has check not been set before, else add set check in settings
         if self.settings.get('input_type') != "text":
             CHK_STRING = "all"
 
         bit_angle = self.settings.get('v_bit_angle')
 
-        #TODO get rid of controller dependency
+        #TODO get rid of controller dependencies
         #vbit_dia = self.settings.get('v_bit_dia')
         rbit = self.controller.calc_vbit_dia()/2.0
 
@@ -138,11 +138,10 @@ class Model():
         if self.settings.get('inlay'):
             v_drv_corner = 360 - v_step_corner
         else:
-            v_drv_corner = float(self.controller.v_drv_corner.get())
+            v_drv_corner = self.settings.get('v_drv_corner')
                     
-        #TODO get rid of controller dependency
-        clean_dia = float(self.controller.clean_dia.get())
-        r_inlay_top = self.controller.calc_r_inlay_top()
+        clean_dia = self.settings.get('clean_dia')
+        # r_inlay_top = self.controller.calc_r_inlay_top()
         if clean_flag:
             rmax = rbit + clean_dia/2
         else:
@@ -153,7 +152,7 @@ class Model():
         xLength = self.maxX-self.minX
         yLength = self.maxY-self.minY
         
-        #TODO get rid of controller dependency
+        #TODO get rid of controller dependencies
         cszw = int(self.controller.PreviewCanvas.cget("width"))
         cszh = int(self.controller.PreviewCanvas.cget("height"))
             
@@ -515,9 +514,9 @@ class Model():
 
     def record_v_carve_data(self, x1, y1, phi, rout, loop_cnt, clean_flag):
 
-        #TODO preferences instead of Application
+        #TODO get rid of controller dependencies
         rbit = self.controller.calc_vbit_dia() / 2.0
-        r_clean = float(self.controller.clean_dia.get())/2.0
+        # r_clean = float(self.controller.clean_dia.get())/2.0
         
         Lx, Ly = transform(0,rout,-phi)
         xnormv = x1+Lx
@@ -1139,6 +1138,7 @@ class Model():
 
         return Xclean_coords_out, Xclean_coords_short_out
 
+
     def _clean_coords_to_path_coords(self, clean_coords_in):
         path_coords_out = []
         # Clean coords format ([xnormv, ynormv, rout, loop_cnt]) - self.clean_coords
@@ -1153,9 +1153,10 @@ class Model():
                                         0])
         return path_coords_out
 
-    def _clean_path_calc(self, bit_type="straight"):
 
-        v_flop = self.get_flop_status(CLEAN_FLAG=True)
+    def clean_path_calc(self, rbit, bit_type="straight"):
+
+        v_flop = self.get_flop_status(CLEAN=True)
         if v_flop:
             edge = 1
         else:
@@ -1167,22 +1168,27 @@ class Model():
         # reorganize clean_coords             #
         #######################################
         if bit_type == "straight":
-            test_clean = self.clean_P.get() + self.clean_X.get() + self.clean_Y.get()
+            test_clean = self.settings.get('clean_P') + \
+                         self.settings.get('clean_X') + \
+                         self.settings.get('clean_Y')
         else:
-            test_clean = self.v_clean_P.get() + self.v_clean_Y.get() + self.v_clean_X.get()
-
-        rbit = self.calc_vbit_dia() / 2.0
+            test_clean = self.settings.get('v_clean_P') + \
+                         self.settings.get('v_clean_X') + \
+                         self.settings.get('v_clean_Y')
 
         check_coords = []
 
         self.statusbar.configure(bg='yellow')
+
         if bit_type == "straight":
+            #TODO get rid of controller dependency
             self.controller.statusMessage.set('Calculating Cleanup Cut Paths')
             self.controller.master.update()
+
             self.clean_coords_sort = []
-            clean_dia = float(self.clean_dia.get())  # diameter of cleanup bit
-            v_step_len = float(self.v_step_len.get())
-            step_over = float(self.clean_step.get())  # percent of cut DIA
+            clean_dia = self.settings.get('clean_dia')  # diameter of cleanup bit
+            v_step_len = self.settings.get('v_step_len')
+            step_over = self.settings.get('clean_step')  # percent of cut DIA
             clean_step = step_over / 100.0
             Radjust = clean_dia / 2.0 + rbit
             check_coords = self.clean_coords
@@ -1192,17 +1198,21 @@ class Model():
             skip = 1
             clean_step = 1.0
 
-            self.master.update()
+            #TODO get rid of controller dependencies
+            # self.master.update()
+            self.controller.update()
+
             self.v_clean_coords_sort = []
 
-            clean_dia = float(self.clean_v.get())  # effective diameter of clean-up v-bit
+            clean_dia = self.settings.get('clean_dia')  # effective diameter of clean-up v-bit
             if float(clean_dia) < Zero:
                 return
+
             # The next line allows the cutter to get within 1/4 of the
             # v-clean step of the v-carved surface.
             offset = clean_dia / 4.0
             Radjust = rbit + offset
-            flat_clean_r = float(self.clean_dia.get()) / 2.0
+            flat_clean_r = self.settings.get('clean_dia') / 2.0
             for line in self.clean_coords:
                 XY = line
                 R = XY[2] - Radjust
@@ -1210,7 +1220,7 @@ class Model():
                     check_coords.append(XY)
 
         clean_coords_out = []
-        if self.cut_type.get() == "v-carve" and len(self.clean_coords) > 1 and test_clean > 0:
+        if self.settings.get('cut_type') == "v-carve" and len(self.clean_coords) > 1 and test_clean > 0:
             DX = clean_dia * clean_step
             DY = DX
 
@@ -1226,8 +1236,8 @@ class Model():
             ## NEW STUFF FOR STRAIGHT BIT ##
             if bit_type == "straight":
                 MaxLoop = 0
-                clean_dia = float(self.clean_dia.get())  # diameter of cleanup bit
-                step_over = float(self.clean_step.get())  # percent of cut DIA
+                clean_dia = self.settings.get('clean_dia')  # diameter of cleanup bit
+                step_over = self.settings.get('clean_step')  # percent of cut DIA
                 clean_step = step_over / 100.0
                 Rperimeter = rbit + (clean_dia / 2.0)
 
@@ -1289,11 +1299,11 @@ class Model():
                     y_pmax = max(y_pmax, P_coords[i][1])
                 loop_cnt_out = loop_cnt_out + MaxLoop
 
-                if self.clean_P.get() == 1:
+                if self.settings.get('clean_P') == 1:
                     clean_coords_out = P_coords
 
                 offset = DX / 2.0
-                if self.clean_X.get() == 1:
+                if self.settings.get('clean_X')  == 1:
                     y_pmax = y_pmax - offset
                     y_pmin = y_pmin + offset
                     Ysize = y_pmax - y_pmin
@@ -1316,7 +1326,7 @@ class Model():
                                     Xclean_coords.append([x1 + offset, y1, loop_cnt])
                                     Xclean_coords.append([x2 - offset, y2, loop_cnt])
 
-                if self.clean_Y.get() == 1:
+                if self.settings.get('clean_Y') == 1:
                     x_pmax = x_pmax - offset
                     x_pmin = x_pmin + offset
                     Xsize = x_pmax - x_pmin
@@ -1347,19 +1357,19 @@ class Model():
                 #########################################################################
                 # Find ends of horizontal lines for carving clean-up
                 #########################################################################
-                Xclean_perimeter, Xclean_coords = self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip,
-                                                                   "X")
+                Xclean_perimeter, Xclean_coords = \
+                    self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip, "X")
 
                 #########################################################################
                 # Find ends of Vertical lines for carving clean-up
                 #########################################################################
-                Yclean_perimeter, Yclean_coords = self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip,
-                                                                   "Y")
+                Yclean_perimeter, Yclean_coords = \
+                    self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip, "Y")
 
                 #######################################################
                 # Find new order based on distance                    #
                 #######################################################
-                if self.v_clean_P.get() == 1:
+                if self.settings.get('v_clean_P') == 1:
                     ########################################
                     ecoords = []
                     for line in Xclean_perimeter:
@@ -1431,10 +1441,11 @@ class Model():
             ###########################################################
             # Now deal with the horizontal line cuts
             ###########################################################
-            if (self.clean_X.get() == 1 and bit_type != "v-bit") or \
-                    (self.v_clean_X.get() == 1 and bit_type == "v-bit"):
+            if (self.settings.get('clean_X') == 1 and bit_type != "v-bit") or \
+                    (self.settings.get('v_clean_X') == 1 and bit_type == "v-bit"):
                 x_old = -999
                 y_old = -999
+
                 order_out = sort_paths(Xclean_coords)
                 loop_old = -1
                 for line in order_out:
@@ -1460,8 +1471,8 @@ class Model():
             ###########################################################
             # Now deal with the vertical line cuts
             ###########################################################
-            if (self.clean_Y.get() == 1 and bit_type != "v-bit") or \
-                    (self.v_clean_Y.get() == 1 and bit_type == "v-bit"):
+            if (self.settings.get('clean_Y')  == 1 and bit_type != "v-bit") or \
+                    (self.settings.get('v_clean_Y')  == 1 and bit_type == "v-bit"):
                 x_old = -999
                 y_old = -999
                 order_out = sort_paths(Yclean_coords)
@@ -1499,3 +1510,18 @@ class Model():
         self.controller.statusMessage.set('Done Calculating Cleanup Cut Paths')
         self.controller.statusbar.configure(bg='white')
         self.controller.master.update_idletasks()
+
+
+    def get_flop_status(self, CLEAN=False):
+
+        v_flop = self.settings.get('v_flop')
+
+        if self.settings.get('input_type') == "text" and CLEAN == False:
+            if self.settings.get('plotbox'):
+                v_flop = not (v_flop)
+            if self.settings.get('mirror'):
+                v_flop = not (v_flop)
+            if self.settings.get('flip'):
+                v_flop = not (v_flop)
+
+        return v_flop

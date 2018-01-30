@@ -2,6 +2,8 @@ import sys
 import os
 
 import externals
+#import icon
+from icon import *
 
 IN_AXIS = "AXIS_PROGRESS_BAR" in os.environ
 
@@ -40,7 +42,6 @@ except Exception, e:
     fmessage(e)
 
 
-#TODO remove?
 def message_box(title, message):
     if VERSION == 3:
         tkinter.messagebox.showinfo(title, message)

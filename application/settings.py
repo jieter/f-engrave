@@ -103,7 +103,7 @@ class Settings(object):
         'b_carve': False,
 
         # TODO is "BALL" shape valid, or is this covered by b_carve?
-        # options: "VBIT", "FLAT", "BALL"
+        # options: 'VBIT', 'FLAT', 'BALL'
         'bit_shape': 'VBIT',
 
         # plot during v-carve calculation [GUI]
@@ -112,16 +112,19 @@ class Settings(object):
         'inlay': False,
         'no_comments': True,
 
-        # arc fitting, options "none", "center", "radius"
+        # arc fitting, options 'none', 'center', 'radius'
         'arc_fit': 'none',
         'ext_char': False,
 
         # disable variables in gcode [GCODE]
-        'var_dis': False,
+        'var_dis': True,
 
+        # cleanup cut directions
         'clean_P': True,
         'clean_X': True,
         'clean_Y': False,
+
+        # V-Bit cut directions
         'v_clean_P': False,
         'v_clean_X': True,
         'v_clean_Y': False,
@@ -141,10 +144,10 @@ class Settings(object):
 
         'line_thickness': 0.25,
 
-        # options:  "Default",
-        # "Top-Left", "Top-Center", "Top-Right",
-        # "Mid-Left", "Mid-Center", "Mid-Right",
-        # "Bot-Left", "Bot-Center", "Bot-Right"
+        # options:  'Default',
+        # 'Top-Left', 'Top-Center', 'Top-Right',
+        # 'Mid-Left', 'Mid-Center', 'Mid-Right',
+        # 'Bot-Left', 'Bot-Center', 'Bot-Right'
         'origin': 'Default',
 
         # options: 'Left', 'Right', 'Center'
@@ -182,7 +185,6 @@ class Settings(object):
         # v-cutter parameters
         'v_bit_angle': 60,
         'v_bit_dia': 3.0,
-
         'v_depth_lim': 0.0,
         'v_drv_corner': 135,
         'v_step_corner': 200,
@@ -190,17 +192,15 @@ class Settings(object):
 
         # V-carve loop accuracy
         'v_acc': 0.001,
-
         'allowance': 0.0,
 
         # options: 'chr', 'all'
         'v_check_all': 'all',
 
-        # TODO long name
         'v_rough_stk': 0.0,
         'v_max_cut': 0.0,
 
-        # options: black, white, right, left, minority, majority, or random
+        # options: 'black', 'white', 'right', 'left', 'minority', 'majority', or 'random'
         'bmp_turnpol': 'minority',
         'bmp_turdsize': 2,
         'bmp_alphamax': 1,
@@ -307,10 +307,9 @@ class Settings(object):
 
     def to_gcode(self):
         #return '\n'.join(
-        return [
-            CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))
-            for key, value in self._settings.items()
-        ]
+        gcode = [CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n')) \
+                 for key, value in self._settings.items()]
+        return gcode
 
     def __str__(self):
         return 'Settings:\n' + ('\n'.join([', '.join(map(str, l)) for l in self._settings.items()]))
