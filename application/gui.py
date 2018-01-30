@@ -1,4 +1,5 @@
 import getopt
+import datetime
 from time import time
 import webbrowser
 
@@ -320,7 +321,8 @@ class Gui(Frame):
         self.Entry_Sthick.bind('<Return>', self.Recalculate_Click)
         self.STHICK.trace_variable("w", self.Entry_Sthick_Callback)
         self.Label_Sthick_ToolTip = ToolTip(self.Label_Sthick, text= \
-            'Thickness or width of engraved lines. Set this to your engraving cutter diameter.  This setting only affects the displayed lines not the g-code output.')
+            'Thickness or width of engraved lines. Set this to your engraving cutter diameter.  \
+            This setting only affects the displayed lines not the g-code output.')
 
         self.Label_Xscale = Label(self.master, text="Text Width", anchor=CENTER)
         self.Label_Xscale_u = Label(self.master, text="%", anchor=W)
@@ -359,7 +361,9 @@ class Gui(Frame):
         self.Entry_Lspace.bind('<Return>', self.Recalculate_Click)
         self.LSPACE.trace_variable("w", self.Entry_Lspace_Callback)
         self.Label_Lspace_ToolTip = ToolTip(self.Label_Lspace, text= \
-            'The vertical spacing between lines of text. This is a multiple of the text height previously input. A vertical spacing of 1.0 could result in consecutive lines of text touching each other if the maximum height character is directly below a character that extends the lowest (like a "g").')
+            'The vertical spacing between lines of text. This is a multiple of the text height previously input. \
+            A vertical spacing of 1.0 could result in consecutive lines of text touching each other if the maximum \
+            height character is directly below a character that extends the lowest (like a "g").')
 
         self.Label_pos_orient = Label(self.master, text="Text Position and Orientation:", anchor=W)
 
@@ -416,21 +420,24 @@ class Gui(Frame):
         self.Entry_Tradius.bind('<Return>', self.Recalculate_Click)
         self.TRADIUS.trace_variable("w", self.Entry_Tradius_Callback)
         self.Label_Tradius_ToolTip = ToolTip(self.Label_Tradius, text= \
-            'Circle radius is the radius of the circle that the text in the input box is placed on. If the circle radius is set to 0.0 the text is not placed on a circle.')
+            'Circle radius is the radius of the circle that the text in the input box is placed on. \
+            If the circle radius is set to 0.0 the text is not placed on a circle.')
 
         self.Label_outer = Label(self.master, text="Outside circle")
         self.Checkbutton_outer = Checkbutton(self.master, text=" ", anchor=W)
         self.Checkbutton_outer.configure(variable=self.outer)
         self.outer.trace_variable("w", self.Entry_recalc_var_Callback)
         self.Label_outer_ToolTip = ToolTip(self.Label_outer, text= \
-            'Select whether the text is placed so that is falls on the inside of the circle radius or the outside of the circle radius.')
+            'Select whether the text is placed so that is falls on the inside of the circle radius or the outside \
+            of the circle radius.')
 
         self.Label_upper = Label(self.master, text="Top of Circle")
         self.Checkbutton_upper = Checkbutton(self.master, text=" ", anchor=W)
         self.Checkbutton_upper.configure(variable=self.upper)
         self.upper.trace_variable("w", self.Entry_recalc_var_Callback)
         self.Label_upper_ToolTip = ToolTip(self.Label_upper, text= \
-            'Select whether the text is placed on the top of the circle of on the bottom of the circle (i.e. concave down or concave up).')
+            'Select whether the text is placed on the top of the circle of on the bottom of the circle \
+            (i.e. concave down or concave up).')
 
         self.separator1 = Frame(height=2, bd=1, relief=SUNKEN)
         self.separator2 = Frame(height=2, bd=1, relief=SUNKEN)
@@ -456,7 +463,8 @@ class Gui(Frame):
         self.Entry_Plunge.bind('<Return>', self.Recalculate_Click)
         self.PLUNGE.trace_variable("w", self.Entry_Plunge_Callback)
         self.Label_Plunge_ToolTip = ToolTip(self.Label_Plunge, text= \
-            'Plunge Rate sets the feed rate for vertical moves into the material being cut.\n\nWhen Plunge Rate is set to zero plunge feeds are equal to Feed Rate.')
+            'Plunge Rate sets the feed rate for vertical moves into the material being cut.\n\n\
+            When Plunge Rate is set to zero plunge feeds are equal to Feed Rate.')
 
         self.Label_Zsafe = Label(self.master, text="Z Safe")
         self.Label_Zsafe_u = Label(self.master, textvariable=self.units, anchor=W)
@@ -537,7 +545,7 @@ class Gui(Frame):
         self.Input.bind("<Key>", self.recalculate_RQD_Nocalc)
         ## self.master.unbind("<Alt>")
 
-        # GEN Setting Window Entry initialization
+        # GENERAL Settings Window Entry initialization
         self.Entry_Xoffset = Entry()
         self.Entry_Yoffset = Entry()
         self.Entry_BoxGap = Entry()
@@ -761,14 +769,20 @@ class Gui(Frame):
             return 0
         return 1
 
-    #TODO Compare to save_settings
     def write_config_file(self, event):
 
-        self.gcode = self.settings.to_gcode()
+        self.gcode = []
+
+        # todays_date = datetime.date.today().strftime("%B %d, %Y")
+        todays_date = datetime.datetime.now().strftime("%I:%M %p %B %d, %Y")
+        self.gcode.append("(#########################################################)")
+        self.gcode.append('( F-Engrave settings, saved %s )' % todays_date)
+        self.gcode.append("(#########################################################)")
+
+        self.gcode.extend( self.settings.to_gcode() )
 
         config_filename = self.settings.get('config_filename')
         configname_full = self.settings.get('HOME_DIR')+ "/" + config_filename
-
         win_id = self.grab_current()
         if (os.path.isfile(configname_full)):
             if not message_ask_ok_cancel("Replace", "Replace Exiting Configuration File?\n" + configname_full):
@@ -785,6 +799,7 @@ class Gui(Frame):
             self.statusMessage.set("Unable to open file for writing: %s" % (configname_full))
             self.statusbar.configure(bg='red')
             return
+
         for line in self.gcode:
             try:
                 fout.write(line + '\n')
@@ -793,6 +808,7 @@ class Gui(Frame):
         fout.close()
         self.statusMessage.set("Configuration File Saved: %s" % (configname_full))
         self.statusbar.configure(bg='white')
+
         try:
             win_id.withdraw()
             win_id.deiconify()
@@ -800,8 +816,9 @@ class Gui(Frame):
             pass
 
     # TODO move to Writers
+
     def WriteSVG(self):
-        '''Write SVG'''
+
         if self.cut_type.get() == "v-carve":
             Thick = 0.001
         else:
@@ -882,8 +899,9 @@ class Gui(Frame):
         self.svgcode.append('</svg>')
 
     #TODO move to Writers
+
     def WriteDXF(self,close_loops=False):
-        '''Write G-Code DXF'''
+
         if close_loops:
             self.v_carve_it(clean_flag=False, DXF_FLAG=close_loops)
         
@@ -975,8 +993,8 @@ class Gui(Frame):
         dxf_code.append("0")
         dxf_code.append("ENDSEC")
         
-        #This block section is not necessary but apperantly it's good form to include one anyway.
-        #The following is an empty block section.
+        # This block section is not necessary but apperantly it's good form to include one anyway.
+        # The following is an empty block section.
         dxf_code.append("0")
         dxf_code.append("SECTION")
         dxf_code.append("2")
@@ -1044,7 +1062,6 @@ class Gui(Frame):
         ## END G-CODE WRITING for Dxf_Write ##
         ######################################
         return dxf_code
-
 
     def CopyClipboard_GCode(self):
         self.clipboard_clear()
@@ -1183,7 +1200,7 @@ class Gui(Frame):
             win_id.grab_set()
         except:
             pass
-        # print "time for cleanup calculations: ",time()-TSTART
+        # print "time for cleanup calculations: ",time()-TSTART # TEST
 
     def Write_Clean_Click(self):
         win_id = self.grab_current()
@@ -1823,8 +1840,8 @@ class Gui(Frame):
             pass
 
     def Entry_Bit_Shape_var_Callback(self, varName, index, mode):
-        self.settings.set('bit_shape', self.bit_shape.get())
         self.Entry_Bit_Shape_Check()
+        self.settings.set('bit_shape', self.bit_shape.get())
 
     ######################################
     # Bitmap Settings Window Call Backs  #
@@ -2047,7 +2064,7 @@ class Gui(Frame):
         self.settings.set('units', self.units.get())
         self.Recalc_RQD()
 
-    #TODO update settings? or is this taken care of by the Tk callback?
+    #TODO update settings? or is this taken care of by the Tk widgets trace?
     def Scale_Linear_Inputs(self, factor=1.0):
         try:
             self.YSCALE.set(     '%.3g' %(float(self.YSCALE.get()     )*factor) )
@@ -2229,7 +2246,6 @@ class Gui(Frame):
         self.initialise_settings()
 
         text_codes=[]
-        #file_full = self.fontdir.get() + "/" + self.fontfile.get()
         file_full = self.settings.get_fontfile()
         fileName, fileExtension = os.path.splitext(file_full)
         TYPE = fileExtension.upper()
@@ -2275,8 +2291,9 @@ class Gui(Frame):
 
         self.calc_depth_limit()
 
-        temp_name, fileExtension = os.path.splitext(filename)
-        file_base = os.path.basename(temp_name)
+        #TODO cleanup
+        # temp_name, fileExtension = os.path.splitext(filename)
+        # file_base = os.path.basename(temp_name)
 
         self.delay_calc = False
         if self.initComplete:
@@ -2381,7 +2398,7 @@ class Gui(Frame):
             return
 
         #self.WRITE_CLEAN_UP(bit_type)
-        self.gcode = write_clean_up(self.model)
+        self.gcode = write_clean_up(self.model, bit_type)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -2958,7 +2975,6 @@ class Gui(Frame):
             self.plot_data()
 
 
-    #TODO move to geometry?
     def coord_scale(self, x, y, xscale, yscale):
         '''
         routine takes an x and a y scales are applied and returns new x,y tuple
@@ -3106,7 +3122,6 @@ class Gui(Frame):
         # V-carve Plotting Stuff
         #########################################
         if self.cut_type.get() == "v-carve":
-            loop_old = -1
             r_inlay_top = self.calc_r_inlay_top()
 
             for line in self.model.vcoords:
@@ -3397,8 +3412,6 @@ class Gui(Frame):
 
         font_line_space = (font_line_height - font_line_depth + Thick/YScale) * LSpace
 
-        max_vals = []
-
         xposition = 0.0
         yposition = 0.0
         line_cnt = 0.0
@@ -3432,7 +3445,7 @@ class Gui(Frame):
                 minx_tmp = 99969.0
                 continue
 
-            first_stroke = True
+            # first_stroke = True
             try:
                 font_line_height = self.font[ord(char)].get_ymax()
             except:
@@ -3810,7 +3823,7 @@ class Gui(Frame):
 
             done = self.model.v_carve(clean_flag, DXF_FLAG)
 
-            #Reset Entry Fields in V-Carve Settings
+            # Reset Entry Fields in V-Carve Settings
             if not self.batch.get():
                 self.entry_set(self.Entry_Vbitangle,   self.Entry_Vbitangle_Check()   ,1)
                 self.entry_set(self.Entry_Vbitdia,     self.Entry_Vbitdia_Check()     ,1)
@@ -3856,7 +3869,7 @@ class Gui(Frame):
         w_entry = 60
         w_units = 35
         xd_entry_L = xd_label_L+w_label+10
-        xd_units_L = xd_entry_L+w_entry+5
+        # xd_units_L = xd_entry_L+w_entry+5
 
         D_Yloc = D_Yloc+D_dY
         self.Label_BMPturnpol = Label(pbm_settings, text="Turn Policy")
@@ -4331,7 +4344,7 @@ class Gui(Frame):
         self.allowance.trace_variable("w", self.Entry_Allowance_Callback)
         self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), 2)
 
-        ### Update Idle tasks before requesting anything from winfo
+        # Update Idle tasks before requesting anything from winfo
         vcarve_settings.update_idletasks()
         center_loc = int(float(vcarve_settings.winfo_width()) / 2)
 

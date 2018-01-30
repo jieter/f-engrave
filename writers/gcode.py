@@ -15,6 +15,9 @@ def gcode(job):
 
     code += settings.to_gcode()
 
+    todays_date = datetime.date.today().strftime("%I:%M %p %B %d, %Y")
+    code.append("(#########################################################)")
+    code.append('( F-Engrave G-Code, generated %s )' % todays_date)
     code.append("(#########################################################)")
 
     # G90 Sets absolute distance mode
@@ -70,8 +73,10 @@ def engrave_gcode(job):
         depth_val = FORMAT % Depth
     else:
         raise Exception('Not implemented')
-        FORMAT = '#1 = %%.%df  ( Safe Z )' % (dp)
+
+        FORMAT = '#1 = %%.%df  ( safe Z )' % (dp)
         code.append(FORMAT % SafeZ)
+
         FORMAT = '#2 = %%.%df  ( Engraving Depth Z )' % (dp)
         code.append(FORMAT % Depth)
         safe_val = '#1'
@@ -80,7 +85,6 @@ def engrave_gcode(job):
     FORMAT = 'F%%.%df  ( Set Feed Rate )' % dpfeed
     code.append("(#########################################################)")
     code.append(FORMAT % settings.get('feedrate'))
-    code.append('G0 Z%s' % safe_val)
 
     oldx = oldy = -1.0e5
     first_stroke = True
@@ -112,7 +116,8 @@ def engrave_gcode(job):
     z1 = 0
     nextz = 0
 
-    code.append("G0 Z%s" % settings.get('zsafe'))
+    # lift engraver
+    # code.append("G0 Z%s ( safe Z )" % safe_val)
 
     for line in order_out:
         temp = line
@@ -150,7 +155,7 @@ def engrave_gcode(job):
                 dist = hypot(dx, dy)
                 if dist > accuracy:
                     # lift engraver
-                    code.append("G0 Z%s" % settings.get('zsafe'))
+                    code.append("G0 Z%s ( safe Z )" % safe_val)
 
                     # rapid to current position
                     FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
@@ -253,8 +258,7 @@ def vcarve_gcode(job):
     SafeZ = settings.get('zsafe')
     Depth = settings.get('zcut')
 
-    #g_target = lambda s: sys.stdout.write(s + "\n")
-
+    #g_target = lambda s: sys.stdout.write(s + "\n") #TEST
     g = Gcode(safetyheight=SafeZ,
               tolerance=accuracy,
               target=lambda s: code.append(s),
@@ -268,7 +272,7 @@ def vcarve_gcode(job):
         safe_val = FORMAT % SafeZ
         # depth_val = FORMAT % Depth
     else:
-        FORMAT = '#1 = %%.%df  ( Safe Z )' % (dp)
+        FORMAT = '#1 = %%.%df  ( safe Z )' % (dp)
         code.append(FORMAT % SafeZ)
         FORMAT = '#2 = %%.%df  ( Engraving Depth Z )' % (dp)
         code.append(FORMAT % Depth)
@@ -278,7 +282,8 @@ def vcarve_gcode(job):
     FORMAT = 'F%%.%df  ( Set Feed Rate )' % dpfeed
     code.append("(#########################################################)")
     code.append(FORMAT % settings.get('feedrate'))
-    code.append('G0 Z%s' % safe_val)
+    # lift engraver
+    # code.append('G0 Z%s' % safe_val)
 
     #########################
     ###  find loop ends   ###
@@ -354,12 +359,14 @@ def vcarve_gcode(job):
             zmin = zmin + maxDZ
 
             loop_old = -1
-            R_last = 999
-            x_center_last = 999
-            y_center_last = 999
-            FLAG_arc = 0
-            FLAG_line = 0
-            code = []
+
+            #TODO These variables are set, but not used?
+            # R_last = 999
+            # x_center_last = 999
+            # y_center_last = 999
+            # FLAG_arc = 0
+            # FLAG_line = 0
+            # code = []
 
             v_index = -1
 
@@ -414,11 +421,13 @@ def vcarve_gcode(job):
                 if z1 > zmax and nextz > zmax and roughing:
                     loop_old = -1
                     continue
+
                 # check and see if we need to move to a new discontinuous start point
                 if loop != loop_old:
                     g.flush()
+
                     # lift engraver
-                    code.append("G0 Z%s" % (safe_val))
+                    code.append("G0 Z%s ( safe Z )" % (safe_val))
 
                     # rapid to current position
                     FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
@@ -428,18 +437,20 @@ def vcarve_gcode(job):
                     FORMAT = 'G1 Z%%.%df' % (dp)
                     code.append(FORMAT % (z1))
 
-                    lastx = x1
-                    lasty = y1
-                    lastz = z1
+                    # lastx = x1
+                    # lasty = y1
+                    # lastz = z1
 
                     g.cut(x1, y1, z1)
 
                 else:
                     g.cut(x1, y1, z1)
-                    lastx = x1
-                    lasty = y1
-                    lastz = z1
+                    # lastx = x1
+                    # lasty = y1
+                    # lastz = z1
+
                 loop_old = loop
+
             g.flush()
         g.flush()
     g.flush()
@@ -449,28 +460,25 @@ def vcarve_gcode(job):
     return code
 
 
-def write_clean_up(job):
-    '''Write Cleanup G-code File'''
-
+def write_clean_up(job, bit_type="straight"):
+    '''
+    Write Cleanup G-code File
+    '''
     settings = job.settings
-    accuracy = settings.get('accuracy')
 
     code = []
 
     SafeZ = settings.get('zsafe')
     BitDia = settings.get('clean_dia')
-    # VBIT, BALL, or FLAT
-    bit_shape = settings.get('bit_shape')
 
     calc_depth_limit(job)
     Depth = settings.get('v_max_cut')
-
     if settings.get('inlay'):
         Depth = Depth + settings.get('allowance')
 
     Units = settings.get('units')
 
-    if bit_shape == "FLAT":
+    if bit_type== "straight":
         coords_out = job.clean_coords_sort
     else:
         coords_out = job.v_clean_coords_sort
@@ -481,8 +489,7 @@ def write_clean_up(job):
         code.append('( This file is a secondary operation for )')
         code.append('( cleaning up a V-carve. )')
 
-        #TODO is "BALL" shape an option for cleaning?
-        if bit_shape == "FLAT":
+        if bit_type == "straight":
             code.append('( The tool paths were calculated based )')
             code.append('( on using a bit with a )')
             code.append('( Diameter of %.4f %s)' % (BitDia, Units))
@@ -493,6 +500,7 @@ def write_clean_up(job):
 
         code.append("(==========================================)")
 
+    # number of decimals
     if Units == "in":
         dp = 4
         dpfeed = 2
@@ -501,9 +509,9 @@ def write_clean_up(job):
         dpfeed = 1
 
     if settings.get('var_dis'):
-        FORMAT = '%%.%df' % (dp)
-        safe_val = FORMAT % (SafeZ)
-        depth_val = FORMAT % (Depth)
+        FORMAT = '%%.%df' % dp
+        safe_val = FORMAT % SafeZ
+        depth_val = FORMAT % Depth
     else:
         FORMAT = '#1 = %%.%df  ( Safe Z )' % (dp)
         code.append(FORMAT % (SafeZ))
@@ -511,26 +519,30 @@ def write_clean_up(job):
 
     code.append("(##########################################)")
 
-    # G90        ; Sets absolute distance mode
+    # G90  ; sets absolute distance mode
     code.append('G90')
 
-    # G91.1      ; Sets Incremental Distance Mode for I, J & K arc offsets.
+    # G91.1  ; sets Incremental Distance Mode for I, J & K arc offsets.
     if settings.get('arc_fit') == "center":
         code.append('G91.1')
     
     if Units == "in":
-        # G20 ; sets units to inches
+        # G20  ; sets units to inches
         code.append('G20')
     else:
-        # G21 ; sets units to mm
+        # G21  ; sets units to mm
         code.append('G21')
 
-    for line in settings.get('gpre').split('|'):
+    for line in settings.get('gcode_preamble').split('|'):
         code.append(line)
 
-    # code.append( 'G0 Z%s' %(safe_val))
-    FORMAT = '%%.%df' % (dp)
+    # initial feedrate
+    FORMAT = '%%.%df' % (dpfeed)
     feed_str = FORMAT % settings.get('feedrate')
+    code.append("F" + feed_str)
+
+    code.append("(##########################################)")
+
     plunge_str = FORMAT % settings.get('plunge_rate')
     feed_current = FORMAT % (float(0.0))
     # fmessage(feed_str +" "+plunge_str)
@@ -554,6 +566,7 @@ def write_clean_up(job):
         rough_stock = -maxDZ
 
     while rough_again or roughing:
+
         if not rough_again:
             roughing = False
             maxDZ = -99999
@@ -580,14 +593,13 @@ def write_clean_up(job):
                 new_coords.append(coords_out[i])
         coords_out = new_coords
 
+        # TODO FLAG_, next_, and last_ vars are not used
         if len(coords_out) > 0:
-
             loop_old = -1
-            FLAG_arc = 0
-            FLAG_line = 0
-            code = []
+            # FLAG_arc = 0
+            # FLAG_line = 0
+            # code = []
             v_index = -1
-
             while v_index < len(coords_out) - 1:
                 v_index = v_index + 1
                 x1 = coords_out[v_index][0]
@@ -595,16 +607,17 @@ def write_clean_up(job):
                 r1 = coords_out[v_index][2]
                 loop = coords_out[v_index][3]
 
-                if v_index + 1 < len(coords_out):
-                    nextx = coords_out[v_index + 1][0]
-                    nexty = coords_out[v_index + 1][1]
-                    nextr = coords_out[v_index + 1][2]
-                    nextloop = coords_out[v_index + 1][3]
-                else:
-                    nextx = 0
-                    nexty = 0
-                    nextr = 0
-                    nextloop = -99
+                #TODO Variables are set, but not used?
+                # if v_index + 1 < len(coords_out):
+                #     nextx = coords_out[v_index + 1][0]
+                #     nexty = coords_out[v_index + 1][1]
+                #     nextr = coords_out[v_index + 1][2]
+                #     nextloop = coords_out[v_index + 1][3]
+                # else:
+                #     nextx = 0
+                #     nexty = 0
+                #     nextr = 0
+                #     nextloop = -99
 
                 # check and see if we need to move to a new discontinuous start point
                 if loop == loop_old:
@@ -616,8 +629,8 @@ def write_clean_up(job):
 
                     FORMAT = 'G1 X%%.%df Y%%.%df' % (dp, dp)
                     code.append(FORMAT % (x1, y1) + FEED_STRING)
-                    lastx = x1
-                    lasty = y1
+                    # lastx = x1
+                    # lasty = y1
                 else:
                     # lift engraver
                     code.append("G0 Z%s" % (safe_val))
@@ -626,7 +639,7 @@ def write_clean_up(job):
                     FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
                     code.append(FORMAT % (x1, y1))
 
-                    z1 = Depth;
+                    z1 = Depth
                     if roughing:
                         z1 = Depth + rough_stock  # Depth
                     if z1 < zmin:
@@ -644,8 +657,8 @@ def write_clean_up(job):
 
                     code.append("G1 Z%s" % (depth_val) + FEED_STRING)
 
-                    lastx = x1
-                    lasty = y1
+                    # lastx = x1
+                    # lasty = y1
 
                 loop_old = loop
 
@@ -653,12 +666,16 @@ def write_clean_up(job):
 
     code.append('G0 Z%s' % (safe_val))  # final engraver up
 
+    for line in settings.get('gcode_postamble').split('|'):
+        code.append(line)
+
     return code
 
 
 def calc_depth_limit(job):
     try:
         settings = job.settings
+
         bit_shape = settings.get('bit_shape')
 
         if bit_shape == "VBIT":
@@ -675,25 +692,25 @@ def calc_depth_limit(job):
         if bit_shape == "FLAT":
             if depth_lim < 0.0:
                 # self.maxcut.set("%.3f" % (depth_lim))
-                settings.set('max_cut', "%.3f" % depth_lim)
+                settings.set('v_max_cut', "%.3f" % depth_lim)
             else:
                 # self.maxcut.set("%.3f" % (bit_depth))
-                settings.set('max_cut', "%.3f" % bit_depth)
+                settings.set('v_max_cut', "%.3f" % bit_depth)
         else:
             if depth_lim < 0.0:
                 # self.maxcut.set("%.3f" % (max(bit_depth, depth_lim)))
-                settings.set('max_cut', "%.3f" % max(bit_depth, depth_lim))
+                settings.set('v_max_cut', "%.3f" % max(bit_depth, depth_lim))
             else:
                 # self.maxcut.set("%.3f" % (bit_depth))
-                settings.set('max_cut', "%.3f" % bit_depth)
+                settings.set('v_max_cut', "%.3f" % bit_depth)
 
         # TODO set maxcut in GUI (using settings)
         # self.maxcut.set("%.3f" % (depth_lim))
-        # settings.get('max_cut')
+        # settings.get('v_max_cut')
+        # self.maxcut.set(settings.get('v_max_cut'))
 
     except:
-        # self.maxcut.set("error")
-        settings.set('max_cut', "error")
+        settings.set('v_max_cut', "error")
 
 
 def calc_r_inlay_top(job):
@@ -746,7 +763,7 @@ class Gcode:
         if not self.cuts:
             return
 
-        for move, (x, y, z), cent in self.douglas(self.cuts, self.tolerance, self.plane):
+        for move, (x, y, z), cent in douglas(self.cuts, self.tolerance, self.plane):
             if cent:
                 self._move_common(x, y, z, I=cent[0], J=cent[1], gcode=move)
             else:
@@ -767,7 +784,7 @@ class Gcode:
         '''
         G0 and G1 moves
         '''
-        gcodestring = xstring = ystring = zstring = Istring = Jstring = Rstring = fstring = ""
+        xstring = ystring = zstring = Istring = Jstring = Rstring = fstring = ""
         if x is None: x = self.lastx
         if y is None: y = self.lasty
         if z is None: z = self.lastz
@@ -775,6 +792,7 @@ class Gcode:
         if (self.feed != self.lastf):
             fstring = self.feed
             self.lastf = self.feed
+
         FORMAT = "%%.%df" % (self.dp)
 
         if (gcode == "G2" or gcode == "G3"):
@@ -805,23 +823,23 @@ class Gcode:
         if xstring == ystring == zstring == fstring == "":
             return
 
-        gcodestring = gcode
         if (self.arc_fit == "radius"):
-            cmd = "".join([gcodestring, xstring, ystring, zstring, Rstring, fstring])
+            cmd = "".join([gcode, xstring, ystring, zstring, Rstring, fstring])
         else:
-            cmd = "".join([gcodestring, xstring, ystring, zstring, Istring, Jstring, fstring])
+            cmd = "".join([gcode, xstring, ystring, zstring, Istring, Jstring, fstring])
 
         if cmd:
             self.write(cmd)
 
     def set_feed(self, feed):
         self.flush()
-        # self.write("F%.4f" % feed)
         self.feed = "F%s" % feed
         self.lastf = None
 
     def cut(self, x=None, y=None, z=None):
-        '''Perform a cutting move at the specified feed rate to the specified coordinates'''
+        '''
+        Perform a cutting move at the specified feed rate to the specified coordinates
+        '''
         if self.cuts:
             lastx, lasty, lastz = self.cuts[-1]
         else:
@@ -836,122 +854,123 @@ class Gcode:
         self.flush()
         self.rapid(z=self.safetyheight)
 
-    def douglas(self, st, tolerance=.001, plane=None, _first=True):
-        '''
-        Perform Douglas-Peucker simplification on the path 'st' with the specified
-        tolerance.  The '_first' argument is for internal use only.
 
-        The Douglas-Peucker simplification algorithm finds a subset of the input points
-        whose path is never more than 'tolerance' away from the original input path.
+def douglas(st, tolerance=.001, plane=None, _first=True):
+    '''
+    Perform Douglas-Peucker simplification on the path 'st' with the specified
+    tolerance.  The '_first' argument is for internal use only.
 
-        If 'plane' is specified as 17, 18, or 19, it may find helical arcs in the given
-        plane in addition to lines.
+    The Douglas-Peucker simplification algorithm finds a subset of the input points
+    whose path is never more than 'tolerance' away from the original input path.
 
-        -- I [scorch] modified the code so the note below does not apply when using plane 17 --
-        Note that if there is movement in the plane
-        perpendicular to the arc, it will be distorted, so 'plane' should usually
-        be specified only when there is only movement on 2 axes
-        '''
+    If 'plane' is specified as 17, 18, or 19, it may find helical arcs in the given
+    plane in addition to lines.
 
-        if len(st) == 1:
-            yield "G1", st[0], None
+    -- I [scorch] modified the code so the note below does not apply when using plane 17 --
+    Note that if there is movement in the plane
+    perpendicular to the arc, it will be distorted, so 'plane' should usually
+    be specified only when there is only movement on 2 axes
+    '''
+
+    if len(st) == 1:
+        yield "G1", st[0], None
+        return
+    # if len(st) < 1:
+    #    print "whaaaa!?"
+    #    #yield "G1", st[0], None
+    #    return
+
+    L1 = st[0]
+    L2 = st[-1]
+
+    last_point = None
+    while (abs(L1[0] - L2[0]) < Zero) \
+            and (abs(L1[1] - L2[1]) < Zero) \
+            and (abs(L1[2] - L2[2]) < Zero):
+        last_point = st.pop()
+        try:
+            L2 = st[-1]
+        except:
             return
-        # if len(st) < 1:
-        #    print "whaaaa!?"
-        #    #yield "G1", st[0], None
-        #    return
 
-        L1 = st[0]
-        L2 = st[-1]
+    worst_dist = 0
+    worst_distz = 0  # added to fix out of plane inaccuracy problem
+    worst = 0
+    min_rad = MAXINT
+    max_arc = -1
 
-        last_point = None
-        while (abs(L1[0] - L2[0]) < Zero) \
-                and (abs(L1[1] - L2[1]) < Zero) \
-                and (abs(L1[2] - L2[2]) < Zero):
-            last_point = st.pop()
-            try:
-                L2 = st[-1]
-            except:
-                return
+    ps = st[0]
+    pe = st[-1]
 
-        worst_dist = 0
-        worst_distz = 0  # added to fix out of plane inacuracy problem
-        worst = 0
-        min_rad = MAXINT
-        max_arc = -1
+    for i, p in enumerate(st):
+        if p is L1 or p is L2: continue
+        dist = dist_lseg(L1, L2, p)
+        distz = dist_lseg(L1, L2, p, z_only=True)  # added to fix out of plane inacuracy problem
+        if dist > worst_dist:
+            worst = i
+            worst_dist = dist
+            rad = arc_rad(plane, ps, p, pe)
+            if rad < min_rad:
+                max_arc = i
+                min_rad = rad
+        if distz > worst_distz:  # added to fix out of plane inacuracy problem
+            worst_distz = distz  # added to fix out of plane inacuracy problem
 
-        ps = st[0]
-        pe = st[-1]
+    worst_arc_dist = 0
+    if min_rad != MAXINT:
+        c1, c2 = arc_center(plane, ps, st[max_arc], pe)
+        Lx, Ly, Lz = st[0]
+        if one_quadrant(plane, (c1, c2), ps, st[max_arc], pe):
+            for i, (x, y, z) in enumerate(st):
+                if plane == 17:
+                    dist1 = abs(hypot(c1 - x, c2 - y) - min_rad)
+                    dist = sqrt(worst_distz ** 2 + dist1 ** 2)  # added to fix out of plane inacuracy problem
+                elif plane == 18:
+                    dist = abs(hypot(c1 - x, c2 - z) - min_rad)
+                elif plane == 19:
+                    dist = abs(hypot(c1 - y, c2 - z) - min_rad)
+                else:
+                    dist = MAXINT
 
-        for i, p in enumerate(st):
-            if p is L1 or p is L2: continue
-            dist = dist_lseg(L1, L2, p)
-            distz = dist_lseg(L1, L2, p, z_only=True)  # added to fix out of plane inacuracy problem
-            if dist > worst_dist:
-                worst = i
-                worst_dist = dist
-                rad = arc_rad(plane, ps, p, pe)
-                if rad < min_rad:
-                    max_arc = i
-                    min_rad = rad
-            if distz > worst_distz:  # added to fix out of plane inacuracy problem
-                worst_distz = distz  # added to fix out of plane inacuracy problem
+                if dist > worst_arc_dist: worst_arc_dist = dist
 
-        worst_arc_dist = 0
-        if min_rad != MAXINT:
-            c1, c2 = arc_center(plane, ps, st[max_arc], pe)
-            Lx, Ly, Lz = st[0]
-            if one_quadrant(plane, (c1, c2), ps, st[max_arc], pe):
-                for i, (x, y, z) in enumerate(st):
-                    if plane == 17:
-                        dist1 = abs(hypot(c1 - x, c2 - y) - min_rad)
-                        dist = sqrt(worst_distz ** 2 + dist1 ** 2)  # added to fix out of plane inacuracy problem
-                    elif plane == 18:
-                        dist = abs(hypot(c1 - x, c2 - z) - min_rad)
-                    elif plane == 19:
-                        dist = abs(hypot(c1 - y, c2 - z) - min_rad)
-                    else:
-                        dist = MAXINT
-
-                    if dist > worst_arc_dist: worst_arc_dist = dist
-
-                    mx = (x + Lx) / 2
-                    my = (y + Ly) / 2
-                    mz = (z + Lz) / 2
-                    if plane == 17:
-                        dist = abs(hypot(c1 - mx, c2 - my) - min_rad)
-                    elif plane == 18:
-                        dist = abs(hypot(c1 - mx, c2 - mz) - min_rad)
-                    elif plane == 19:
-                        dist = abs(hypot(c1 - my, c2 - mz) - min_rad)
-                    else:
-                        dist = MAXINT
-                    Lx, Ly, Lz = x, y, z
-            else:
-                worst_arc_dist = MAXINT
+                mx = (x + Lx) / 2
+                my = (y + Ly) / 2
+                mz = (z + Lz) / 2
+                if plane == 17:
+                    dist = abs(hypot(c1 - mx, c2 - my) - min_rad)
+                elif plane == 18:
+                    dist = abs(hypot(c1 - mx, c2 - mz) - min_rad)
+                elif plane == 19:
+                    dist = abs(hypot(c1 - my, c2 - mz) - min_rad)
+                else:
+                    dist = MAXINT
+                Lx, Ly, Lz = x, y, z
         else:
             worst_arc_dist = MAXINT
+    else:
+        worst_arc_dist = MAXINT
 
-        if worst_arc_dist < tolerance and worst_arc_dist < worst_dist:
-            ccw = arc_dir(plane, (c1, c2), ps, st[max_arc], pe)
-            if plane == 18:
-                ccw = not ccw
-            yield "G1", ps, None
-            if ccw:
-                yield "G3", st[-1], arc_fmt(plane, c1, c2, ps)
-            else:
-                yield "G2", st[-1], arc_fmt(plane, c1, c2, ps)
-        elif worst_dist > tolerance:
-            if _first: yield "G1", st[0], None
-            for i in self.douglas(st[:worst + 1], tolerance, plane, False):
-                yield i
-            yield "G1", st[worst], None
-            for i in self.douglas(st[worst:], tolerance, plane, False):
-                yield i
-            if _first: yield "G1", st[-1], None
+    if worst_arc_dist < tolerance and worst_arc_dist < worst_dist:
+        ccw = arc_dir(plane, (c1, c2), ps, st[max_arc], pe)
+        if plane == 18:
+            ccw = not ccw
+        yield "G1", ps, None
+        if ccw:
+            yield "G3", st[-1], arc_fmt(plane, c1, c2, ps)
         else:
-            if _first: yield "G1", st[0], None
-            if _first: yield "G1", st[-1], None
+            yield "G2", st[-1], arc_fmt(plane, c1, c2, ps)
+    elif worst_dist > tolerance:
+        if _first: yield "G1", st[0], None
+        for i in douglas(st[:worst + 1], tolerance, plane, False):
+            yield i
+        yield "G1", st[worst], None
+        for i in douglas(st[worst:], tolerance, plane, False):
+            yield i
+        if _first: yield "G1", st[-1], None
+    else:
+        if _first: yield "G1", st[0], None
+        if _first: yield "G1", st[-1], None
 
-        if last_point != None:  # added to fix closed loop problem
-            yield "G1", st[0], None  # added to fix closed loop problem
+    if last_point != None:  # added to fix closed loop problem
+        yield "G1", st[0], None  # added to fix closed loop problem

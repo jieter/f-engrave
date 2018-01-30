@@ -29,9 +29,9 @@ def check_potrace():
         if VERSION == 3:
             stdout = bytes.decode(stdout)
         if str.find(stdout.upper(), 'POTRACE') != -1:
-            return True
             if str.find(stdout.upper(), '1.1') == -1:
-                raise Exception("F-Engrave Requires Potrace Version 1.10 or Newer.")
+                raise Exception("F-Engrave Requires Potrace Version 1.10 or newer.")
+            return True
         else:
             raise Exception("potrace is not working...Bummer")
     except:

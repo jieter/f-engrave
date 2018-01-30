@@ -1,10 +1,13 @@
-from math import cos, sin, degrees, radians, atan2, acos, hypot
+from math import atan2, cos, sin, degrees, radians, hypot, sqrt
 
 from boundingbox import BoundingBox
 from font import *
 from util import MAXINT
 
+from pathsorter import *
+
 Zero = 1e-6
+
 
 def transform(x, y, angle):
     '''

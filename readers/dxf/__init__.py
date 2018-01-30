@@ -8,7 +8,6 @@ def parse(dxf_file, segarc, new_origin=True):
 
     # Initialize / reset
     font = Font()
-    key = None
 
     DXF_source = " "
     dxf_import = DXF_CLASS()

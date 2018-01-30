@@ -70,8 +70,6 @@ NGC_FILE = (HOME_DIR + "/None")
 IMAGE_FILE = (HOME_DIR + "/Desktop/None")  # TEST
 
 
-# IMAGE_FILE = (HOME_DIR + "/Desktop/circle.dxf")
-
 class Settings(object):
     '''
     Default values for the application settings.
@@ -218,7 +216,7 @@ class Settings(object):
         # diameter of the cleanup bit
         'clean_dia': 3.0,
 
-        # Clean-up step-over as percent of clean-up bit diameter
+        # Clean-up step-over as percentage of the clean-up bit diameter
         'clean_step': 50,
         'clean_name': '_clean',
 
@@ -239,8 +237,7 @@ class Settings(object):
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
 
-        # 'default_text': 'F-engrave'
-        'default_text': 'F' #TEST
+        'default_text': 'F-engrave'
     }
 
     def __init__(self, filename=None, autoload=False):
