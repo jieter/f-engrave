@@ -68,12 +68,12 @@ class SettingsTest(unittest.TestCase):
         # test strings
         self.assertEquals(s.get('fontfile'), 'courier.cxf')
         self.assertEquals(s.get('gcode_preamble'), 'G17 G64 P0.003 M3 S3000 M7')
-        self.assertEquals(s.get('text'), 'Jieter\nbla')
+        self.assertEquals(s.get('default_text'), 'F-Engrave')
 
     def test_casting(self):
         s = Settings()
 
-        for var in ('yscale', 'text', 'v_bit_angle'):
+        for var in ('yscale', 'default_text', 'v_bit_angle'):
             a = type(s.get(var))
             s.set(var, 1)
             self.assertEquals(a, type(s.get(var)))
@@ -83,8 +83,8 @@ class SettingsTest(unittest.TestCase):
     def test_cast_string(self):
         s = Settings()
 
-        s.set('text', '  "Test123 "   ')
-        self.assertEquals(s.get('text'), 'Test123')
+        s.set('default_text', '  "Test123 "   ')
+        self.assertEquals(s.get('default_text'), 'Test123')
 
         s.set('text', '"bla bla "foo" bla bla"')
         self.assertEquals(s.get('text'), 'bla bla "foo" bla bla')

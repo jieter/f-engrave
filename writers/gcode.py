@@ -1,11 +1,12 @@
 import sys
+import datetime
 from math import hypot, tan, radians, sqrt
 
 from geometry import *
 from geometry.pathsorter import sort_paths
 from geometry.linearcfitter import line_arc_fit
 
-from util import fmessage, icon
+from util import date_and_time, fmessage, icon
 
 
 def gcode(job):
@@ -15,9 +16,8 @@ def gcode(job):
 
     code += settings.to_gcode()
 
-    todays_date = datetime.date.today().strftime("%I:%M %p %B %d, %Y")
     code.append("(#########################################################)")
-    code.append('( F-Engrave G-Code, generated %s )' % todays_date)
+    code.append('( F-Engrave G-Code, generated %s )' % date_and_time())
     code.append("(#########################################################)")
 
     # G90 Sets absolute distance mode
@@ -258,7 +258,7 @@ def vcarve_gcode(job):
     SafeZ = settings.get('zsafe')
     Depth = settings.get('zcut')
 
-    #g_target = lambda s: sys.stdout.write(s + "\n") #TEST
+    # g_target = lambda s: sys.stdout.write(s + "\n") #TEST
     g = Gcode(safetyheight=SafeZ,
               tolerance=accuracy,
               target=lambda s: code.append(s),

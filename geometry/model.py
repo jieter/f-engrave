@@ -9,10 +9,10 @@ from writers import douglas
 
 
 class Model():
-    '''
+    """
     Manage all loops, derived from the data in the font or image file,
     as coordinate lists.
-    '''
+    """
     def __init__(self, controller, settings):
 
         self.controller = controller
@@ -87,9 +87,9 @@ class Model():
         return total_length
 
     def v_carve(self, clean_flag=False, DXF_FLAG=False):
-        '''
+        """
         V-Carve Stuff
-        '''
+        """
         # set variable for first point in loop
         xa = 9999
         ya = 9999
@@ -371,12 +371,12 @@ class Model():
                 if calc_flag != 0:
                     CUR_LENGTH = CUR_LENGTH + Lseg
                 else:
-                    #theta = phi         #V1.62
-                    #x0=x2               #V1.62
-                    #y0=y2               #V1.62
-                    #seg_sin0=seg_sin    #V1.62
-                    #seg_cos0=seg_cos    #V1.62
-                    #char_num0=char_num  #V1.62
+                    # theta = phi         #V1.62
+                    # x0=x2               #V1.62
+                    # y0=y2               #V1.62
+                    # seg_sin0=seg_sin    #V1.62
+                    # seg_cos0=seg_cos    #V1.62
+                    # char_num0=char_num  #V1.62
                     continue
                 
                 if fabs(x1-x0) > Zero or fabs(y1-y0) > Zero or char_num != char_num0:
@@ -518,7 +518,7 @@ class Model():
 
     def record_v_carve_data(self, x1, y1, phi, rout, loop_cnt, clean_flag):
 
-        #TODO get rid of controller dependencies
+        # TODO get rid of controller dependencies
         # r_clean = float(self.controller.clean_dia.get())/2.0
         rbit = self.controller.calc_vbit_dia() / 2.0
 
@@ -1180,11 +1180,11 @@ class Model():
 
         check_coords = []
 
-        #TODO remove controller dependency
+        # TODO remove controller dependency
         self.controller.statusbar.configure(bg='yellow')
 
         if bit_type == "straight":
-            #TODO get rid of controller dependency
+            # TODO get rid of controller dependency
             self.controller.statusMessage.set('Calculating Cleanup Cut Paths')
             self.controller.master.update()
 
@@ -1201,9 +1201,9 @@ class Model():
             skip = 1
             clean_step = 1.0
 
-            #TODO get rid of controller dependencies
+            # TODO get rid of controller dependencies
             # self.master.update()
-            self.controller.update()
+            self.controller.master.update()
 
             self.v_clean_coords_sort = []
 

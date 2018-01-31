@@ -1,7 +1,16 @@
 import os
 import unittest
 
-from flake8.engine import get_style_guide
+# from flake8.engine import get_style_guide
+# flake8.api.legacy.get_style_guide(**kwargs)
+# http://flake8.pycqa.org/en/latest/user/python-api.html
+
+import flake8.api.legacy
+
+
+def get_style_guide(**kwargs):
+    return flake8.api.legacy.get_style_guide(**kwargs)
+
 
 flake8 = get_style_guide(
     ignore=(
@@ -20,6 +29,7 @@ flake8 = get_style_guide(
 
         # new files, to be cleaned up:
         'gui.py',
+        'model.py',
         'nurbs.py',
         'bspline.py',
         # 'linearcfitter.py',

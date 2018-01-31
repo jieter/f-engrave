@@ -1,5 +1,6 @@
 import sys
-import os
+import datetime
+# import os
 
 import externals
 #import icon
@@ -40,6 +41,11 @@ try:
     POTRACE_AVAILABLE = externals.check_potrace()
 except Exception, e:
     fmessage(e)
+
+
+def date_and_time():
+    # todays_date = datetime.date.today().strftime("%B %d, %Y")
+    return datetime.datetime.now().strftime("%I:%M %p %B %d, %Y")
 
 
 def message_box(title, message):

@@ -2,6 +2,7 @@ from math import *
 
 
 class BSplineClass:
+
     def __init__(self, degree=0, Knots=[], CPts=[]):
         self.degree = degree
         self.Knots = Knots

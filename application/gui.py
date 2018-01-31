@@ -1,5 +1,4 @@
 import getopt
-import datetime
 from time import time
 import webbrowser
 
@@ -18,7 +17,8 @@ if VERSION == 3:
 else:
     from Tkinter import *
     from tkFileDialog import *
-    #import tkMessageBox
+    import tkMessageBox
+
 
 class Gui(Frame):
 
@@ -181,7 +181,7 @@ class Gui(Frame):
         else:
             self.funits.set('mm/min')
 
-        #TODO settings
+        # TODO settings
         config_file = "config.ngc"
         home_config1 = self.HOME_DIR + "/" + config_file
         config_file2 = ".fengraverc"
@@ -259,12 +259,12 @@ class Gui(Frame):
             if self.cut_type.get() == "v-carve":
                 self.v_carve_it()
 
-            #self.write_gcode()
+            # self.write_gcode()
             self.gcode = gcode(self.model)
 
             for line in self.gcode:
                 try:
-                    sys.stdout.write(line+'\n')
+                    sys.stdout.write(line + '\n')
                 except:
                     sys.stdout.write('(skipping line)\n')
             sys.exit()
@@ -308,7 +308,7 @@ class Gui(Frame):
         self.Entry_Yscale.configure(textvariable=self.YSCALE)
         self.Entry_Yscale.bind('<Return>', self.Recalculate_Click)
         self.YSCALE.trace_variable("w", self.Entry_Yscale_Callback)
-        self.Label_Yscale_ToolTip = ToolTip(self.Label_Yscale, text= \
+        self.Label_Yscale_ToolTip = ToolTip(self.Label_Yscale, text=
             'Character height of a single line of text.')
         # or the height of an imported image. (DXF, BMP, etc.)')
 
@@ -320,7 +320,7 @@ class Gui(Frame):
         self.Entry_Sthick.configure(textvariable=self.STHICK)
         self.Entry_Sthick.bind('<Return>', self.Recalculate_Click)
         self.STHICK.trace_variable("w", self.Entry_Sthick_Callback)
-        self.Label_Sthick_ToolTip = ToolTip(self.Label_Sthick, text= \
+        self.Label_Sthick_ToolTip = ToolTip(self.Label_Sthick, text=
             'Thickness or width of engraved lines. Set this to your engraving cutter diameter.  \
             This setting only affects the displayed lines not the g-code output.')
 
@@ -330,7 +330,7 @@ class Gui(Frame):
         self.Entry_Xscale.configure(textvariable=self.XSCALE)
         self.Entry_Xscale.bind('<Return>', self.Recalculate_Click)
         self.XSCALE.trace_variable("w", self.Entry_Xscale_Callback)
-        self.Label_Xscale_ToolTip = ToolTip(self.Label_Xscale, text= \
+        self.Label_Xscale_ToolTip = ToolTip(self.Label_Xscale, text=
             'Scaling factor for the width of characters.')
 
         self.Label_useIMGsize = Label(self.master, text="Set Height as %")
@@ -343,7 +343,7 @@ class Gui(Frame):
         self.Entry_Cspace.configure(textvariable=self.CSPACE)
         self.Entry_Cspace.bind('<Return>', self.Recalculate_Click)
         self.CSPACE.trace_variable("w", self.Entry_Cspace_Callback)
-        self.Label_Cspace_ToolTip = ToolTip(self.Label_Cspace, text= \
+        self.Label_Cspace_ToolTip = ToolTip(self.Label_Cspace, text=
             'Character spacing as a percent of character width.')
 
         self.Label_Wspace = Label(self.master, text="Word Spacing", anchor=CENTER)
@@ -352,7 +352,7 @@ class Gui(Frame):
         self.Entry_Wspace.configure(textvariable=self.WSPACE)
         self.Entry_Wspace.bind('<Return>', self.Recalculate_Click)
         self.WSPACE.trace_variable("w", self.Entry_Wspace_Callback)
-        self.Label_Wspace_ToolTip = ToolTip(self.Label_Wspace, text= \
+        self.Label_Wspace_ToolTip = ToolTip(self.Label_Wspace, text=
             'Width of the space character. This is determined as a percentage of the maximum width of the characters in the currently selected font.')
 
         self.Label_Lspace = Label(self.master, text="Line Spacing", anchor=CENTER)
@@ -360,7 +360,7 @@ class Gui(Frame):
         self.Entry_Lspace.configure(textvariable=self.LSPACE)
         self.Entry_Lspace.bind('<Return>', self.Recalculate_Click)
         self.LSPACE.trace_variable("w", self.Entry_Lspace_Callback)
-        self.Label_Lspace_ToolTip = ToolTip(self.Label_Lspace, text= \
+        self.Label_Lspace_ToolTip = ToolTip(self.Label_Lspace, text=
             'The vertical spacing between lines of text. This is a multiple of the text height previously input. \
             A vertical spacing of 1.0 could result in consecutive lines of text touching each other if the maximum \
             height character is directly below a character that extends the lowest (like a "g").')
@@ -373,13 +373,13 @@ class Gui(Frame):
         self.Entry_Tangle.configure(textvariable=self.TANGLE)
         self.Entry_Tangle.bind('<Return>', self.Recalculate_Click)
         self.TANGLE.trace_variable("w", self.Entry_Tangle_Callback)
-        self.Label_Tangle_ToolTip = ToolTip(self.Label_Tangle, text= \
+        self.Label_Tangle_ToolTip = ToolTip(self.Label_Tangle, text=
             'Rotation of the text or image from horizontal.')
 
         self.Label_Justify = Label(self.master, text="Justify", anchor=CENTER)
         self.Justify_OptionMenu = OptionMenu(self.master, self.justify, "Left", "Center",
                                              "Right", command=self.Recalculate_RQD_Click)
-        self.Label_Justify_ToolTip = ToolTip(self.Label_Justify, text= \
+        self.Label_Justify_ToolTip = ToolTip(self.Label_Justify, text=
             'Justify determins how to align multiple lines of text. Left side, Right side or Centered.')
 
         self.Label_Origin = Label(self.master, text="Origin", anchor=CENTER)
@@ -394,21 +394,21 @@ class Gui(Frame):
                                             "Bot-Center",
                                             "Bot-Right",
                                             "Default", command=self.Recalculate_RQD_Click)
-        self.Label_Origin_ToolTip = ToolTip(self.Label_Origin, text= \
+        self.Label_Origin_ToolTip = ToolTip(self.Label_Origin, text=
             'Origin determins where the X and Y zero position is located relative to the engraving.')
 
         self.Label_flip = Label(self.master, text="Flip Text")
         self.Checkbutton_flip = Checkbutton(self.master, text=" ", anchor=W)
         self.Checkbutton_flip.configure(variable=self.flip)
         self.flip.trace_variable("w", self.Entry_recalc_var_Callback)
-        self.Label_flip_ToolTip = ToolTip(self.Label_flip, text= \
+        self.Label_flip_ToolTip = ToolTip(self.Label_flip, text=
             'Selecting Flip Text/Image mirrors the design about a horizontal line.')
 
         self.Label_mirror = Label(self.master, text="Mirror Text")
         self.Checkbutton_mirror = Checkbutton(self.master, text=" ", anchor=W)
         self.Checkbutton_mirror.configure(variable=self.mirror)
         self.mirror.trace_variable("w", self.Entry_recalc_var_Callback)
-        self.Label_mirror_ToolTip = ToolTip(self.Label_mirror, text= \
+        self.Label_mirror_ToolTip = ToolTip(self.Label_mirror, text=
             'Selecting Mirror Text/Image mirrors the design about a vertical line.')
 
         self.Label_text_on_arc = Label(self.master, text="Text on Circle Properties:", anchor=W)
@@ -419,7 +419,7 @@ class Gui(Frame):
         self.Entry_Tradius.configure(textvariable=self.TRADIUS)
         self.Entry_Tradius.bind('<Return>', self.Recalculate_Click)
         self.TRADIUS.trace_variable("w", self.Entry_Tradius_Callback)
-        self.Label_Tradius_ToolTip = ToolTip(self.Label_Tradius, text= \
+        self.Label_Tradius_ToolTip = ToolTip(self.Label_Tradius, text=
             'Circle radius is the radius of the circle that the text in the input box is placed on. \
             If the circle radius is set to 0.0 the text is not placed on a circle.')
 
@@ -427,7 +427,7 @@ class Gui(Frame):
         self.Checkbutton_outer = Checkbutton(self.master, text=" ", anchor=W)
         self.Checkbutton_outer.configure(variable=self.outer)
         self.outer.trace_variable("w", self.Entry_recalc_var_Callback)
-        self.Label_outer_ToolTip = ToolTip(self.Label_outer, text= \
+        self.Label_outer_ToolTip = ToolTip(self.Label_outer, text=
             'Select whether the text is placed so that is falls on the inside of the circle radius or the outside \
             of the circle radius.')
 
@@ -435,7 +435,7 @@ class Gui(Frame):
         self.Checkbutton_upper = Checkbutton(self.master, text=" ", anchor=W)
         self.Checkbutton_upper.configure(variable=self.upper)
         self.upper.trace_variable("w", self.Entry_recalc_var_Callback)
-        self.Label_upper_ToolTip = ToolTip(self.Label_upper, text= \
+        self.Label_upper_ToolTip = ToolTip(self.Label_upper, text=
             'Select whether the text is placed on the top of the circle of on the bottom of the circle \
             (i.e. concave down or concave up).')
 
@@ -453,7 +453,7 @@ class Gui(Frame):
         self.Entry_Feed.configure(textvariable=self.FEED)
         self.Entry_Feed.bind('<Return>', self.Recalculate_Click)
         self.FEED.trace_variable("w", self.Entry_Feed_Callback)
-        self.Label_Feed_ToolTip = ToolTip(self.Label_Feed, text= \
+        self.Label_Feed_ToolTip = ToolTip(self.Label_Feed, text=
             'Specify the tool feed rate that is output in the g-code output file.')
 
         self.Label_Plunge = Label(self.master, text="Plunge Rate")
@@ -462,7 +462,7 @@ class Gui(Frame):
         self.Entry_Plunge.configure(textvariable=self.PLUNGE)
         self.Entry_Plunge.bind('<Return>', self.Recalculate_Click)
         self.PLUNGE.trace_variable("w", self.Entry_Plunge_Callback)
-        self.Label_Plunge_ToolTip = ToolTip(self.Label_Plunge, text= \
+        self.Label_Plunge_ToolTip = ToolTip(self.Label_Plunge, text=
             'Plunge Rate sets the feed rate for vertical moves into the material being cut.\n\n\
             When Plunge Rate is set to zero plunge feeds are equal to Feed Rate.')
 
@@ -472,7 +472,7 @@ class Gui(Frame):
         self.Entry_Zsafe.configure(textvariable=self.ZSAFE)
         self.Entry_Zsafe.bind('<Return>', self.Recalculate_Click)
         self.ZSAFE.trace_variable("w", self.Entry_Zsafe_Callback)
-        self.Label_Zsafe_ToolTip = ToolTip(self.Label_Zsafe, text= \
+        self.Label_Zsafe_ToolTip = ToolTip(self.Label_Zsafe, text=
             'Z location that the tool will be sent to prior to any rapid moves.')
 
         self.Label_Zcut = Label(self.master, text="Engrave Depth")
@@ -481,7 +481,7 @@ class Gui(Frame):
         self.Entry_Zcut.configure(textvariable=self.ZCUT)
         self.Entry_Zcut.bind('<Return>', self.Recalculate_Click)
         self.ZCUT.trace_variable("w", self.Entry_Zcut_Callback)
-        self.Label_Zcut_ToolTip = ToolTip(self.Label_Zcut, text= \
+        self.Label_Zcut_ToolTip = ToolTip(self.Label_Zcut, text=
             'Depth of the engraving cut. This setting has no effect when the v-carve option is selected.')
 
         self.Checkbutton_fontdex = Checkbutton(self.master, text="Show All Font Characters", anchor=W)
@@ -773,10 +773,8 @@ class Gui(Frame):
 
         self.gcode = []
 
-        # todays_date = datetime.date.today().strftime("%B %d, %Y")
-        todays_date = datetime.datetime.now().strftime("%I:%M %p %B %d, %Y")
         self.gcode.append("(#########################################################)")
-        self.gcode.append('( F-Engrave settings, saved %s )' % todays_date)
+        self.gcode.append('( F-Engrave settings, saved %s )' % date_and_time())
         self.gcode.append("(#########################################################)")
 
         self.gcode.extend( self.settings.to_gcode() )
@@ -898,7 +896,7 @@ class Gui(Frame):
                 Delta = Thick/2 + float(self.boxgap.get())
         self.svgcode.append('</svg>')
 
-    #TODO move to Writers
+    # TODO move to Writers
 
     def WriteDXF(self,close_loops=False):
 
@@ -1583,7 +1581,7 @@ class Gui(Frame):
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
-        self.model.refresh_v_pplot() #TODO only needed when plotting
+        self.model.refresh_v_pplot() # TODO only needed when plotting
 
     def Entry_Box_Callback(self, varName, index, mode):
         try:
@@ -1619,7 +1617,7 @@ class Gui(Frame):
 
     def Entry_Vbitangle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check() )
-        #TODO settings
+        # TODO settings
         self.calc_depth_limit()
 
     def Entry_Vbitdia_Check(self):
@@ -1858,7 +1856,7 @@ class Gui(Frame):
 
     def Entry_BMPturdsize_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check() )
-        #TODO settings
+        # TODO settings
 
     def Entry_BMPalphamax_Check(self):
         try:
@@ -2064,7 +2062,7 @@ class Gui(Frame):
         self.settings.set('units', self.units.get())
         self.Recalc_RQD()
 
-    #TODO update settings? or is this taken care of by the Tk widgets trace?
+    # TODO update settings? or is this taken care of by the Tk widgets trace?
     def Scale_Linear_Inputs(self, factor=1.0):
         try:
             self.YSCALE.set(     '%.3g' %(float(self.YSCALE.get()     )*factor) )
@@ -2291,7 +2289,7 @@ class Gui(Frame):
 
         self.calc_depth_limit()
 
-        #TODO cleanup
+        # TODO cleanup
         # temp_name, fileExtension = os.path.splitext(filename)
         # file_base = os.path.basename(temp_name)
 
@@ -3726,7 +3724,7 @@ class Gui(Frame):
         self.MAXY = maxy - y_zero + YOrigin
         self.MINY = miny - y_zero + YOrigin
         
-        #TODO fix variables (crossing App and Model)
+        # TODO fix variables (crossing App and Model)
         self.model.setMaxX(self.MAXX)
         self.model.setMinX(self.MINX)
         self.model.setMaxY(self.MAXY)
@@ -4145,8 +4143,8 @@ class Gui(Frame):
         self.Label_BoxGap_u.place(x=w_label + x_radio_offset + 230, y=D_Yloc, width=100, height=21)
         self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
 
-        #TODO Tkinter Checkbutton default values are 0/1, this seems to go with False and True, as used in settings.
-        #TODO Find out whether it is better to explicitly set on/off value to True respectively False
+        # TODO Tkinter Checkbutton default values are 0/1, this seems to go with False and True, as used in settings.
+        # TODO Find out whether it is better to explicitly set on/off value to True respectively False
 
         D_Yloc = D_Yloc + D_dY
         self.Label_v_pplot = Label(gen_settings, text="Plot During V-Carve Calculation")

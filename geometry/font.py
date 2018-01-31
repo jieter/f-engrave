@@ -2,6 +2,7 @@ from geometry.boundingbox import BoundingBox
 
 
 class Character(object):
+
     def __init__(self, key, stroke_list):
         self.key = key
         self.stroke_list = stroke_list
@@ -43,6 +44,7 @@ class Character(object):
 
 
 class Font(object):
+
     def __init__(self):
         self.characters = {}
         self.bbox = BoundingBox()
@@ -56,15 +58,6 @@ class Font(object):
             return Character(' ', [])
 
         return self.characters[key]
-
-    #TODO To be removed after testing has been completed
-    def __str__(self):
-        charstring = ''
-        for char in self.characters:
-            charstring = charstring + str(char) + ' '
-
-        return charstring
-    #/TEST
 
     def add_character(self, char):
         self.characters[char.key] = char

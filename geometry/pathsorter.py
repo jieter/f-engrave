@@ -1,10 +1,10 @@
 def sort_paths(ecoords, i_loop=2):
-    '''
+    """
     Sort paths
     :param ecoords: list of loops
     :param i_loop: inner loop? #TODO
     :return: ordered loops
-    '''
+    """
 
     # find loop ends
     Lbeg = []

@@ -5,14 +5,14 @@ from geometry import Character, Line, Font
 
 
 def parse(file, segarc):
-    '''
+    """
     This routine parses the .cxf font file and builds a font dictionary of
     line segment strokes required to cut each character.
     Arcs (only used in some fonts) are converted to a number of line
     segments based on the angular length of the arc. Since the idea of
     this font description is to make it support independent x and y scaling,
     we do not use native arcs in the g-code.
-    '''
+    """
     font = Font()
 
     key = None

@@ -1,16 +1,16 @@
 from util import VERSION
 
 if VERSION == 3:
-	from tkinter import *
-	from tkinter.filedialog import *
-	import tkinter.messagebox
+    from tkinter import *
+    from tkinter.filedialog import *
+    import tkinter.messagebox
 else:
-	from Tkinter import *
-	from tkFileDialog import *
-	import tkMessageBox
+    from Tkinter import *
+    from tkFileDialog import *
+    import tkMessageBox
 
 class ToolTip:
-    '''
+    """
     http://tkinter.unpythonic.net/wiki/ToolTip
 
     Michael Lange <klappnase (at) freakmail (dot) de>
@@ -52,7 +52,7 @@ class ToolTip:
     create_contents() : creates the contents of the tooltip window (by default a Tkinter.Label)
 
     # Ideas gleaned from PySol
-    '''
+    """
     def __init__(self, master, text='Your text here', delay=100, **opts):
         self.master = master
         self._opts = {'anchor': 'center', 'bd': 1, 'bg': 'lightyellow', 'delay': delay, 'fg': 'black',
@@ -78,8 +78,8 @@ class ToolTip:
                 KeyError = 'KeyError: Unknown option: "%s"' %key
                 raise KeyError
     
-    #these methods handle the callbacks on "<Enter>", "<Leave>" and "<Motion>"
-    #events on the parent widget; override them if you want to change the widget's behavior
+    # these methods handle the callbacks on "<Enter>", "<Leave>" and "<Motion>"
+    # events on the parent widget; override them if you want to change the widget's behavior
 
     def enter(self, event=None):
         self._schedule()
@@ -93,7 +93,7 @@ class ToolTip:
             x, y = self.coords()
             self._tipwindow.wm_geometry("+%d+%d" % (x, y))
     
-    #the methods that do the work:
+    # the methods that do the work:
 
     def _schedule(self):
         self._unschedule()
@@ -132,7 +132,7 @@ class ToolTip:
         if tw:
             tw.destroy()
                 
-    #these methods might be overridden in derived classes:
+    # these methods might be overridden in derived classes:
 
     def coords(self):
         # The tip window must be completely outside the master widget;

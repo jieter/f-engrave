@@ -1,4 +1,4 @@
-from geometry import BoundingBox, Zero, Scale, Translate, Rotn
+from geometry import BoundingBox, Zero, scale, translate, rotation
 from readers.cxf import parse as parse_cxf
 from settings import CUT_TYPE_VCARVE
 from util import fmessage

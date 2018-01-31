@@ -10,11 +10,11 @@ Zero = 1e-6
 
 
 def transform(x, y, angle):
-    '''
+    """
     routine takes an x and a y coords and does a coordinate transformation
     to a new coordinate system at angle from the initial coordinate system
     Returns new x,y tuple
-    '''
+    """
     newx = x * cos(angle) - y * sin(angle)
     newy = x * sin(angle) + y * cos(angle)
 
@@ -22,18 +22,18 @@ def transform(x, y, angle):
 
 
 def rotation(x, y, angle, radius):
-    '''
+    """
     routine takes an x and y the point is rotated by angle returns new x,y,alpha
-    '''
-    if radius > 0.0 or radius < 0.0:
-        alpha = x / radius
-        xx = (radius + y) * sin(alpha)
-        yy = (radius + y) * cos(alpha)
-    else:
-        # radius is exacly 0
+    """
+    if radius == 0.0:
         alpha = 0
         xx = x
         yy = y
+    else:
+        # radius > 0.0 or radius < 0.0
+        alpha = x / radius
+        xx = (radius + y) * sin(alpha)
+        yy = (radius + y) * cos(alpha)
 
     rad = hypot(xx, yy)
     theta = atan2(yy, xx)
@@ -52,11 +52,11 @@ def translate(x1, y1, x2, y2):
 
 
 def point_inside_polygon(x, y, poly):
-    '''
+    """
     determine if a point is inside a given polygon or not
     Polygon is a list of (x,y) pairs.
     http://www.ariel.com.au/a/python-point-int-poly.html
-    '''
+    """
     n = len(poly)
     inside = -1
     p1x = poly[0][0]
@@ -77,9 +77,9 @@ def point_inside_polygon(x, y, poly):
 
 
 def detect_intersect(coords0, coords1, lcoords, XY_T_F=True):
-    '''
+    """
     Find intersecting lines
-    '''
+    """
     [x0, y0] = coords0
     [x1, y1] = coords1
 
@@ -194,10 +194,10 @@ class Line(object):
 ################################################################################
 
 def dist_lseg(l1, l2, p, z_only=False):
-    '''
+    """
     Compute the 3D distance from the line segment l1..l2 to the point p.
     (Those are lower case L1 and L2)
-    '''
+    """
     x0, y0, z0 = l1
     xa, ya, za = l2
     xi, yi, zi = p
@@ -378,9 +378,9 @@ def arc_dir(plane, c, p1, p2, p3):
 
 
 def get_angle(s, c):
-    '''
+    """
     routine takes a sin and cos and returns the angle (between 0 and 360)
-    '''
+    """
     angle = 90.0 - degrees(atan2(c, s))
 
     if angle < 0:

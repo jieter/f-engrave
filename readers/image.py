@@ -4,7 +4,6 @@ from subprocess import Popen, PIPE
 import dxf
 from util import fmessage, VERSION
 from geometry import Font
-#from . import dxf as parse_dxf
 
 def read_image_file(settings):
 
@@ -29,7 +28,7 @@ def read_image_file(settings):
             with open(file_full) as dxf_file:
                 # build stroke lists from image file
                 font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
-                #font['DXF_source'] = DXF_source
+                # font['DXF_source'] = DXF_source
                 settings.set('input_type', 'image')
 
         except Exception, e:
@@ -59,7 +58,7 @@ def read_image_file(settings):
 
             # build stroke lists from font file
             font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
-            #font['DXF_source'] = DXF_source
+            # font['DXF_source'] = DXF_source
 
             settings.set('input_type', 'image')
 

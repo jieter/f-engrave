@@ -8,6 +8,7 @@ from geometry import Zero
 ##  Begin Excerpts from dxf2gcode_b02_nurbs_calc  ##
 ####################################################
 class NURBSClass(object):
+
     def __init__(self, degree=0, Knots=[], Weights=None, CPoints=None):
         self.degree = degree              # Spline degree
         self.Knots = Knots                # Knot Vector
@@ -25,7 +26,7 @@ class NURBSClass(object):
                                     Knots=self.Knots,
                                     CPts=self.HCPts)
 
-    #Calculate a number of evenly distributed points
+    # Calculate a number of evenly distributed points
     def calc_curve_old(self, n=0, cpts_nr=20):
         # Initial values for step and u
         u = 0
@@ -85,8 +86,7 @@ class NURBSClass(object):
                 Pt1=Pt2
         return Points
 
-
-    #Calculate a point of NURBS
+    # Calculate a point of NURBS
     def NURBS_evaluate(self,n=0,u=0):
 
         #Calculate the homogeneous points to the n th derivative
@@ -96,7 +96,7 @@ class NURBSClass(object):
         Point=self.HPt_2_Pt(HPt[0])
         return Point
 
-    #Convert the NURBS control points and weight in a homogeneous vector
+    # Convert the NURBS control points and weight in a homogeneous vector
     def CPts_2_HCPts(self):
         for P_nr in range(len(self.CPoints)):
             HCPtVec=[self.CPoints[P_nr].x*self.Weights[P_nr],\
@@ -104,6 +104,6 @@ class NURBSClass(object):
                        self.Weights[P_nr]]
             self.HCPts.append(HCPtVec[:])
 
-    #Convert a homogeneous vector point in a point
+    # Convert a homogeneous vector point in a point
     def HPt_2_Pt(self,HPt):
         return PointClass(x=HPt[0]/HPt[-1],y=HPt[1]/HPt[-1])

@@ -71,9 +71,9 @@ IMAGE_FILE = (HOME_DIR + "/Desktop/None")  # TEST
 
 
 class Settings(object):
-    '''
+    """
     Default values for the application settings.
-    '''
+    """
     _defaults = {
         'HOME_DIR': HOME_DIR,
         'NGC_FILE': NGC_FILE,
@@ -237,7 +237,7 @@ class Settings(object):
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
 
-        'default_text': 'F-engrave'
+        'default_text': 'F-Engrave'
     }
 
     def __init__(self, filename=None, autoload=False):

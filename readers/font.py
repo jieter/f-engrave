@@ -6,9 +6,9 @@ from . import cxf as parse_cxf
 
 
 def readFontFile(settings):
-    '''
-    Read a font file (.cxf, .ttf)
-    '''
+    """
+    Read a (.cxf, .ttf) font file
+    """
     filename = settings.get_fontfile()
 
     if not os.path.isfile(filename):
