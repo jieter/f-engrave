@@ -1,12 +1,11 @@
 import sys
-import datetime
 from math import hypot, tan, radians, sqrt
 
 from geometry import *
 from geometry.pathsorter import sort_paths
 from geometry.linearcfitter import line_arc_fit
 
-from util import date_and_time, fmessage, icon
+from util import header_text, fmessage, icon
 
 
 def gcode(job):
@@ -14,11 +13,8 @@ def gcode(job):
 
     code = []
 
-    code += settings.to_gcode()
-
-    code.append("(#########################################################)")
-    code.append('( F-Engrave G-Code, generated %s )' % date_and_time())
-    code.append("(#########################################################)")
+    code.extend(header_text())
+    code.extend(settings.to_gcode())
 
     # G90 Sets absolute distance mode
     code.append('G90')
@@ -461,9 +457,9 @@ def vcarve_gcode(job):
 
 
 def write_clean_up(job, bit_type="straight"):
-    '''
+    """
     Write Cleanup G-code File
-    '''
+    """
     settings = job.settings
 
     code = []
@@ -776,14 +772,14 @@ class Gcode:
         self.safety()
 
     def rapid(self, x=None, y=None, z=None):
-        '''Perform a rapid move to the specified coordinates'''
+        """Perform a rapid move to the specified coordinates"""
         self.flush()
         self._move_common(x, y, z, gcode="G0")
 
     def _move_common(self, x=None, y=None, z=None, I=None, J=None, gcode="G0"):
-        '''
+        """
         G0 and G1 moves
-        '''
+        """
         xstring = ystring = zstring = Istring = Jstring = Rstring = fstring = ""
         if x is None: x = self.lastx
         if y is None: y = self.lasty
@@ -837,9 +833,9 @@ class Gcode:
         self.lastf = None
 
     def cut(self, x=None, y=None, z=None):
-        '''
+        """
         Perform a cutting move at the specified feed rate to the specified coordinates
-        '''
+        """
         if self.cuts:
             lastx, lasty, lastz = self.cuts[-1]
         else:
@@ -856,7 +852,7 @@ class Gcode:
 
 
 def douglas(st, tolerance=.001, plane=None, _first=True):
-    '''
+    """
     Perform Douglas-Peucker simplification on the path 'st' with the specified
     tolerance.  The '_first' argument is for internal use only.
 
@@ -870,7 +866,7 @@ def douglas(st, tolerance=.001, plane=None, _first=True):
     Note that if there is movement in the plane
     perpendicular to the arc, it will be distorted, so 'plane' should usually
     be specified only when there is only movement on 2 axes
-    '''
+    """
 
     if len(st) == 1:
         yield "G1", st[0], None

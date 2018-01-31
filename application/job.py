@@ -42,7 +42,8 @@ class Job(object):
         return '\n'.join(writers.svg(self)).strip()
 
     def get_gcode(self):
-        return '\n'.join(writers.gcode(self))
+        # return '\n'.join(writers.gcode(self))
+        return writers.gcode(self)
 
     def get_font(self):
         filename = self.settings.get_fontfile()
@@ -93,7 +94,7 @@ class Job(object):
         settings = self.settings
 
         font = self.font
-        engrave_text = self.settings.get('text')
+        engrave_text = self.settings.get('default_text')
         line_thickness = settings.get('line_thickness')
 
         if settings.get('height_calculation') == 'max_all':
@@ -182,7 +183,7 @@ class Job(object):
             self._draw_box()
 
     def _transform_justify(self):
-        '''Jusitify the text'''
+        """Justify the text"""
         justify = self.settings.get('justify')
 
         if justify is 'Left':
@@ -197,7 +198,7 @@ class Job(object):
                 # TODO: implement justify right
 
     def _transform_mirror(self):
-        '''Mirror in x-axis'''
+        """Mirror in x-axis"""
         for i, line in enumerate(self.coords):
             line[0] *= -1
             line[2] *= -1
@@ -227,7 +228,7 @@ class Job(object):
         self.coords.append([bbox.xmin, bbox.ymax, bbox.xmin, bbox.ymin, 0, 0])
 
     def _transform_radius(self):
-        '''Transform the coordinates to a radius'''
+        """Transform the coordinates to a radius"""
         radius = self.get_plot_radius()
 
         # print radius
@@ -238,8 +239,8 @@ class Job(object):
         max_alpha = -100000
         for i, line in enumerate(self.coords):
             # print line
-            line[0], line[1], alpha1 = Rotn(line[0], line[1], 0, radius)
-            line[1], line[2], alpha2 = Rotn(line[1], line[2], 0, radius)
+            line[0], line[1], alpha1 = rotation(line[0], line[1], 0, radius)
+            line[1], line[2], alpha2 = rotation(line[1], line[2], 0, radius)
             # print line
             self.coords[i] = line
             min_alpha = min(alpha1, alpha2, min_alpha)

@@ -48,7 +48,7 @@ class SettingsTest(unittest.TestCase):
         self.assertEquals(s.get('xscale'), 100)
 
         # test booleans
-        self.assertEquals(s.get('var_dis'), False)
+        self.assertEquals(s.get('var_dis'), True)
         self.assertEquals(s.get('upper'), True)
 
         # test strings
@@ -62,7 +62,7 @@ class SettingsTest(unittest.TestCase):
         self.assertEquals(s.get('xscale'), 100)
 
         # test booleans
-        self.assertEquals(s.get('var_dis'), False)
+        self.assertEquals(s.get('var_dis'), True)
         self.assertEquals(s.get('upper'), True)
 
         # test strings
@@ -86,7 +86,7 @@ class SettingsTest(unittest.TestCase):
         s.set('default_text', '  "Test123 "   ')
         self.assertEquals(s.get('default_text'), 'Test123')
 
-        s.set('text', '"bla bla "foo" bla bla"')
+        s.set('default_text', '"bla bla "foo" bla bla"')
         self.assertEquals(s.get('text'), 'bla bla "foo" bla bla')
 
     # def test_autoload(self):

@@ -1,7 +1,9 @@
+import os
 import getopt
 from time import time
 import webbrowser
 
+# from util import VERSION, POTRACE_AVAILABLE, TTF_AVAILABLE, PIL, IN_AXIS, header_text
 from util import *
 from tooltip import ToolTip
 
@@ -638,9 +640,9 @@ class Gui(Frame):
 
 
     def initialise_settings(self):
-        '''
+        """
         Initialise the TK widgets with the values from settings
-        '''
+        """
         self.batch.set(self.settings.get('batch'))
         self.show_axis.set(self.settings.get('show_axis'))
         self.show_box.set(self.settings.get('show_box'))
@@ -773,10 +775,7 @@ class Gui(Frame):
 
         self.gcode = []
 
-        self.gcode.append("(#########################################################)")
-        self.gcode.append('( F-Engrave settings, saved %s )' % date_and_time())
-        self.gcode.append("(#########################################################)")
-
+        self.gcode.extend(header_text())
         self.gcode.extend( self.settings.to_gcode() )
 
         config_filename = self.settings.get('config_filename')
@@ -902,7 +901,7 @@ class Gui(Frame):
 
         if close_loops:
             self.v_carve_it(clean_flag=False, DXF_FLAG=close_loops)
-        
+
         dxf_code = []
         # Create a header section just in case the reading software needs it
         dxf_code.append("999")
@@ -920,9 +919,9 @@ class Gui(Frame):
 
         #         
         #Tables Section
-        #These can be used to specify predefined constants, line styles, text styles, view 
-        #tables, user coordinate systems, etc. We will only use tables to define some layers 
-        #for use later on. Note: not all programs that support DXF import will support 
+        #These can be used to specify predefined constants, line styles, text styles, view
+        #tables, user coordinate systems, etc. We will only use tables to define some layers
+        #for use later on. Note: not all programs that support DXF import will support
         #layers and those that do usually insist on the layers being defined before use
         #
         # The following will initialise layers 1 and 2 for use with moves and rapid moves.
@@ -990,7 +989,7 @@ class Gui(Frame):
         dxf_code.append("ENDTAB")
         dxf_code.append("0")
         dxf_code.append("ENDSEC")
-        
+
         # This block section is not necessary but apperantly it's good form to include one anyway.
         # The following is an empty block section.
         dxf_code.append("0")
@@ -1013,7 +1012,7 @@ class Gui(Frame):
         #for line in side:
         for line in self.model.coords:
             XY = line
-            
+
             #if line[0] == 1 or (line[0] == 0 and Rapids):
             dxf_code.append("LINE")
             dxf_code.append("  5")
@@ -1036,7 +1035,7 @@ class Gui(Frame):
             dxf_code.append(" 62") #color code
             dxf_code.append("150")
             ###########################
-            
+
             dxf_code.append("100")
             dxf_code.append("AcDbLine")
             dxf_code.append(" 10")
@@ -1718,7 +1717,7 @@ class Gui(Frame):
             pass
         self.settings.set('inlay', self.inlay.get())
         self.Recalc_RQD()
-        
+
     def Entry_v_max_cut_Check(self):
         try:
             value = float(self.v_max_cut.get())
@@ -2062,7 +2061,6 @@ class Gui(Frame):
         self.settings.set('units', self.units.get())
         self.Recalc_RQD()
 
-    # TODO update settings? or is this taken care of by the Tk widgets trace?
     def Scale_Linear_Inputs(self, factor=1.0):
         try:
             self.YSCALE.set(     '%.3g' %(float(self.YSCALE.get()     )*factor) )
@@ -2182,7 +2180,6 @@ class Gui(Frame):
 
     # End General Settings Callbacks
 
-
     def menu_File_Open_G_Code_File(self):
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -2193,7 +2190,6 @@ class Gui(Frame):
 
         if fileselect != '' and fileselect != ():
             self.Open_G_Code_File(fileselect)
-
 
     def menu_File_Open_DXF_File(self):
         init_dir = os.path.dirname(self.IMAGE_FILE)  # TODO  settings
@@ -3089,7 +3085,7 @@ class Gui(Frame):
 
         x_zero = self.xzero
         y_zero = self.yzero
-        
+
         # Plot circle radius with radius equal to Radius_plot
         if Radius_plot != 0:
             Rpx_lft = cszw/2 + ( -Radius_plot-midx - x_zero) / plot_scale
@@ -3230,7 +3226,7 @@ class Gui(Frame):
             return
 
         self.menu_View_Refresh()
-        
+
         if not self.batch.get:
             if self.cut_type.get() == "v-carve":
                 self.V_Carve_Calc.configure(state="normal", command=None)
@@ -3381,7 +3377,7 @@ class Gui(Frame):
                     error_text = "Image contains no design information. (Empty DXF File)"
                 else:
                     error_text = "Input Characters Were Not Found in the Current Font"
-                    
+
                 if not self.batch.get():
                     self.statusMessage.set(error_text)
                 else:
@@ -3455,7 +3451,7 @@ class Gui(Frame):
                     no_font_record.append(char)
                     message2 = ", CHECK OUTPUT! Some characters not found in font file."
                 continue
-                
+
             for stroke in self.font[ord(char)].stroke_list:
                 x1 = stroke.xstart + xposition
                 y1 = stroke.ystart - yposition
@@ -3493,7 +3489,7 @@ class Gui(Frame):
         ##########################################
         if self.justify.get() == "Left":
             pass
-            
+
         ##########################################
         #          TEXT CENTERING STUFF          #
         ##########################################
@@ -3567,7 +3563,7 @@ class Gui(Frame):
         ##########################################
         mirror_flag = self.mirror.get()
         flip_flag = self.flip.get()
-            
+
         maxx = -99991.0
         maxy = -99992.0
         miny =  99994.0
@@ -3578,7 +3574,7 @@ class Gui(Frame):
                 miny = -font_line_height*YScale
             else:
                 maxy = font_line_height*YScale
-                
+
         elif Angle == 90.0 or Angle == -270.0:
             if not mirror_flag:
                 minx = -font_line_height*YScale
@@ -3652,7 +3648,7 @@ class Gui(Frame):
                     self.model.coords.append([ maxx+Delta, miny-Delta, maxx+Delta, maxy+Delta, 0, 0])
                     self.model.coords.append([ maxx+Delta, maxy+Delta, minx-Delta, maxy+Delta, 0, 0])
                     self.model.coords.append([ minx-Delta, maxy+Delta, minx-Delta, miny-Delta, 0, 0])
-                
+
                 if self.cut_type.get() != "v-carve":
                     Delta = Delta + Thick/2
                 minx = minx - Delta
@@ -3723,7 +3719,7 @@ class Gui(Frame):
         self.MINX = minx - x_zero + XOrigin
         self.MAXY = maxy - y_zero + YOrigin
         self.MINY = miny - y_zero + YOrigin
-        
+
         # TODO fix variables (crossing App and Model)
         self.model.setMaxX(self.MAXX)
         self.model.setMinX(self.MINX)
@@ -3787,7 +3783,7 @@ class Gui(Frame):
 
         if self.Check_All_Variables() > 0:
             return
-            
+
         if not clean_flag:
             self.do_it()
             self.model.init_clean_coords()
@@ -3838,7 +3834,7 @@ class Gui(Frame):
             if done and (not self.batch.get()):
                 self.statusMessage.set('Done -- ' + self.bounding_box.get())
                 self.statusbar.configure( bg='white' )
-                
+
         self.master.bind("<Configure>", self.Master_Configure)
 
     def PBM_Settings_Window(self):

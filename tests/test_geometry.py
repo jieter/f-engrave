@@ -36,21 +36,18 @@ class RotationTest(unittest.TestCase):
 
         # with radius
         x, y, alpha = rotation(1, 1, 90, 100)
-        print 'A x, y, alpha:', x, y, alpha
 
         self.assertAlmostEqual(x, -101.0)
         self.assertAlmostEqual(y, 0.0)
         self.assertAlmostEqual(alpha, 0.0)
 
         x, y, alpha = rotation(1, 1, -90, 100)
-        print 'B x, y, alpha:', x, y, alpha
 
         self.assertAlmostEqual(x, 101.0)
         self.assertAlmostEqual(y, 0.0)
         self.assertAlmostEqual(alpha, 0.0)
 
         x, y, alpha = rotation(1, 1, 180, 100)
-        print 'C x, y, alpha:', x, y, alpha
 
         self.assertAlmostEqual(x, 0.0)
         self.assertAlmostEqual(y, -101.0)

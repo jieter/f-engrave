@@ -7,7 +7,7 @@ from application.job import Job
 class JobTest(unittest.TestCase):
 
     def _save_testfiles(self, job, filename):
-        basename = '/home/jieter/Dropbox/cnc/%s.%s'
+        basename = '/Users/johan/Desktop/cnc/%s.%s'
 
         with open(basename % (filename, 'ngc'), 'w') as f:
             f.write(job.get_gcode())
@@ -20,7 +20,7 @@ class JobTest(unittest.TestCase):
 
     def _job_with_settings(self, *args):
         settings = Settings(filename='tests/files/job_test_settings.ngc')
-        settings.set('text', 'OOF-Engrave')
+        settings.set('default_text', 'OOF-Engrave')
 
         for key, value in args:
             settings.set(key, value)
@@ -36,7 +36,6 @@ class JobTest(unittest.TestCase):
 
     def test_text_radius(self):
         job = self._job_with_settings(('text_radius', 100))
-
         self._save_testfiles(job, 'radius')
 
     def test_write_max_all(self):
@@ -53,7 +52,7 @@ class JobTest(unittest.TestCase):
 
     def test_write_box(self):
         job = self._job_with_settings(
-            ('text', 'plotbox\nboxgap=50 '),
+            ('default_text', 'plotbox\nboxgap=50 '),
             ('plotbox', 'box'),
             ('boxgap', 50)
         )

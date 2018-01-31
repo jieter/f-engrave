@@ -37,7 +37,7 @@ else:
 
     root = Tk()
     app = Gui(root, settings)
-    app.master.title("F-Engrave V" + version)
+    app.master.title("F-Engrave v" + version)
     app.master.iconname("F-Engrave")
     app.master.minsize(780, 540)
 

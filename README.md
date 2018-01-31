@@ -12,6 +12,7 @@ The repo name was changed into OOF-Engrave to avoid confusion with the original.
  - sync with F-Engrave version 1.65
  - split(ting) into modules
  - decouple the GUI from the actual processing
+ - batch processing
  - work towards a clean, consistent coding style, by using flake
  - Tests
  
