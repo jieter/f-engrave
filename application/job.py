@@ -42,8 +42,7 @@ class Job(object):
         return '\n'.join(writers.svg(self)).strip()
 
     def get_gcode(self):
-        # return '\n'.join(writers.gcode(self))
-        return writers.gcode(self)
+        return '\n'.join(writers.gcode(self))
 
     def get_font(self):
         filename = self.settings.get_fontfile()

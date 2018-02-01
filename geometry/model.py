@@ -13,9 +13,8 @@ class Model():
     Manage all loops, derived from the data in the font or image file,
     as coordinate lists.
     """
-    def __init__(self, controller, settings):
 
-        self.controller = controller
+    def __init__(self, settings):
 
         self.progress_callback = None
         self.plot_progress_callback = None
@@ -28,10 +27,12 @@ class Model():
         self.v_pplot = self.settings.get('v_pplot')
         self.STOP_CALC = False
 
-        self.setMaxX(0)
-        self.setMinX(0)
-        self.setMaxY(0)
-        self.setMinY(0)
+        self.set_x_length(0)
+        self.set_y_length(0)
+        self.set_maxX(0)
+        self.set_minX(0)
+        self.set_maxY(0)
+        self.set_minX(0)
 
     def init_coords(self):
         self.coords = []
@@ -59,16 +60,22 @@ class Model():
     def refresh_v_pplot(self):
         self.v_pplot = self.settings.get('v_pplot')
 
-    def setMaxX(self, x):
+    def set_x_length(self, xl):
+        self.x_length = xl
+
+    def set_y_length(self, yl):
+        self.y_length = yl
+
+    def set_maxX(self, x):
         self.maxX = x
 
-    def setMinX(self, x):
+    def set_minX(self, x):
         self.minX = x
 
-    def setMaxY(self, y):
+    def set_maxY(self, y):
         self.maxY = y
 
-    def setMinY(self, y):
+    def set_minY(self, y):
         self.minY = y
 
     def number_of_clean_segments(self):
@@ -90,7 +97,7 @@ class Model():
             y1 = line[i_y1]
             x2 = line[i_x2]
             y2 = line[i_y2]
-            length = sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) )
+            length = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
             if clean_flag:
                 if self.clean_segment[idx] != 0:
                     total_length += length
@@ -108,7 +115,7 @@ class Model():
         ya = 9999
         xb = 9999
         yb = 9999
-        
+
         # set variable for the point previously calculated in a loop
         x0 = 9999
         y0 = 9999
@@ -117,7 +124,7 @@ class Model():
         seg_cos0 = 2
         char_num0 = -1
         theta = 9999.0
-        loop_cnt = 0 # the number of loops in this model
+        loop_cnt = 0  # the number of loops in this model
 
         v_flop = self.get_flop_status(clean_flag)
         if v_flop:
@@ -135,67 +142,55 @@ class Model():
             i_x2 = 2
             i_y2 = 3
 
-        not_b_carve = not bool( self.settings.get('bit_shape') == "BALL" )
+        not_b_carve = not bool(self.settings.get('bit_shape') == "BALL")
 
         CHK_STRING = self.settings.get('v_check_all')
-        #TODO has check not been set before, else add set check in settings
+        # TODO has check not been set before, else add set check in settings
         if self.settings.get('input_type') != "text":
             CHK_STRING = "all"
 
         bit_angle = self.settings.get('v_bit_angle')
-
-        #TODO get rid of controller dependencies
-        #vbit_dia = self.settings.get('v_bit_dia')
-        rbit = self.controller.calc_vbit_dia()/2.0
-
+        rbit = self.calc_vbit_radius()
         dline = self.settings.get('v_step_len')
-        dangle = degrees(dline/rbit)
+        dangle = degrees(dline / rbit)
         if dangle < 2.0:
             dangle = 2.0
-                    
+
         v_step_corner = self.settings.get('v_step_corner')
         if self.settings.get('inlay'):
             v_drv_corner = 360 - v_step_corner
         else:
             v_drv_corner = self.settings.get('v_drv_corner')
-                    
+
         # r_inlay_top = self.controller.calc_r_inlay_top()
         clean_dia = self.settings.get('clean_dia')
         if clean_flag:
-            rmax = rbit + clean_dia/2
+            rmax = rbit + clean_dia / 2
         else:
             rmax = rbit
 
-        midx = (self.maxX + self.minX) / 2
-        midy = (self.maxY + self.minY) / 2
-        xLength = self.maxX - self.minX
-        yLength = self.maxY - self.minY
-        
-        #TODO get rid of controller dependencies
-        # cszw = int(self.controller.PreviewCanvas.cget("width"))
-        # cszh = int(self.controller.PreviewCanvas.cget("height"))
-            
         #########################
         # Setup Grid Partitions #
         #########################
         coord_radius = []
-        xN = 0
-        yN = 0
 
-        xN_minus_1 = max(int(xLength/((2*rmax+dline)*1.1)), 1)
-        yN_minus_1 = max(int(yLength/((2*rmax+dline)*1.1)), 1)
+        xLength = self.maxX-self.minX
+        yLength = self.maxY-self.minY
 
-        xPartitionLength = xLength/xN_minus_1
-        yPartitionLength = yLength/yN_minus_1
+        xN_minus_1 = max(int(xLength / ((2 * rmax + dline) * 1.1)), 1)
+        yN_minus_1 = max(int(yLength / ((2 * rmax + dline) * 1.1)), 1)
 
-        xN = xN_minus_1+1
-        yN = yN_minus_1+1
+        xPartitionLength = xLength / xN_minus_1
+        yPartitionLength = yLength / yN_minus_1
+
+        xN = xN_minus_1 + 1
+        yN = yN_minus_1 + 1
 
         if xPartitionLength < Zero:
             xPartitionLength = 1
         if yPartitionLength < Zero:
             yPartitionLength = 1
-            
+
         self.xPartitionLength = xPartitionLength
         self.yPartitionLength = yPartitionLength
 
@@ -208,25 +203,26 @@ class Model():
         # End Setup Grid Partitions   #
         ###############################
 
-        CUR_CNT = -1
-        while (self.number_of_segments() > CUR_CNT+1):
-            CUR_CNT += 1
-            XY_R = self.coords[CUR_CNT][:]
+        done = True
+
+        for curr, coords in enumerate(self.coords):
+
+            XY_R = self.coords[curr][:]
             x1_R = XY_R[0]
             y1_R = XY_R[1]
             x2_R = XY_R[2]
             y2_R = XY_R[3]
-            LENGTH = sqrt( (x2_R-x1_R)*(x2_R-x1_R) + (y2_R-y1_R)*(y2_R-y1_R) )
-            
-            R_R = LENGTH/2 + rmax
-            X_R = (x1_R + x2_R)/2
-            Y_R = (y1_R + y2_R)/2
+            LENGTH = sqrt((x2_R - x1_R) * (x2_R - x1_R) + (y2_R - y1_R) * (y2_R - y1_R))
+
+            R_R = LENGTH / 2 + rmax
+            X_R = (x1_R + x2_R) / 2
+            Y_R = (y1_R + y2_R) / 2
             coord_radius.append([X_R, Y_R, R_R])
 
             #####################################################
             # Determine active partitions for each line segment #
             #####################################################
-            coded_index=[]
+            coded_index = []
 
             # find the local coordinates of the line segment ends
             x1_G = XY_R[0] - self.minX
@@ -235,43 +231,43 @@ class Model():
             y2_G = XY_R[3] - self.minY
 
             # find the grid box index for each line segment end
-            X1i = int( x1_G / xPartitionLength )
-            X2i = int( x2_G / xPartitionLength )
-            Y1i = int( y1_G / yPartitionLength )
-            Y2i = int( y2_G / yPartitionLength )
+            X1i = int(x1_G / xPartitionLength)
+            X2i = int(x2_G / xPartitionLength)
+            Y1i = int(y1_G / yPartitionLength)
+            Y2i = int(y2_G / yPartitionLength)
 
             ## Find the max/min grid box locations
-            Xindex_min = min(X1i,X2i)
-            Xindex_max = max(X1i,X2i)
-            Yindex_min = min(Y1i,Y2i)
-            Yindex_max = max(Y1i,Y2i)
+            Xindex_min = min(X1i, X2i)
+            Xindex_max = max(X1i, X2i)
+            Yindex_min = min(Y1i, Y2i)
+            Yindex_max = max(Y1i, Y2i)
 
             check_points = []
-            if Xindex_max > Xindex_min and abs(x2_G-x1_G) > Zero:
+            if Xindex_max > Xindex_min and abs(x2_G - x1_G) > Zero:
 
-                if Yindex_max > Yindex_min and abs(y2_G-y1_G) > Zero:
+                if Yindex_max > Yindex_min and abs(y2_G - y1_G) > Zero:
                     check_points.append([X1i, Y1i])
                     check_points.append([X2i, Y2i])
-                    
+
                     # Establish line equation variables: y=m*x+b
-                    m_G = (y2_G-y1_G)/(x2_G-x1_G)
-                    b_G = y1_G - m_G*x1_G
+                    m_G = (y2_G - y1_G) / (x2_G - x1_G)
+                    b_G = y1_G - m_G * x1_G
 
                     # Add check point in each partition in the range of X values
-                    x_ind_check = Xindex_min+1
-                    while x_ind_check <= Xindex_max-1:
+                    x_ind_check = Xindex_min + 1
+                    while x_ind_check <= Xindex_max - 1:
                         x_val = x_ind_check * xPartitionLength
                         y_val = m_G * x_val + b_G
-                        y_ind_check = int(y_val/yPartitionLength)
+                        y_ind_check = int(y_val / yPartitionLength)
                         check_points.append([x_ind_check, y_ind_check])
                         x_ind_check = x_ind_check + 1
-                        
+
                     # Add check point in each partition in the range of Y values
-                    y_ind_check = Yindex_min+1
-                    while y_ind_check <= Yindex_max-1:
-                        y_val =  y_ind_check * yPartitionLength
-                        x_val = (y_val-b_G ) / m_G
-                        x_ind_check = int(x_val/xPartitionLength)
+                    y_ind_check = Yindex_min + 1
+                    while y_ind_check <= Yindex_max - 1:
+                        y_val = y_ind_check * yPartitionLength
+                        x_val = (y_val - b_G) / m_G
+                        x_ind_check = int(x_val / xPartitionLength)
                         check_points.append([x_ind_check, y_ind_check])
                         y_ind_check = y_ind_check + 1
                 else:
@@ -293,33 +289,29 @@ class Model():
                 xy_p = xy_point
                 xIndex = xy_p[0]
                 yIndex = xy_p[1]
-                for i in range( max(xIndex-1,0), min(xN, xIndex+2) ):
-                    for j in range( max(yIndex-1,0), min(yN, yIndex+2) ):
-                        coded_index.append(int(i+j*xN))
+                for i in range(max(xIndex - 1, 0), min(xN, xIndex + 2)):
+                    for j in range(max(yIndex - 1, 0), min(yN, yIndex + 2)):
+                        coded_index.append(int(i + j * xN))
 
             codedIndexSet = set(coded_index)
-            
+
             for thisCode in codedIndexSet:
                 thisIndex = thisCode
                 line_R_appended = XY_R
                 line_R_appended.append(X_R)
                 line_R_appended.append(Y_R)
                 line_R_appended.append(R_R)
-                self.partitionList[int(thisIndex%xN)][int(thisIndex/xN)].append(line_R_appended)
+                self.partitionList[int(thisIndex % xN)][int(thisIndex / xN)].append(line_R_appended)
         #########################################################
         # End Determine active partitions for each line segment #
         #########################################################
 
         TOT_LENGTH = self.get_segments_length(i_x1, i_y1, i_x2, i_y2, clean_flag)
-        MAX_CNT = self.number_of_segments()
 
         CUR_LENGTH = 0.0
-        CUR_CNT = -1
         START_TIME = time()
 
-        # Update canvas with modified paths
-        # if not self.batch:
-        #     self.controller.plot_data()
+        # Update GUI with the modified toolpath
         if not self.progress_callback is None:
             self.progress_callback()
 
@@ -327,38 +319,38 @@ class Model():
 
             calc_flag = 1
 
-            for line in range( self.number_of_segments() ):
-
-                CUR_CNT += 1
+            for curr in range(self.number_of_segments()):
+            #for curr in range(len(len(self.coords)):
 
                 if clean_flag == False:
                     self.clean_segment.append(0)
-                elif self.number_of_clean_segments() != self.number_of_segments():
-                    fmessage("Need to Recalculate V-Carve Path")
-                    break
+                elif self.number_of_clean_segments() == self.number_of_segments():
+                    calc_flag = self.clean_segment[curr]
                 else:
-                    calc_flag = self.clean_segment[CUR_CNT]
-                
-                CUR_PCT = float(CUR_LENGTH)/TOT_LENGTH*100.0
+                    fmessage('Need to Recalculate V-Carve Path')
+                    done = False
+                    break
+
+                CUR_PCT = float(CUR_LENGTH) / TOT_LENGTH * 100.0
                 if CUR_PCT > 0.0:
-                    MIN_REMAIN = ( time()-START_TIME )/60 * (100-CUR_PCT)/CUR_PCT
-                    MIN_TOTAL = 100.0/CUR_PCT * ( time()-START_TIME )/60
+                    MIN_REMAIN = (time() - START_TIME) / 60 * (100 - CUR_PCT) / CUR_PCT
+                    MIN_TOTAL = 100.0 / CUR_PCT * (time() - START_TIME) / 60
                 else:
                     MIN_REMAIN = -1
                     MIN_TOTAL = -1
-                    
+
                 if not self.status_callback is None:
-                    self.status_callback('%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' %( CUR_PCT, MIN_REMAIN, MIN_TOTAL) )
+                    self.status_callback(
+                        '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL))
 
                 if self.STOP_CALC:
-
                     self.STOP_CALC = False
-
                     if clean_flag:
                         self.clean_coords = []
                         calc_flag = 0
                     else:
                         self.vcoords = []
+                    done = False
                     break
 
                 v_index = v_index + v_inc
@@ -368,19 +360,19 @@ class Model():
                 x2 = self.coords[v_index][i_x2]
                 y2 = self.coords[v_index][i_y2]
                 char_num = int(self.coords[v_index][5])
-                dx = x2-x1
-                dy = y2-y1
-                Lseg = sqrt(dx*dx + dy*dy)
+                dx = x2 - x1
+                dy = y2 - y1
+                Lseg = sqrt(dx * dx + dy * dy)
 
-                if Lseg < Zero: #was accuracy
+                if Lseg < Zero:  # was accuracy
                     continue
-                
+
                 # calculate the sin and cos of the coord transformation needed for
                 # the distance calculations
-                seg_sin = dy/Lseg
-                seg_cos = -dx/Lseg
+                seg_sin = dy / Lseg
+                seg_cos = -dx / Lseg
                 phi = get_angle(seg_sin, seg_cos)
-                
+
                 if calc_flag != 0:
                     CUR_LENGTH = CUR_LENGTH + Lseg
                 else:
@@ -391,8 +383,8 @@ class Model():
                     # seg_cos0=seg_cos    #V1.62
                     # char_num0=char_num  #V1.62
                     continue
-                
-                if fabs(x1-x0) > Zero or fabs(y1-y0) > Zero or char_num != char_num0:
+
+                if fabs(x1 - x0) > Zero or fabs(y1 - y0) > Zero or char_num != char_num0:
                     New_Loop = 1
                     loop_cnt += 1
                     xa = float(x1)
@@ -406,40 +398,39 @@ class Model():
                 if seg_cos0 > 1.0:
                     delta = 180
                 else:
-                    xtmp1 = (x2-x1) * seg_cos0 - (y2-y1) * seg_sin0
-                    ytmp1 = (x2-x1) * seg_sin0 + (y2-y1) * seg_cos0
-                    Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
-                    d_seg_sin = ytmp1/Ltmp
-                    d_seg_cos = xtmp1/Ltmp
+                    xtmp1 = (x2 - x1) * seg_cos0 - (y2 - y1) * seg_sin0
+                    ytmp1 = (x2 - x1) * seg_sin0 + (y2 - y1) * seg_cos0
+                    Ltmp = sqrt(xtmp1 * xtmp1 + ytmp1 * ytmp1)
+                    d_seg_sin = ytmp1 / Ltmp
+                    d_seg_cos = xtmp1 / Ltmp
                     delta = get_angle(d_seg_sin, d_seg_cos)
 
-                if delta < float(v_drv_corner) and bit_angle !=0 and not_b_carve and clean_flag == False:
+                if delta < float(v_drv_corner) and bit_angle != 0 and not_b_carve and clean_flag == False:
                     # drive to corner
                     self.vcoords.append([x1, y1, 0.0, loop_cnt])
 
                 if delta > float(v_step_corner):
-                   ###########################
-                   #add sub-steps around corner
-                   ###########################
-                   phisteps = max(floor((delta-180)/dangle), 2)
-                   step_phi = (delta-180)/phisteps
-                   pcnt = 0
-                   while pcnt < phisteps-1:
-                       pcnt = pcnt+1
-                       sub_phi = radians( -pcnt*step_phi + theta )
-                       sub_seg_cos = cos(sub_phi)
-                       sub_seg_sin = sin(sub_phi)
+                    ###########################
+                    # add sub-steps around corner
+                    ###########################
+                    phisteps = max(floor((delta - 180) / dangle), 2)
+                    step_phi = (delta - 180) / phisteps
+                    pcnt = 0
+                    while pcnt < phisteps - 1:
+                        pcnt = pcnt + 1
+                        sub_phi = radians(-pcnt * step_phi + theta)
+                        sub_seg_cos = cos(sub_phi)
+                        sub_seg_sin = sin(sub_phi)
 
-                       rout = self.find_max_circle(x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
+                        rout = self.find_max_circle(x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
 
-                       xv, yv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rout, loop_cnt, clean_flag)
+                        xv, yv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rout, loop_cnt, clean_flag)
 
-                       self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
+                        self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
-                       if self.v_pplot and (not self.plot_progress_callback is None) and (not clean_flag):
-                           ul = (xv, yv)
-                           br = (midx, midy)
-                           self.plot_progress_callback( ul, br, "blue", rv, 0)
+                        if self.v_pplot and (not self.plot_progress_callback is None) and (not clean_flag):
+                            normv = (xv, yv)
+                            self.plot_progress_callback(normv, "blue", rv, 0)
 
                 theta = phi
                 x0 = x2
@@ -450,19 +441,19 @@ class Model():
 
                 # Calculate the number of steps then the dx and dy for each step.
                 # Don't calculate at the joints.
-                nsteps = max(floor(Lseg/dline), 2)
-                dxpt = dx/nsteps
-                dypt = dy/nsteps
+                nsteps = max(floor(Lseg / dline), 2)
+                dxpt = dx / nsteps
+                dypt = dy / nsteps
 
                 # this makes sure the first cut start at the begining of the first segment
                 cnt = 0
-                if New_Loop == 1 and bit_angle !=0 and not_b_carve:
+                if New_Loop == 1 and bit_angle != 0 and not_b_carve:
                     cnt = -1
 
-                seg_sin =  dy/Lseg
-                seg_cos = -dx/Lseg
+                seg_sin = dy / Lseg
+                seg_cos = -dx / Lseg
                 phi2 = radians(get_angle(seg_sin, seg_cos))
-                while cnt < nsteps-1:
+                while cnt < nsteps - 1:
                     cnt += 1
                     # determine location of next step along outline (xpt, ypt)
                     xpt = x1 + dxpt * cnt
@@ -473,13 +464,11 @@ class Model():
                     if cnt == 0 and not_b_carve:
                         rout = 0.0
                     xv, yv, rv, clean_seg = self.record_v_carve_data(xpt, ypt, phi2, rout, loop_cnt, clean_flag)
-
-                    self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
+                    self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                     if self.v_pplot and (not self.plot_progress_callback is None) and (not clean_flag):
-                       ul = (xv, yv)
-                       br = (midx, midy)
-                       self.plot_progress_callback( ul, br, "blue", rv, 0)
+                        normv = (xv, yv)
+                        self.plot_progress_callback(normv, "blue", rv, 0)
 
                     if New_Loop == 1 and cnt == 1:
                         xpta = xpt
@@ -490,99 +479,98 @@ class Model():
                 #################################################
                 # Check to see if we need to close an open loop
                 #################################################
-                if abs(x2-xa) < self.accuracy and abs(y2-ya) < self.accuracy:
-                    xtmp1 = (xb-xa) * seg_cos0 - (yb-ya) * seg_sin0
-                    ytmp1 = (xb-xa) * seg_sin0 + (yb-ya) * seg_cos0
-                    Ltmp = sqrt( xtmp1*xtmp1 + ytmp1*ytmp1 )
-                    d_seg_sin = ytmp1/Ltmp
-                    d_seg_cos = xtmp1/Ltmp
-                    delta = get_angle(d_seg_sin,d_seg_cos)
+                if abs(x2 - xa) < self.accuracy and abs(y2 - ya) < self.accuracy:
+                    xtmp1 = (xb - xa) * seg_cos0 - (yb - ya) * seg_sin0
+                    ytmp1 = (xb - xa) * seg_sin0 + (yb - ya) * seg_cos0
+                    Ltmp = sqrt(xtmp1 * xtmp1 + ytmp1 * ytmp1)
+                    d_seg_sin = ytmp1 / Ltmp
+                    d_seg_cos = xtmp1 / Ltmp
+                    delta = get_angle(d_seg_sin, d_seg_cos)
                     if delta < v_drv_corner and clean_flag == False:
                         # drive to corner
                         self.vcoords.append([xa, ya, 0.0, loop_cnt])
 
                     elif delta > v_step_corner:
                         # add substeps around corner
-                        phisteps = max(floor((delta-180)/dangle),2)
-                        step_phi = (delta-180)/phisteps
+                        phisteps = max(floor((delta - 180) / dangle), 2)
+                        step_phi = (delta - 180) / phisteps
                         pcnt = 0
 
-                        while pcnt < phisteps-1:
-                            pcnt = pcnt+1
-                            sub_phi = radians( -pcnt*step_phi + theta )
+                        while pcnt < phisteps - 1:
+                            pcnt = pcnt + 1
+                            sub_phi = radians(-pcnt * step_phi + theta)
                             sub_seg_cos = cos(sub_phi)
                             sub_seg_sin = sin(sub_phi)
 
                             rout = self.find_max_circle(xa, ya, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
-                            xv, yv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt, clean_flag)
-                            self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
+                            xv, yv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt,
+                                                                             clean_flag)
+                            self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                             if self.v_pplot and (not self.plot_progress_callback is None) and (not clean_flag):
-                                ul = (xv, yv)
-                                br = (midx, midy)
-                                self.plot_progress_callback(ul, br, "blue", rv, 0)
+                                normv = (xv, yv)
+                                self.plot_progress_callback(normv, "blue", rv, 0)
 
                         xv, yv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean_flag)
-                        self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
+                        self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
                     else:
                         # add closing segment
                         xv, yv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean_flag)
-                        self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
+                        self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
-        # return Done (or not)
-        if CUR_CNT == MAX_CNT-1:
-            return True
-        else:
-            return False
+        return done
 
     def record_v_carve_data(self, x1, y1, phi, rout, loop_cnt, clean_flag):
 
-        # TODO get rid of controller dependencies
-        # r_clean = float(self.controller.clean_dia.get())/2.0
-        rbit = self.calc_vbit_dia() / 2.0
+        rbit = self.calc_vbit_radius()
 
-        Lx, Ly = transform(0,rout,-phi)
-        xnormv = x1+Lx
-        ynormv = y1+Ly
+        Lx, Ly = transform(0, rout, -phi)
+        xnormv = x1 + Lx
+        ynormv = y1 + Ly
+
         need_clean = 0
-
         if clean_flag:
             if rout >= rbit:
                 self.clean_coords.append([xnormv, ynormv, rout, loop_cnt])
         else:
             self.vcoords.append([xnormv, ynormv, rout, loop_cnt])
-            if abs(rbit-rout) <= Zero:
+            if abs(rbit - rout) <= Zero:
                 need_clean = 1
 
         return xnormv, ynormv, rout, need_clean
 
-    def calc_vbit_dia(self):
-
-        bit_dia = self.settings.get('v_bit_dia')
+    def calc_vbit_radius(self):
+        """
+        Calculate the V-Bit radius
+        """
+        vbit_dia = self.settings.get('v_bit_dia')
         depth_lim = self.settings.get('v_depth_lim')
         half_angle = radians(self.settings.get('v_bit_angle') / 2.0)
 
         if self.settings.get('inlay') and self.settings.get('bit_shape') == "VBIT":
             allowance = self.settings.get('allowance')
-            bit_dia = -2 * allowance * tan(half_angle)
-            bit_dia = max(bit_dia, 0.001)
-            return bit_dia
+            vbit_dia = -2 * allowance * tan(half_angle)
+            vbit_dia = max(vbit_dia, 0.001)
+        else:
+            if depth_lim < 0.0:
+                if self.settings.get('bit_shape') == "VBIT":
+                    vbit_dia = -2 * depth_lim * tan(half_angle)
 
-        if depth_lim < 0.0:
-            if self.settings.get('bit_shape') == "VBIT":
-                bit_dia = -2 * depth_lim * tan(half_angle)
-            elif self.settings.get('bit_shape') == "BALL":
-                R = bit_dia / 2.0
-                if depth_lim > -R:
-                    bit_dia = 2 * sqrt(R ** 2 - (R + depth_lim) ** 2)
+                elif self.settings.get('bit_shape') == "BALL":
+                    R = vbit_dia / 2.0
+                    if depth_lim > -R:
+                        vbit_dia = 2 * sqrt(R ** 2 - (R + depth_lim) ** 2)
+                    else:
+                        pass
+
+                elif self.settings.get('bit_shape') == "FLAT":
+                    # R = vbit_dia / 2.0
+                    pass
+
                 else:
-                    bit_dia = self.settings.get('v_bit_dia')
-            elif self.settings.get('bit_shape') == "FLAT":
-                R = bit_dia / 2.0
-            else:
-                pass
+                    pass
 
-        return bit_dia
+        return vbit_dia / 2
 
     def find_max_circle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
         """
@@ -592,10 +580,10 @@ class Model():
         global Zero
         rtmp = rmin
 
-        xIndex = int((xpt-self.minX)/self.xPartitionLength)
-        yIndex = int((ypt-self.minY)/self.yPartitionLength)
+        xIndex = int((xpt - self.minX) / self.xPartitionLength)
+        yIndex = int((ypt - self.minY) / self.yPartitionLength)
 
-        self.coords_check=[]
+        self.coords_check = []
 
         R_A = abs(rmin)
         Bcnt = -1
@@ -604,20 +592,20 @@ class Model():
         # Loop over active partitions for the current line segment #
         ############################################################
         for line_B in self.partitionList[xIndex][yIndex]:
-            Bcnt = Bcnt+1
-            X_B = line_B[len(line_B)-3]
-            Y_B = line_B[len(line_B)-2]
-            R_B = line_B[len(line_B)-1]
-            GAP = sqrt( (X_B-xpt)*(X_B-xpt) + (Y_B-ypt)*(Y_B-ypt)  )
+            Bcnt = Bcnt + 1
+            X_B = line_B[len(line_B) - 3]
+            Y_B = line_B[len(line_B) - 2]
+            R_B = line_B[len(line_B) - 1]
+            GAP = sqrt((X_B - xpt) * (X_B - xpt) + (Y_B - ypt) * (Y_B - ypt))
             if GAP < abs(R_A + R_B):
                 self.coords_check.append(line_B)
 
         for linec in self.coords_check:
             XYc = linec
-            xmaxt = max(XYc[0],XYc[2]) + rmin*2
-            xmint = min(XYc[0],XYc[2]) - rmin*2
-            ymaxt = max(XYc[1],XYc[3]) + rmin*2
-            ymint = min(XYc[1],XYc[3]) - rmin*2
+            xmaxt = max(XYc[0], XYc[2]) + rmin * 2
+            xmint = min(XYc[0], XYc[2]) - rmin * 2
+            ymaxt = max(XYc[1], XYc[3]) + rmin * 2
+            ymint = min(XYc[1], XYc[3]) - rmin * 2
             if xpt >= xmint and ypt >= ymint and xpt <= xmaxt and ypt <= ymaxt:
                 logic_full = True
             else:
@@ -633,94 +621,94 @@ class Model():
                              ((fabs(xpt - XYc[2]) > Zero) or (fabs(ypt - XYc[3]) > Zero))
 
             if logic_full:
-                xc1 = (XYc[0]-xpt) * seg_cos - (XYc[1]-ypt) * seg_sin
-                yc1 = (XYc[0]-xpt) * seg_sin + (XYc[1]-ypt) * seg_cos
-                xc2 = (XYc[2]-xpt) * seg_cos - (XYc[3]-ypt) * seg_sin
-                yc2 = (XYc[2]-xpt) * seg_sin + (XYc[3]-ypt) * seg_cos
+                xc1 = (XYc[0] - xpt) * seg_cos - (XYc[1] - ypt) * seg_sin
+                yc1 = (XYc[0] - xpt) * seg_sin + (XYc[1] - ypt) * seg_cos
+                xc2 = (XYc[2] - xpt) * seg_cos - (XYc[3] - ypt) * seg_sin
+                yc2 = (XYc[2] - xpt) * seg_sin + (XYc[3] - ypt) * seg_cos
 
-                if fabs(xc2-xc1) < Zero and fabs(yc2-yc1) > Zero:
+                if fabs(xc2 - xc1) < Zero and fabs(yc2 - yc1) > Zero:
                     rtmp = fabs(xc1)
-                    if max(yc1,yc2) >= rtmp and min(yc1,yc2) <= rtmp:
-                        rmin = min(rmin,rtmp)
+                    if max(yc1, yc2) >= rtmp and min(yc1, yc2) <= rtmp:
+                        rmin = min(rmin, rtmp)
 
-                elif fabs(yc2-yc1) < Zero and fabs(xc2-xc1) > Zero:
-                    if max(xc1,xc2) >= 0.0 and min(xc1,xc2) <= 0.0 and yc1 > Zero:
-                        rtmp = yc1/2.0
-                        rmin = min(rmin,rtmp)
+                elif fabs(yc2 - yc1) < Zero and fabs(xc2 - xc1) > Zero:
+                    if max(xc1, xc2) >= 0.0 and min(xc1, xc2) <= 0.0 and yc1 > Zero:
+                        rtmp = yc1 / 2.0
+                        rmin = min(rmin, rtmp)
 
-                if fabs(yc2-yc1) > Zero and fabs(xc2-xc1) > Zero:
-                    m = (yc2-yc1)/(xc2-xc1)
-                    b = yc1 - m*xc1
-                    sq = m+1/m
-                    A = 1 + m*m - 2*m*sq
-                    B = -2*b*sq
-                    C = -b*b
+                if fabs(yc2 - yc1) > Zero and fabs(xc2 - xc1) > Zero:
+                    m = (yc2 - yc1) / (xc2 - xc1)
+                    b = yc1 - m * xc1
+                    sq = m + 1 / m
+                    A = 1 + m * m - 2 * m * sq
+                    B = -2 * b * sq
+                    C = -b * b
                     try:
-                        sq_root = sqrt(B*B-4*A*C)
-                        xq1 = (-B + sq_root)/(2*A)
+                        sq_root = sqrt(B * B - 4 * A * C)
+                        xq1 = (-B + sq_root) / (2 * A)
 
-                        if xq1 >= min(xc1,xc2) and xq1 <= max(xc1,xc2):
-                            rtmp = xq1*sq + b
+                        if xq1 >= min(xc1, xc2) and xq1 <= max(xc1, xc2):
+                            rtmp = xq1 * sq + b
                             if rtmp >= 0.0:
-                                rmin=min(rmin,rtmp)
+                                rmin = min(rmin, rtmp)
 
-                        xq2 = (-B - sq_root)/(2*A)
-                        yq2 = m*xq2+b
+                        xq2 = (-B - sq_root) / (2 * A)
+                        yq2 = m * xq2 + b
 
-                        if xq2 >= min(xc1,xc2) and xq2 <= max(xc1,xc2):
-                            rtmp = xq2*sq + b
+                        if xq2 >= min(xc1, xc2) and xq2 <= max(xc1, xc2):
+                            rtmp = xq2 * sq + b
                             if rtmp >= 0.0:
-                                rmin=min(rmin,rtmp)
+                                rmin = min(rmin, rtmp)
                     except:
                         pass
 
                 if yc1 > Zero:
-                    rtmp = (xc1*xc1 + yc1*yc1) / (2*yc1)
-                    rmin=min(rmin,rtmp)
+                    rtmp = (xc1 * xc1 + yc1 * yc1) / (2 * yc1)
+                    rmin = min(rmin, rtmp)
 
                 if yc2 > Zero:
-                    rtmp = (xc2*xc2 + yc2*yc2) / (2*yc2)
-                    rmin = min(rmin,rtmp)
+                    rtmp = (xc2 * xc2 + yc2 * yc2) / (2 * yc2)
+                    rmin = min(rmin, rtmp)
 
                 if abs(yc1) < Zero and abs(xc1) < Zero:
                     if yc2 > Zero:
                         rmin = 0.0
-                        
+
                 if abs(yc2) < Zero and abs(xc2) < Zero:
                     if yc1 > Zero:
                         rmin = 0.0
 
         return rmin
-        
+
     def sort_for_v_carve(self, LN_START=0):
         self.coords = self._sort_for_v_carve(self.coords, LN_START)
 
     def _sort_for_v_carve(self, sort_coords, LN_START):
 
         ecoords = []
-        Lbeg=[]
-        Lend=[]
-        cnt=0
+        Lbeg = []
+        Lend = []
+        cnt = 0
 
         for i in range(len(sort_coords)):
-        
+
             [x1, y1, x2, y2, dummy1, dummy2] = sort_coords[i]
 
             if i == 0:
                 cnt = 0
                 ecoords.append([x1, y1])
                 Lbeg.append(cnt)
-                cnt = cnt+1
+                cnt = cnt + 1
                 ecoords.append([x2, y2])
                 oldx, oldy = x2, y2
             else:
-                dist = sqrt((oldx - x1)**2 + (oldy - y1)**2)
+                dist = sqrt((oldx - x1) ** 2 + (oldy - y1) ** 2)
                 # check and see if we need to move
                 # to a new discontinuous start point
                 if dist > Zero:
                     Lend.append(cnt)
-                    cnt = cnt+1
-                    ecoords.append([x1,y1])
+                    cnt = cnt + 1
+                    ecoords.append([x1, y1])
                     Lbeg.append(cnt)
                 cnt += 1
                 ecoords.append([x2, y2])
@@ -740,27 +728,27 @@ class Model():
         i = 0
         LObeg = []
         LOend = []
-        while i < len(Lbeg): #for each loop
+        while i < len(Lbeg):  # for each loop
             [Xstart, Ystart] = ecoords[Lbeg[i]]
             [Xend, Yend] = ecoords[Lend[i]]
-            dist = sqrt((Xend-Xstart)**2 +(Yend-Ystart)**2)
-            if  dist <= Zero: #if end is the same as the beginning (changed in V1.55: was Acc)
+            dist = sqrt((Xend - Xstart) ** 2 + (Yend - Ystart) ** 2)
+            if dist <= Zero:  # if end is the same as the beginning (changed in V1.55: was Acc)
                 ecoords[Lend[i]] = [Xstart, Ystart]
                 i += 1
-            else:  #end != to beginning
+            else:  # end != to beginning
                 LObeg.append(Lbeg.pop(i))
                 LOend.append(Lend.pop(i))
 
         LNbeg = []
         LNend = []
         LNloop = []
-        
+
         #######################################################
         ###  For Each open loop connect to the next closest ###
         ###  loop end until all of the loops are closed     ###
         #######################################################
         Lcnt = 0
-        while len(LObeg) > 0: # for each Open Loop
+        while len(LObeg) > 0:  # for each Open Loop
             Start = LObeg.pop(0)
             End = LOend.pop(0)
             Lcnt += 1
@@ -771,16 +759,16 @@ class Model():
 
             OPEN = True
             while OPEN == True and len(LObeg) > 0:
-                [Xend,Yend] = ecoords[End]
-                dist_beg_min = sqrt((Xend-Xstart)**2 +(Yend-Ystart)**2)
+                [Xend, Yend] = ecoords[End]
+                dist_beg_min = sqrt((Xend - Xstart) ** 2 + (Yend - Ystart) ** 2)
                 dist_end_min = dist_beg_min
                 k_min_beg = -1
                 k_min_end = -1
                 for k in range(len(LObeg)):
                     [Xkstart, Ykstart] = ecoords[LObeg[k]]
                     [Xkend, Ykend] = ecoords[LOend[k]]
-                    dist_beg = sqrt((Xend-Xkstart)**2 + (Yend-Ykstart)**2)
-                    dist_end = sqrt((Xend - Xkend)**2 + (Yend - Ykend)**2)
+                    dist_beg = sqrt((Xend - Xkstart) ** 2 + (Yend - Ykstart) ** 2)
+                    dist_end = sqrt((Xend - Xkend) ** 2 + (Yend - Ykend) ** 2)
                     if dist_beg < dist_beg_min:
                         dist_beg_min = dist_beg
                         k_min_beg = k
@@ -796,8 +784,8 @@ class Model():
                     ecoords.append(ecoords[Start])
 
                     LNloop.append(Lcnt)
-                    LNbeg.append(len(ecoords)-2)
-                    LNend.append(len(ecoords)-1)
+                    LNbeg.append(len(ecoords) - 2)
+                    LNend.append(len(ecoords) - 1)
                     OPEN = False
                 elif dist_end_min < dist_beg_min:
                     kend = LObeg.pop(k_min_end)
@@ -807,8 +795,8 @@ class Model():
                     ecoords.append(ecoords[kbeg])
 
                     LNloop.append(Lcnt)
-                    LNbeg.append(len(ecoords)-2)
-                    LNend.append(len(ecoords)-1)
+                    LNbeg.append(len(ecoords) - 2)
+                    LNend.append(len(ecoords) - 1)
                     LNloop.append(Lcnt)
                     LNbeg.append(kbeg)
                     LNend.append(kend)
@@ -821,8 +809,8 @@ class Model():
                     ecoords.append(ecoords[kbeg])
 
                     LNloop.append(Lcnt)
-                    LNbeg.append(len(ecoords)-2)
-                    LNend.append(len(ecoords)-1)
+                    LNbeg.append(len(ecoords) - 2)
+                    LNend.append(len(ecoords) - 1)
                     LNloop.append(Lcnt)
                     LNbeg.append(kbeg)
                     LNend.append(kend)
@@ -832,8 +820,8 @@ class Model():
                 ecoords.append(ecoords[End])
                 ecoords.append(ecoords[Start])
                 LNloop.append(Lcnt)
-                LNbeg.append(len(ecoords)-2)
-                LNend.append(len(ecoords)-1)
+                LNbeg.append(len(ecoords) - 2)
+                LNend.append(len(ecoords) - 1)
 
         #######################################################
         ### Make new sequential ecoords for each new loop   ###
@@ -846,18 +834,18 @@ class Model():
             if Loop != Loop_last:
                 Lbeg.append(len(ecoords))
                 if Loop_last != -1:
-                    Lend.append(len(ecoords)-1)
+                    Lend.append(len(ecoords) - 1)
                 Loop_last = Loop
 
             if Start > End:
                 step = -1
             else:
                 step = 1
-            for i in range(Start, End+step, step):
-                [x1,y1] = ecoords[i]
-                ecoords.append([x1,y1])
+            for i in range(Start, End + step, step):
+                [x1, y1] = ecoords[i]
+                ecoords.append([x1, y1])
         if len(Lbeg) > len(Lend):
-            Lend.append(len(ecoords)-1)
+            Lend.append(len(ecoords) - 1)
 
         ###########################################
         ###   Determine loop directions CW/CCW  ###
@@ -878,10 +866,10 @@ class Model():
 
             signedArea = 0.0
 
-            [x1,y1] = ecoords[Start]
-            for i in range(Start+1,End+step,step):
-                [x2,y2] = ecoords[i]
-                signedArea += (x2-x1)*(y2+y1)
+            [x1, y1] = ecoords[Start]
+            for i in range(Start + 1, End + step, step):
+                [x2, y2] = ecoords[i]
+                signedArea += (x2 - x1) * (y2 + y1)
                 x1 = x2
                 y1 = y2
             if signedArea > 0.0:
@@ -894,8 +882,8 @@ class Model():
         Nloops = len(Lbeg)
         LoopTree = []
         Lnum = []
-        
-        for iloop in range(LN_START, Nloops+LN_START):
+
+        for iloop in range(LN_START, Nloops + LN_START):
             LoopTree.append([iloop, [], []])
             Lnum.append(iloop)
 
@@ -903,12 +891,12 @@ class Model():
         # For each loop determine if other loops are inside #
         #####################################################
         for iloop in range(Nloops):
-            CUR_PCT = float(iloop)/Nloops*100.0
+            CUR_PCT = float(iloop) / Nloops * 100.0
             # if not self.batch:
             #     self.controller.statusMessage.set('Determining Which Side of Loop to Cut: %d of %d' %(iloop+1,Nloops))
             #     self.controller.master.update()
             if not self.status_callback is None:
-                self.status_callback('Determining Which Side of Loop to Cut: %d of %d' %(iloop+1,Nloops))
+                self.status_callback('Determining Which Side of Loop to Cut: %d of %d' % (iloop + 1, Nloops))
 
             ipoly = ecoords[Lbeg[iloop]:Lend[iloop]]
 
@@ -918,7 +906,7 @@ class Model():
                     if jloop != iloop:
                         inside = 0
                         jval = Lbeg[jloop]
-                        inside = inside + point_inside_polygon(ecoords[jval][0],ecoords[jval][1],ipoly)
+                        inside = inside + point_inside_polygon(ecoords[jval][0], ecoords[jval][1], ipoly)
                         if inside > 0:
                             Lflip[jloop] = not Lflip[jloop]
                             LoopTree[iloop][1].append(jloop)
@@ -945,13 +933,13 @@ class Model():
         order_out = []
         if len(Lflip) > 0:
             if Lflip[0]:
-                order_out.append([ Lend[0], Lbeg[0], Lnum[0] ])
+                order_out.append([Lend[0], Lbeg[0], Lnum[0]])
             else:
-                order_out.append([ Lbeg[0], Lend[0], Lnum[0] ])
+                order_out.append([Lbeg[0], Lend[0], Lnum[0]])
 
         inext = 0
         total = len(Lbeg)
-        for i in range(total-1):
+        for i in range(total - 1):
             Lbeg.pop(inext)
             ii = Lend.pop(inext)
             Lflip.pop(inext)
@@ -960,26 +948,26 @@ class Model():
             Xcur = ecoords[ii][0]
             Ycur = ecoords[ii][1]
 
-            dx = Xcur - ecoords[ Lbeg[0] ][0]
-            dy = Ycur - ecoords[ Lbeg[0] ][1]
-            min_dist = dx*dx + dy*dy
+            dx = Xcur - ecoords[Lbeg[0]][0]
+            dy = Ycur - ecoords[Lbeg[0]][1]
+            min_dist = dx * dx + dy * dy
 
             inext = 0
             for j in range(1, len(Lbeg)):
-                dx = Xcur - ecoords[ Lbeg[j] ][0]
-                dy = Ycur - ecoords[ Lbeg[j] ][1]
-                dist = dx*dx + dy*dy
+                dx = Xcur - ecoords[Lbeg[j]][0]
+                dy = Ycur - ecoords[Lbeg[j]][1]
+                dist = dx * dx + dy * dy
                 if dist < min_dist:
                     min_dist = dist
                     inext = j
 
             if Lflip[inext]:
-                order_out.append([ Lend[inext], Lbeg[inext], Lnum[inext] ])
+                order_out.append([Lend[inext], Lbeg[inext], Lnum[inext]])
             else:
-                order_out.append([ Lbeg[inext], Lend[inext], Lnum[inext] ])
+                order_out.append([Lbeg[inext], Lend[inext], Lnum[inext]])
 
         ###########################################################
-        temp_coords=[]
+        temp_coords = []
         for k in range(len(order_out)):
             [Start, End, LN] = order_out[k]
             if Start > End:
@@ -988,37 +976,37 @@ class Model():
                 step = 1
             xlast = ""
             ylast = ""
-            xa,ya = ecoords[Start]
-            for i in range(Start+step, End+step, step):
+            xa, ya = ecoords[Start]
+            for i in range(Start + step, End + step, step):
                 if xlast != "" and ylast != "":
                     x1 = xlast
                     y1 = ylast
                 else:
-                    [x1,y1] = ecoords[i-step]
-                [x2,y2] = ecoords[i]
+                    [x1, y1] = ecoords[i - step]
+                [x2, y2] = ecoords[i]
 
-                Lseg = sqrt((x2-x1)**2 + (y2-y1)**2)
+                Lseg = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
                 if Lseg >= self.accuracy:
-                    temp_coords.append([x1,y1,x2,y2,LN,0])
+                    temp_coords.append([x1, y1, x2, y2, LN, 0])
                     xlast = ""
                     ylast = ""
                 else:
                     xlast = x1
                     ylast = y1
-                    
-            if  xlast != "" and  ylast != "":
-                Llast = sqrt((x1-xa)*(x1-xa) + (y1-ya)*(y1-ya))
+
+            if xlast != "" and ylast != "":
+                Llast = sqrt((x1 - xa) * (x1 - xa) + (y1 - ya) * (y1 - ya))
                 if len(temp_coords) > 1:
                     if Llast <= self.accuracy and LN == temp_coords[-1][4]:
                         temp_coords[-1][2] = xa
                         temp_coords[-1][3] = ya
                     else:
-                        temp_coords.append([x1,y1,xa,ya,LN,0])
+                        temp_coords.append([x1, y1, xa, ya, LN, 0])
         return temp_coords
 
     def _find_paths(self, check_coords_in, clean_dia, Radjust, clean_step, skip, direction):
-        check_coords=[]
-        
+        check_coords = []
+
         if direction == "Y":
             cnt = -1
             for line in check_coords_in:
@@ -1032,20 +1020,20 @@ class Model():
         maxx_c = 0
         miny_c = 0
         maxy_c = 0
-        
+
         if len(check_coords) > 0:
-            minx_c = check_coords[0][0]-check_coords[0][2]
-            maxx_c = check_coords[0][0]+check_coords[0][2]
-            miny_c = check_coords[0][1]-check_coords[0][2]
-            maxy_c = check_coords[0][1]+check_coords[0][2]
+            minx_c = check_coords[0][0] - check_coords[0][2]
+            maxx_c = check_coords[0][0] + check_coords[0][2]
+            miny_c = check_coords[0][1] - check_coords[0][2]
+            maxy_c = check_coords[0][1] + check_coords[0][2]
         for line in check_coords:
             XY = line
-            minx_c = min(minx_c, XY[0]-XY[2] )
-            maxx_c = max(maxx_c, XY[0]+XY[2] )
-            miny_c = min(miny_c, XY[1]-XY[2] )
-            maxy_c = max(maxy_c, XY[1]+XY[2] )
+            minx_c = min(minx_c, XY[0] - XY[2])
+            maxx_c = max(maxx_c, XY[0] + XY[2])
+            miny_c = min(miny_c, XY[1] - XY[2])
+            maxy_c = max(maxy_c, XY[1] + XY[2])
 
-        DX = clean_dia*clean_step
+        DX = clean_dia * clean_step
         DY = DX
         Xclean_coords = []
         Xclean_coords_short = []
@@ -1056,71 +1044,9 @@ class Model():
             #########################################################################
             loop_cnt = 0
             Y = miny_c
-            line_cnt = skip-1
+            line_cnt = skip - 1
             while Y <= maxy_c:
-                line_cnt = line_cnt+1  
-                X = minx_c
-                x1 = X
-                x2 = X
-                x1_old = x1
-                x2_old = x2
-
-                # Find relevant clean_coord_data
-                ################################
-                temp_coords=[]
-                for line in check_coords:
-                    XY=line
-                    if Y < XY[1]+XY[2] and Y > XY[1]-XY[2]:
-                        temp_coords.append(XY)
-                ################################
-
-                while X <= maxx_c:
-                    for line in temp_coords:
-                        XY = line
-                        h = XY[0]
-                        k = XY[1]
-                        R = XY[2]-Radjust
-                        dist = sqrt((X-h)**2 + (Y-k)**2)
-                        if dist <= R:
-                            Root = sqrt(R**2 - (Y-k)**2)
-                            XL = h-Root
-                            XR = h+Root
-                            if XL < x1:
-                                x1 = XL
-                            if XR > x2:
-                                x2 = XR
-                    if x1 == x2:
-                        X = X+DX
-                        x1 = X
-                        x2 = X
-                    elif x1 == x1_old and x2 == x2_old:
-                        loop_cnt += 1
-                        Xclean_coords.append([x1, Y, loop_cnt])
-                        Xclean_coords.append([x2, Y, loop_cnt])
-                        if line_cnt == skip:
-                            Xclean_coords_short.append([x1, Y, loop_cnt])
-                            Xclean_coords_short.append([x2, Y, loop_cnt])
-
-                        X = X+DX
-                        x1 = X
-                        x2 = X
-                    else:
-                        X = x2
-                    x1_old = x1
-                    x2_old = x2
-                if line_cnt == skip:
-                    line_cnt = 0
-                Y = Y+DY
-            #########################################################################
-
-        if True == False:
-            #########################################################################
-            # loop over circles recording "pixels" that are covered by the circles
-            #########################################################################
-            loop_cnt = 0
-            Y = miny_c
-            while Y <= maxy_c:
-                line_cnt = line_cnt+1  
+                line_cnt = line_cnt + 1
                 X = minx_c
                 x1 = X
                 x2 = X
@@ -1132,7 +1058,7 @@ class Model():
                 temp_coords = []
                 for line in check_coords:
                     XY = line
-                    if Y < XY[1]+XY[2] and Y > XY[1]-XY[2]:
+                    if Y < XY[1] + XY[2] and Y > XY[1] - XY[2]:
                         temp_coords.append(XY)
                 ################################
 
@@ -1141,18 +1067,18 @@ class Model():
                         XY = line
                         h = XY[0]
                         k = XY[1]
-                        R = XY[2]-Radjust
-                        dist = sqrt((X-h)**2 + (Y-k)**2)
+                        R = XY[2] - Radjust
+                        dist = sqrt((X - h) ** 2 + (Y - k) ** 2)
                         if dist <= R:
-                            Root = sqrt(R**2 - (Y-k)**2)
-                            XL = h-Root
-                            XR = h+Root
+                            Root = sqrt(R ** 2 - (Y - k) ** 2)
+                            XL = h - Root
+                            XR = h + Root
                             if XL < x1:
                                 x1 = XL
                             if XR > x2:
                                 x2 = XR
                     if x1 == x2:
-                        X = X+DX
+                        X = X + DX
                         x1 = X
                         x2 = X
                     elif x1 == x1_old and x2 == x2_old:
@@ -1163,7 +1089,7 @@ class Model():
                             Xclean_coords_short.append([x1, Y, loop_cnt])
                             Xclean_coords_short.append([x2, Y, loop_cnt])
 
-                        X = X+DX
+                        X = X + DX
                         x1 = X
                         x2 = X
                     else:
@@ -1172,7 +1098,69 @@ class Model():
                     x2_old = x2
                 if line_cnt == skip:
                     line_cnt = 0
-                Y = Y+DY
+                Y = Y + DY
+            #########################################################################
+
+        if True == False:
+            #########################################################################
+            # loop over circles recording "pixels" that are covered by the circles
+            #########################################################################
+            loop_cnt = 0
+            Y = miny_c
+            while Y <= maxy_c:
+                line_cnt = line_cnt + 1
+                X = minx_c
+                x1 = X
+                x2 = X
+                x1_old = x1
+                x2_old = x2
+
+                # Find relevant clean_coord_data
+                ################################
+                temp_coords = []
+                for line in check_coords:
+                    XY = line
+                    if Y < XY[1] + XY[2] and Y > XY[1] - XY[2]:
+                        temp_coords.append(XY)
+                ################################
+
+                while X <= maxx_c:
+                    for line in temp_coords:
+                        XY = line
+                        h = XY[0]
+                        k = XY[1]
+                        R = XY[2] - Radjust
+                        dist = sqrt((X - h) ** 2 + (Y - k) ** 2)
+                        if dist <= R:
+                            Root = sqrt(R ** 2 - (Y - k) ** 2)
+                            XL = h - Root
+                            XR = h + Root
+                            if XL < x1:
+                                x1 = XL
+                            if XR > x2:
+                                x2 = XR
+                    if x1 == x2:
+                        X = X + DX
+                        x1 = X
+                        x2 = X
+                    elif x1 == x1_old and x2 == x2_old:
+                        loop_cnt += 1
+                        Xclean_coords.append([x1, Y, loop_cnt])
+                        Xclean_coords.append([x2, Y, loop_cnt])
+                        if line_cnt == skip:
+                            Xclean_coords_short.append([x1, Y, loop_cnt])
+                            Xclean_coords_short.append([x2, Y, loop_cnt])
+
+                        X = X + DX
+                        x1 = X
+                        x2 = X
+                    else:
+                        X = x2
+                    x1_old = x1
+                    x2_old = x2
+                if line_cnt == skip:
+                    line_cnt = 0
+                Y = Y + DY
             #########################################################################
 
         Xclean_coords_out = []
@@ -1183,13 +1171,13 @@ class Model():
             for line in Xclean_coords:
                 cnt += 1
                 XY = line
-                Xclean_coords_out.append([XY[1],XY[0],XY[2]])
+                Xclean_coords_out.append([XY[1], XY[0], XY[2]])
 
             cnt = -1
             for line in Xclean_coords_short:
                 cnt += 1
                 XY = line
-                Xclean_coords_short_out.append([XY[1],XY[0],XY[2]])
+                Xclean_coords_short_out.append([XY[1], XY[0], XY[2]])
         else:
             Xclean_coords_out = Xclean_coords
             Xclean_coords_short_out = Xclean_coords_short
@@ -1218,7 +1206,7 @@ class Model():
         else:
             edge = 0
 
-        rbit = self.calc_vbit_dia() / 2.0
+        rbit = self.calc_vbit_radius()
 
         loop_cnt = 0
         loop_cnt_out = 0
@@ -1237,9 +1225,10 @@ class Model():
         check_coords = []
 
         if bit_type == "straight":
-            # TODO get rid of controller dependency
-            self.controller.statusMessage.set('Calculating Cleanup Cut Paths')
-            self.controller.master.update()
+            # self.controller.statusMessage.set('Calculating Cleanup Cut Paths')
+            # self.controller.master.update()
+            if not self.status_callback is None:
+                self.status_callback('Calculating Cleanup Cut Paths')
 
             self.clean_coords_sort = []
             clean_dia = self.settings.get('clean_dia')  # diameter of cleanup bit
@@ -1250,13 +1239,12 @@ class Model():
             check_coords = self.clean_coords
 
         elif bit_type == "v-bit":
-            self.controller.statusMessage.set('Calculating V-Bit Cleanup Cut Paths')
+            # self.controller.statusMessage.set('Calculating V-Bit Cleanup Cut Paths')
+            if not self.status_callback is None:
+                self.status_callback('Calculating V-Bit Cleanup Cut Paths')
+
             skip = 1
             clean_step = 1.0
-
-            # TODO get rid of controller dependencies
-            # self.master.update()
-            self.controller.master.update()
 
             self.v_clean_coords_sort = []
 
@@ -1359,7 +1347,7 @@ class Model():
                     clean_coords_out = P_coords
 
                 offset = DX / 2.0
-                if self.settings.get('clean_X')  == 1:
+                if self.settings.get('clean_X') == 1:
                     y_pmax = y_pmax - offset
                     y_pmin = y_pmin + offset
                     Ysize = y_pmax - y_pmin
@@ -1527,8 +1515,8 @@ class Model():
             ###########################################################
             # Now deal with the vertical line cuts
             ###########################################################
-            if (self.settings.get('clean_Y')  == 1 and bit_type != "v-bit") or \
-                    (self.settings.get('v_clean_Y')  == 1 and bit_type == "v-bit"):
+            if (self.settings.get('clean_Y') == 1 and bit_type != "v-bit") or \
+                    (self.settings.get('v_clean_Y') == 1 and bit_type == "v-bit"):
                 x_old = -999
                 y_old = -999
                 order_out = sort_paths(Yclean_coords)
@@ -1554,18 +1542,21 @@ class Model():
                         loop_old = loop
 
             # TODO move to controller
-            self.controller.entry_set(self.controller.Entry_CLEAN_DIA, self.controller.Entry_CLEAN_DIA_Check(), 1)
-            self.controller.entry_set(self.controller.Entry_STEP_OVER, self.controller.Entry_STEP_OVER_Check(), 1)
-            self.controller.entry_set(self.controller.Entry_V_CLEAN, self.controller.Entry_V_CLEAN_Check(), 1)
+            print 'TODO Move parts of code in Model.clean_path_calc() to GUI'
+            # self.controller.entry_set(self.controller.Entry_CLEAN_DIA, self.controller.Entry_CLEAN_DIA_Check(), 1)
+            # self.controller.entry_set(self.controller.Entry_STEP_OVER, self.controller.Entry_STEP_OVER_Check(), 1)
+            # self.controller.entry_set(self.controller.Entry_V_CLEAN, self.controller.Entry_V_CLEAN_Check(), 1)
 
             if bit_type == "v-bit":
                 self.v_clean_coords_sort = clean_coords_out
             else:
                 self.clean_coords_sort = clean_coords_out
 
-        self.controller.statusMessage.set('Done Calculating Cleanup Cut Paths')
-        self.controller.statusbar.configure(bg='white')
-        self.controller.master.update_idletasks()
+        # self.controller.statusMessage.set('Done Calculating Cleanup Cut Paths')
+        # self.controller.statusbar.configure(bg='white')
+        # self.controller.master.update_idletasks()
+        if not self.status_callback is None:
+            self.status_callback('Done Calculating Cleanup Cut Paths', color='white')
 
     def get_flop_status(self, CLEAN=False):
 

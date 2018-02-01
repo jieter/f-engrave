@@ -34,28 +34,28 @@ class Gui(Frame):
         self.delay_calc = False
 
         self.settings = settings
-        self.model = Model(controller=self, settings=self.settings)
+        self.model = Model(self.settings)
 
         self.bind_keys()
         self.create_widgets()
 
-        self.model.set_progress_callback(self.plot_data)
+        self.model.set_progress_callback(self.plot_tool_path)
         self.model.set_plot_progress_callback(self.plot_progress)
         self.model.set_status_callback(self.status_update)
 
-    def status_update(self, msg):
+    def status_update(self, msg, color='yellow'):
         self.statusMessage.set(msg)
-        self.statusbar.configure( bg='yellow' )
+        self.statusbar.configure(bg=color)
         self.master.update()
         # self.PreviewCanvas.update()
 
     # def plot_progress(self, position, radius):
-    def plot_progress(self, ul, br, color, radius, fill=False):
-        xv, yv = ul
-        midx, midy = br
+    def plot_progress(self, normv, color, radius, fill=False):
         cszw = int(self.PreviewCanvas.cget("width"))
         cszh = int(self.PreviewCanvas.cget("height"))
-        self.plot_circle(xv, yv, midx, midy, cszw, cszh, color, radius, fill)
+        midx = (self.MAXX + self.MINX) / 2
+        midy = (self.MAXY + self.MINY) / 2
+        self.plot_circle(normv, midx, midy, cszw, cszh, color, radius, fill)
 
     def f_engrave_init(self):
         self.master.update()
@@ -186,6 +186,7 @@ class Gui(Frame):
         self.bounding_box.set(" ")
 
         self.plot_scale = 0
+
         # PAN and ZOOM STUFF
         self.panx = 0
         self.panx = 0
@@ -200,7 +201,6 @@ class Gui(Frame):
         else:
             self.funits.set('mm/min')
 
-        # TODO settings
         config_file = "config.ngc"
         home_config1 = self.HOME_DIR + "/" + config_file
         config_file2 = ".fengraverc"
@@ -1206,7 +1206,7 @@ class Gui(Frame):
             stop = self.Clean_Calc_Click("straight")
             if not stop:
                 self.Clean_Calc_Click("v-bit")
-            self.plot_data()
+            self.plot_tool_path()
 
         try:
             win_id.withdraw()
@@ -1283,33 +1283,6 @@ class Gui(Frame):
     def v_pplot_Click(self, event):
         self.settings.set('v_pplot', self.v_pplot.get())
         self.model.refresh_v_pplot()
-
-    def calc_vbit_dia(self):
-        bit_dia = float(self.v_bit_dia.get())
-        depth_lim = float(self.v_depth_lim.get())
-        half_angle = radians(float(self.v_bit_angle.get()) / 2.0)
-
-        if self.inlay.get() and (self.bit_shape.get() == "VBIT"):
-            allowance = float(self.allowance.get())
-            bit_dia = -2 * allowance * tan(half_angle)
-            bit_dia = max(bit_dia, 0.001)
-            return bit_dia
-
-        if depth_lim < 0.0:
-            if self.bit_shape.get() == "VBIT":
-                bit_dia = -2 * depth_lim * tan(half_angle)
-            elif self.bit_shape.get() == "BALL":
-                R = bit_dia / 2.0
-                if depth_lim > -R:
-                    bit_dia = 2 * sqrt(R ** 2 - (R + depth_lim) ** 2)
-                else:
-                    bit_dia = float(self.v_bit_dia.get())
-            elif self.bit_shape.get() == "FLAT":
-                R = bit_dia / 2.0
-            else:
-                pass
-
-        return bit_dia
 
     def calc_depth_limit(self):
         try:
@@ -1648,7 +1621,7 @@ class Gui(Frame):
 
     def Entry_Vbitdia_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check() )
-        self.settings.set('vbit_dia', self.vbit_dia.get())
+        self.settings.set('vbit_dia', self.v_bit_dia.get())
         self.calc_depth_limit()
 
     def Entry_VDepthLimit_Check(self):
@@ -2053,10 +2026,9 @@ class Gui(Frame):
             except:
                 pass
 
-
+        # prepare statusbar (color) for progress updates
         self.statusbar.configure(bg='yellow')
-        # rbit = self.calc_vbit_dia() / 2.0
-        self.model.clean_path_calc(rbit, bit_type)
+        self.model.clean_path_calc(bit_type)
 
         if self.model.clean_coords == []:
             return True # stop
@@ -2985,18 +2957,20 @@ class Gui(Frame):
             else:
                 pass
             ###########################################################
-            self.plot_data()
+            self.plot_tool_path()
 
 
     def coord_scale(self, x, y, xscale, yscale):
-        '''
-        routine takes an x and a y scales are applied and returns new x,y tuple
-        '''
+        """
+        Takes an x and a y, scales are applied and returns new x,y tuple
+        """
         newx = x * xscale
         newy = y * yscale
         return newx, newy
 
-    def plot_line(self, XX1, YY1, XX2, YY2, midx, midy, cszw, cszh, col, radius=0):
+    def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):
+        XX1, YY1 = old
+        XX2, YY2 = new
         x1 = cszw / 2 + (XX1 - midx) / self.plot_scale
         x2 = cszw / 2 + (XX2 - midx) / self.plot_scale
         y1 = cszh / 2 - (YY1 - midy) / self.plot_scale
@@ -3005,17 +2979,18 @@ class Gui(Frame):
             thick = 0
         else:
             thick = radius * 2 / self.plot_scale
-        self.segID.append(self.PreviewCanvas.create_line(x1, y1, x2, y2, fill=col, capstyle="round", width=thick))
+        self.segID.append(self.PreviewCanvas.create_line(x1, y1, x2, y2, fill=color, capstyle="round", width=thick))
 
+    # TODO simplify circle drawing
     def _create_circle(self, x, y, r, **kwargs):
         return self.create_oval(x - r, y - r, x + r, y + r, **kwargs)
 
-    def plot_circle(self, XX1, YY1, midx, midy, cszw, cszh, color, Rad, fill):
-        dd = Rad
-        x1 = cszw / 2 + (XX1 - dd - midx) / self.plot_scale
-        x2 = cszw / 2 + (XX1 + dd - midx) / self.plot_scale
-        y1 = cszh / 2 - (YY1 - dd - midy) / self.plot_scale
-        y2 = cszh / 2 - (YY1 + dd - midy) / self.plot_scale
+    def plot_circle(self, normv, midx, midy, cszw, cszh, color, rad, fill):
+        XX, YY = normv
+        x1 = cszw / 2 + (XX - rad - midx) / self.plot_scale
+        x2 = cszw / 2 + (XX + rad - midx) / self.plot_scale
+        y1 = cszh / 2 - (YY - rad - midy) / self.plot_scale
+        y2 = cszh / 2 - (YY + rad - midy) / self.plot_scale
         if fill == 0:
             self.segID.append(self.PreviewCanvas.create_oval(x1, y1, x2, y2, outline=color, fill=None, width=1))
         else:
@@ -3037,9 +3012,9 @@ class Gui(Frame):
         self.do_it()
 
 
-    def plot_data(self):
+    def plot_tool_path(self):
         """
-        Canvas plotting stuff
+        Show the tool path for engraving or V-carve, and the clean path
         """
         if self.delay_calc:
             return
@@ -3058,8 +3033,8 @@ class Gui(Frame):
         minx = self.MINX
         maxy = self.MAXY
         miny = self.MINY
-        midx = (maxx+minx)/2
-        midy = (maxy+miny)/2
+        midx = (maxx + minx) / 2
+        midy = (maxy + miny) / 2
 
         if self.cut_type.get() == "v-carve":
             Thick = 0.0
@@ -3079,7 +3054,7 @@ class Gui(Frame):
         Radius_plot = 0
         if self.plotbox.get() and self.cut_type.get() == "engrave":
             if Radius_in != 0:
-                Radius_plot=  float(self.RADIUS_PLOT)
+                Radius_plot = float(self.RADIUS_PLOT)
 
         x_lft = cszw/2 + (minx-midx) / plot_scale
         x_rgt = cszw/2 + (maxx-midx) / plot_scale
@@ -3093,10 +3068,10 @@ class Gui(Frame):
                                                     width=0))
 
         if Radius_in != 0:
-            Rx_lft = cszw/2 + ( -Radius_in-midx)  / plot_scale
-            Rx_rgt = cszw/2 + (  Radius_in-midx)  / plot_scale
-            Ry_bot = cszh/2 + (  Radius_in+midy)  / plot_scale
-            Ry_top = cszh/2 + ( -Radius_in+midy)  / plot_scale
+            Rx_lft = cszw / 2 + (-Radius_in - midx) / plot_scale
+            Rx_rgt = cszw / 2 + (Radius_in - midx) / plot_scale
+            Ry_bot = cszh / 2 + (Radius_in + midy) / plot_scale
+            Ry_top = cszh / 2 + (-Radius_in + midy) / plot_scale
             self.segID.append(
                 self.PreviewCanvas.create_oval(Rx_lft, Ry_bot, Rx_rgt, Ry_top, outline="gray90", width=0, dash=3))
 
@@ -3110,10 +3085,10 @@ class Gui(Frame):
 
         # Plot circle radius with radius equal to Radius_plot
         if Radius_plot != 0:
-            Rpx_lft = cszw/2 + ( -Radius_plot-midx - x_zero) / plot_scale
-            Rpx_rgt = cszw/2 + (  Radius_plot-midx - x_zero)  / plot_scale
-            Rpy_bot = cszh/2 + (  Radius_plot+midy + y_zero)  / plot_scale
-            Rpy_top = cszh/2 + ( -Radius_plot+midy + y_zero)  / plot_scale
+            Rpx_lft = cszw / 2 + (-Radius_plot - midx - x_zero) / plot_scale
+            Rpx_rgt = cszw / 2 + (Radius_plot - midx - x_zero) / plot_scale
+            Rpy_bot = cszh / 2 + (Radius_plot + midy + y_zero) / plot_scale
+            Rpy_top = cszh / 2 + (-Radius_plot + midy + y_zero) / plot_scale
             self.segID.append(
                 self.PreviewCanvas.create_oval(Rpx_lft, Rpy_bot, Rpx_rgt, Rpy_top, outline="black", width=plot_width))
 
@@ -3147,22 +3122,20 @@ class Gui(Frame):
                 r = XY[2]
                 color = "black"
 
-                rbit = self.calc_vbit_dia()/2.0
+                rbit = self.model.calc_vbit_radius()
                 if self.bit_shape.get() == "FLAT":
                     if r >= rbit:
-                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, color, r, 1)
+                        self.plot_circle( (x1, y1), midx, midy, cszw, cszh, color, r, 1)
                 else:
                     if self.inlay.get():
-                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, color, r-r_inlay_top, 1)
+                        self.plot_circle( (x1, y1), midx, midy, cszw, cszh, color, r-r_inlay_top, 1)
                     else:
-                        self.plot_circle(x1, y1, midx, midy, cszw, cszh, color, r, 1)
+                        self.plot_circle( (x1, y1), midx, midy, cszw, cszh, color, r, 1)
 
             loop_old = -1
             rold = -1
             for line in self.model.vcoords:
-                XY = line
-                x1 = XY[0]
-                y1 = XY[1]
+                new = (line[0], line[1])
                 r = XY[2]
                 loop = XY[3]
                 color = "white"
@@ -3175,57 +3148,47 @@ class Gui(Frame):
                     plot_flat = True
 
                 if loop == loop_old and plot_flat:
-                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, color)
+                    self.plot_line(old, new, midx, midy, cszw, cszh, color)
                 loop_old = loop
                 rold = r
-                xold = x1
-                yold = y1
+                old = new
 
         ########################################
-        # Plot cleanup data
+        # Plot cleanup path
         ########################################
         if self.cut_type.get() == "v-carve":
             loop_old = -1
             for line in self.model.clean_coords_sort:
-                XY = line
-                x1 = XY[0]
-                y1 = XY[1]
+                new = (line[0], line[1])
                 r = XY[2]
                 loop = XY[3]
                 color = "brown"
                 if loop == loop_old:
-                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, color, r)
+                    self.plot_line(old, new, midx, midy, cszw, cszh, color, r)
                 loop_old = loop
-                xold = x1
-                yold = y1
+                old = new
 
             loop_old = -1
             for line in self.model.clean_coords_sort:
-                XY = line
-                x1 = XY[0]
-                y1 = XY[1]
+                new = (line[0], line[1])
                 loop = XY[3]
                 color = "white"
                 # check and see if we need to move to a new discontinuous start point
                 if loop == loop_old:
-                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, color)
+                    self.plot_line(old, new, midx, midy, cszw, cszh, color)
                 loop_old = loop
-                xold = x1
-                yold = y1
+                old = new
 
             loop_old = -1
             for line in self.model.v_clean_coords_sort:
-                XY = line
-                x1 = XY[0]
-                y1 = XY[1]
+                new = (line[0], line[1])
                 r = XY[2]
                 loop = XY[3]
                 color = "yellow"
                 if loop == loop_old:
-                    self.plot_line(xold, yold, x1, y1, midx, midy, cszw, cszh, color)
+                    self.plot_line(old, new, midx, midy, cszw, cszh, color)
                 loop_old = loop
-                xold = x1
-                yold = y1
+                old = new
 
         #########################################
         # End V-carve Plotting Stuff
@@ -3241,9 +3204,9 @@ class Gui(Frame):
                                                                   fill='green', width=0))
 
     def do_it(self):
-        '''
+        """
         Perform  Calculations
-        '''
+        """
         if self.delay_calc:
             return
 
@@ -3291,16 +3254,16 @@ class Gui(Frame):
             Radius_in = 0.0
 
         try:
-            SegArc    = float(self.segarc.get())
+            # SegArc    = float(self.segarc.get())
             YScale_in = float(self.YSCALE.get() )
             CSpaceP   = float(self.CSPACE.get() )
             WSpaceP   = float(self.WSPACE.get() )
             LSpace    = float(self.LSPACE.get() )
             Angle     = float(self.TANGLE.get() )
             Thick     = float(self.STHICK.get() )
-            XOrigin   = float(self.xorigin.get())
-            YOrigin   = float(self.yorigin.get())
-            v_flop    = bool(self.v_flop.get())
+            # XOrigin   = float(self.xorigin.get())
+            # YOrigin   = float(self.yorigin.get())
+            # v_flop    = bool(self.v_flop.get())
         except:
             self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
             self.statusbar.configure( bg='red' )
@@ -3318,8 +3281,8 @@ class Gui(Frame):
 
         maxx_tmp = -99991.0
         maxy_tmp = -99992.0
-        maxa_tmp = -99993.0
-        mina_tmp =  99993.0
+        # maxa_tmp = -99993.0
+        # mina_tmp =  99993.0
         miny_tmp =  99994.0
         minx_tmp =  99995.0
 
@@ -3364,9 +3327,9 @@ class Gui(Frame):
         ##################################
         for char in String:
             try:
-                font_used_height = max( self.font[ord(char)].get_ymax(), font_used_height )
-                font_used_width = max( self.font[ord(char)].get_xmax(), font_used_width  )
-                font_used_depth = min( self.font[ord(char)].get_ymin(), font_used_depth  )
+                font_used_height = max(self.font[ord(char)].get_ymax(), font_used_height)
+                font_used_width = max(self.font[ord(char)].get_xmax(), font_used_width)
+                font_used_depth = min(self.font[ord(char)].get_ymin(), font_used_depth)
             except:
                 pass
 
@@ -3388,7 +3351,9 @@ class Gui(Frame):
                 if YScale <= Zero:
                     YScale = .1
         else:
-            if not self.batch.get(): self.statusbar.configure( bg='red' )
+            if not self.batch.get():
+                self.statusbar.configure( bg='red' )
+
             if self.H_CALC.get() == "max_all":
                 if not self.batch.get():
                     self.statusMessage.set("No Font Characters Found")
@@ -3408,9 +3373,9 @@ class Gui(Frame):
 
         font_char_width = self.font.get_character_width()
         font_word_space = font_char_width * (WSpaceP / 100.0)
+        font_char_space = font_char_width * (CSpaceP / 100.0)
 
         XScale = float(self.XSCALE.get()) * YScale / 100
-        font_char_space = font_char_width * (CSpaceP / 100.0)
 
         if Radius_in != 0.0:
             if self.outer.get() == True:
@@ -3440,23 +3405,28 @@ class Gui(Frame):
             if char == ' ':
                 xposition += font_word_space
                 continue
+
             if char == '\t':
                 xposition += 3 * font_word_space
                 continue
+
             if char == '\n':
                 xposition = 0
                 yposition += font_line_space
-                line_cnt = line_cnt + 1
+                line_cnt += 1
+
                 line_minx.append(minx_tmp)
                 line_miny.append(miny_tmp)
                 line_maxx.append(maxx_tmp)
                 line_maxy.append(maxy_tmp)
-                line_maxa.append(maxa_tmp)
-                line_mina.append(mina_tmp)
+
+                # line_maxa.append(maxa_tmp)
+                # line_mina.append(mina_tmp)
+
                 maxx_tmp = -99919.0
                 maxy_tmp = -99929.0
-                maxa_tmp = -99939.0
-                mina_tmp = 99949.0
+                # maxa_tmp = -99939.0
+                # mina_tmp = 99949.0
                 miny_tmp = 99959.0
                 minx_tmp = 99969.0
                 continue
@@ -3493,53 +3463,116 @@ class Gui(Frame):
 
             char_width = self.font[ord(char)].get_xmax() # move over for next character
             xposition += font_char_space + char_width
+
         #END Char in String
+
+
+        # TODO split up code
+        minx, maxx, miny, maxy = \
+            self.calc_maxX_maxY(line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale)
+
+        # x_length = self.MAXX - self.MINX
+        # y_length = self.MAXY - self.MINY
+        # self.model.set_x_length(x_length)
+        # self.model.set_y_length(y_length)
+
+        self.model.set_maxX(self.MAXX)
+        self.model.set_minX(self.MINX)
+        self.model.set_maxY(self.MAXY)
+        self.model.set_minY(self.MINY)
+
+        # self.xzero = x_zero
+        # self.yzero = y_zero
+
+        if not self.batch.get():
+            # Reset Status Bar and Entry Fields
+            self.Input.configure(bg='white')
+            self.entry_set(self.Entry_Yscale,  self.Entry_Yscale_Check()  ,1)
+            self.entry_set(self.Entry_Xscale,  self.Entry_Xscale_Check()  ,1)
+            self.entry_set(self.Entry_Sthick,  self.Entry_Sthick_Check()  ,1)
+            self.entry_set(self.Entry_Lspace,  self.Entry_Lspace_Check()  ,1)
+            self.entry_set(self.Entry_Cspace,  self.Entry_Cspace_Check()  ,1)
+            self.entry_set(self.Entry_Wspace,  self.Entry_Wspace_Check()  ,1)
+            self.entry_set(self.Entry_Tangle,  self.Entry_Tangle_Check()  ,1)
+            self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check() ,1)
+            self.entry_set(self.Entry_Feed,    self.Entry_Feed_Check()    ,1)
+            self.entry_set(self.Entry_Plunge,  self.Entry_Plunge_Check()  ,1)
+            self.entry_set(self.Entry_Zsafe,   self.Entry_Zsafe_Check()   ,1)
+            self.entry_set(self.Entry_Zcut,    self.Entry_Zcut_Check()    ,1)
+            self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check()  ,1)
+            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(),1)
+
+            self.bounding_box.set("Bounding Box (WxH) = " +
+                                  "%.3g" % (maxx - minx) +
+                                  " %s " % self.units.get() +
+                                  " x " +
+                                  "%.3g" % (maxy - miny) +
+                                  " %s " % self.units.get() +
+                                  " %s" % message2)
+            self.statusMessage.set(self.bounding_box.get())
+
+        if no_font_record != []:
+            if not self.batch.get():
+                self.statusbar.configure( bg='orange' )
+            fmessage('Characters not found in font file:',FALSE)
+            fmessage("(",FALSE)
+            for entry in no_font_record:
+                fmessage( "%s," %(entry),FALSE)
+            fmessage(")")
+
+        if not self.batch.get():
+            self.plot_tool_path()
+
+
+    def calc_maxX_maxY(self, line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale):
+
+        try:
+            # SegArc    = float(self.segarc.get())
+            # YScale_in = float(self.YSCALE.get() )
+            # CSpaceP   = float(self.CSPACE.get() )
+            # WSpaceP   = float(self.WSPACE.get() )
+            # LSpace    = float(self.LSPACE.get() )
+            Angle     = float(self.TANGLE.get() )
+            Thick     = float(self.STHICK.get() )
+            XOrigin   = float(self.xorigin.get())
+            YOrigin   = float(self.yorigin.get())
+            v_flop    = bool(self.v_flop.get())
+        except:
+            self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
+            self.statusbar.configure( bg='red' )
+            return
 
         maxx = maxy = -99999.0
         miny = minx = 99999.0
-        cnt=0
-
-        for maxx_val in line_maxx:
-            maxx = max( maxx, line_maxx[cnt] )
-            minx = min( minx, line_minx[cnt] )
-            miny = min( miny, line_miny[cnt] )
-            maxy = max( maxy, line_maxy[cnt] )
-            cnt += 1
+        for i, maxx_val in enumerate(line_maxx):
+            minx = min(minx, line_minx[i])
+            maxx = max(maxx, line_maxx[i])
+            miny = min(miny, line_miny[i])
+            maxy = max(maxy, line_maxy[i])
 
         ##########################################
-        #      TEXT LEFT JUSTIFY STUFF           #
+        #        TEXT JUSTIFICATION              #
         ##########################################
         if self.justify.get() == "Left":
             pass
 
-        ##########################################
-        #          TEXT CENTERING STUFF          #
-        ##########################################
-        if self.justify.get() == "Center":
-            cnt=0
-            for line in self.model.coords:
-                XY = line
+        elif self.justify.get() == "Center":
+            for i, XY in enumerate(self.model.coords):
                 line_num = int(XY[4])
                 try:
-                    self.model.coords[cnt][0]=XY[0] + (maxx - line_maxx[line_num])/2
-                    self.model.coords[cnt][2]=XY[2] + (maxx - line_maxx[line_num])/2
+                    self.model.coords[i][0] = XY[0] + (maxx - line_maxx[line_num]) / 2
+                    self.model.coords[i][2] = XY[2] + (maxx - line_maxx[line_num]) / 2
                 except:
                     pass
-                cnt += 1
 
-        ##########################################
-        #        TEXT RIGHT JUSTIFY STUFF        #
-        ##########################################
-        if self.justify.get() == "Right":
-            for line in self.model.coords:
-                XY = line
+        elif self.justify.get() == "Right":
+            for XY in iter(self.model.coords):
                 line_num = int(XY[4])
                 try:
-                    XY[0]=XY[0] + (maxx - line_maxx[line_num])
-                    XY[2]=XY[2] + (maxx - line_maxx[line_num])
+                    XY[0] = XY[0] + (maxx - line_maxx[line_num])
+                    XY[2] = XY[2] + (maxx - line_maxx[line_num])
                 except:
                     pass
-                cnt += 1
 
         ##########################################
         #         TEXT ON RADIUS STUFF           #
@@ -3547,32 +3580,26 @@ class Gui(Frame):
         mina = 99996.0
         maxa = -99993.0
         if Radius != 0.0:
-            for line in self.model.coords:
-                XY = line
+            for XY in self.model.coords:
                 XY[0], XY[1], A1 = rotation(XY[0], XY[1], 0, Radius)
                 XY[2], XY[3], A2 = rotation(XY[2], XY[3], 0, Radius)
                 maxa = max(maxa, A1, A2)
                 mina = min(mina, A1, A2)
             mida = (mina + maxa) / 2
+
             ##########################################
-            #         TEXT LEFT JUSTIFY STUFF        #
+            #          TEXT JUSTIFICATION            #
             ##########################################
             if self.justify.get() == "Left":
                 pass
-            ##########################################
-            #          TEXT CENTERING STUFF          #
-            ##########################################
-            if self.justify.get() == "Center":
-                for line in self.model.coords:
-                    XY = line
+
+            elif self.justify.get() == "Center":
+                for XY in self.model.coords:
                     XY[0], XY[1] = transform(XY[0], XY[1], mida)
                     XY[2], XY[3] = transform(XY[2], XY[3], mida)
-            ##########################################
-            #        TEXT RIGHT JUSTIFY STUFF        #
-            ##########################################
-            if self.justify.get() == "Right":
-                for line in self.model.coords:
-                    XY = line
+
+            elif self.justify.get() == "Right":
+                for XY in self.model.coords:
                     if self.upper.get() == True:
                         XY[0], XY[1] = transform(XY[0], XY[1], maxa)
                         XY[2], XY[3] = transform(XY[2], XY[3], maxa)
@@ -3588,37 +3615,37 @@ class Gui(Frame):
 
         maxx = -99991.0
         maxy = -99992.0
-        miny =  99994.0
-        minx =  99995.0
+        miny = 99994.0
+        minx = 99995.0
 
         if Angle == 0.0:
             if flip_flag:
-                miny = -font_line_height*YScale
+                miny = -font_line_height * YScale
             else:
-                maxy = font_line_height*YScale
+                maxy = font_line_height * YScale
 
         elif Angle == 90.0 or Angle == -270.0:
             if not mirror_flag:
-                minx = -font_line_height*YScale
+                minx = -font_line_height * YScale
             else:
-                maxx = font_line_height*YScale
+                maxx = font_line_height * YScale
 
         elif Angle == 270.0 or Angle == -90.0:
             if not mirror_flag:
-                maxx = font_line_height*YScale
+                maxx = font_line_height * YScale
             else:
-                minx = -font_line_height*YScale
+                minx = -font_line_height * YScale
 
         elif Angle == 180.0 or Angle == -180.0:
             if flip_flag:
-                maxy = font_line_height*YScale
+                maxy = font_line_height * YScale
             else:
-                miny = -font_line_height*YScale
+                miny = -font_line_height * YScale
 
-        maxr2 =  0.0
+        maxr2 = 0.0
 
-        for line in self.model.coords:
-            XY = line
+        for XY in self.model.coords:
+
             if Angle != 0.0:
                 XY[0], XY[1], A1 = rotation(XY[0], XY[1], Angle, 0)
                 XY[2], XY[3], A2 = rotation(XY[2], XY[3], Angle, 0)
@@ -3626,12 +3653,12 @@ class Gui(Frame):
             if mirror_flag == True:
                 XY[0] = -XY[0]
                 XY[2] = -XY[2]
-                v_flop = not(v_flop)
+                v_flop = not (v_flop)
 
             if flip_flag == True:
                 XY[1] = -XY[1]
                 XY[3] = -XY[3]
-                v_flop = not(v_flop)
+                v_flop = not (v_flop)
 
             maxx = max(maxx, XY[0], XY[2])
             maxy = max(maxy, XY[1], XY[3])
@@ -3639,40 +3666,40 @@ class Gui(Frame):
             minx = min(minx, XY[0], XY[2])
             miny = min(miny, XY[1], XY[3])
 
-            maxr2 = max(maxr2, float(XY[0]*XY[0]+XY[1]*XY[1]), float(XY[2]*XY[2]+XY[3]*XY[3]))
+            maxr2 = max(maxr2, float(XY[0] * XY[0] + XY[1] * XY[1]), float(XY[2] * XY[2] + XY[3] * XY[3]))
 
-        maxx = maxx + Thick/2
-        maxy = maxy + Thick/2
-        minx = minx - Thick/2
-        miny = miny - Thick/2
+        maxx = maxx + Thick / 2
+        maxy = maxy + Thick / 2
+        minx = minx - Thick / 2
+        miny = miny - Thick / 2
 
-        midx = (minx+maxx)/2
-        midy = (miny+maxy)/2
+        midx = (minx + maxx) / 2
+        midy = (miny + maxy) / 2
 
         #############################
         #   Engrave Box or circle   #
         #############################
-        Delta = 0
-        Radius_plot = 0
-        Thick_Border = float(self.STHICK.get() )
-        Delta = Thick/2 + float(self.boxgap.get())
+        # Delta = 0
+        # Radius_plot = 0
+        # Thick_Border = float(self.STHICK.get())
+        Delta = Thick / 2 + float(self.boxgap.get())
 
-        if self.plotbox.get(): #and self.cut_type.get() != "v-carve":
+        if self.plotbox.get():  # and self.cut_type.get() != "v-carve":
 
             if Radius_in == 0 or self.cut_type.get() == "v-carve":
                 if bool(self.mirror.get()) ^ bool(self.flip.get()):
-                    self.model.coords.append([ minx-Delta, miny-Delta, minx-Delta, maxy+Delta, 0, 0])
-                    self.model.coords.append([ minx-Delta, maxy+Delta, maxx+Delta, maxy+Delta, 0, 0])
-                    self.model.coords.append([ maxx+Delta, maxy+Delta, maxx+Delta, miny-Delta, 0, 0])
-                    self.model.coords.append([ maxx+Delta, miny-Delta, minx-Delta, miny-Delta, 0, 0])
+                    self.model.coords.append([minx - Delta, miny - Delta, minx - Delta, maxy + Delta, 0, 0])
+                    self.model.coords.append([minx - Delta, maxy + Delta, maxx + Delta, maxy + Delta, 0, 0])
+                    self.model.coords.append([maxx + Delta, maxy + Delta, maxx + Delta, miny - Delta, 0, 0])
+                    self.model.coords.append([maxx + Delta, miny - Delta, minx - Delta, miny - Delta, 0, 0])
                 else:
-                    self.model.coords.append([ minx-Delta, miny-Delta, maxx+Delta, miny-Delta, 0, 0])
-                    self.model.coords.append([ maxx+Delta, miny-Delta, maxx+Delta, maxy+Delta, 0, 0])
-                    self.model.coords.append([ maxx+Delta, maxy+Delta, minx-Delta, maxy+Delta, 0, 0])
-                    self.model.coords.append([ minx-Delta, maxy+Delta, minx-Delta, miny-Delta, 0, 0])
+                    self.model.coords.append([minx - Delta, miny - Delta, maxx + Delta, miny - Delta, 0, 0])
+                    self.model.coords.append([maxx + Delta, miny - Delta, maxx + Delta, maxy + Delta, 0, 0])
+                    self.model.coords.append([maxx + Delta, maxy + Delta, minx - Delta, maxy + Delta, 0, 0])
+                    self.model.coords.append([minx - Delta, maxy + Delta, minx - Delta, miny - Delta, 0, 0])
 
                 if self.cut_type.get() != "v-carve":
-                    Delta = Delta + Thick/2
+                    Delta = Delta + Thick / 2
                 minx = minx - Delta
                 maxx = maxx + Delta
                 miny = miny - Delta
@@ -3680,7 +3707,7 @@ class Gui(Frame):
 
             else:
                 Radius_plot = sqrt(maxr2) + Thick + float(self.boxgap.get())
-                minx = -Radius_plot - Thick/2
+                minx = -Radius_plot - Thick / 2
                 maxx = -minx
                 miny = minx
                 maxy = maxx
@@ -3694,7 +3721,7 @@ class Gui(Frame):
         #         ORIGIN LOCATING STUFF          #
         ##########################################
         CASE = str(self.origin.get())
-        if   CASE == "Top-Left":
+        if CASE == "Top-Left":
             x_zero = minx
             y_zero = maxy
         elif CASE == "Top-Center":
@@ -3724,72 +3751,22 @@ class Gui(Frame):
         elif CASE == "Arc-Center":
             x_zero = 0
             y_zero = 0
-        else: # "Default"
+        else:  # "Default"
             x_zero = 0
             y_zero = 0
 
-        cnt=0
-        for line in self.model.coords:
-            XY = line
-            self.model.coords[cnt][0] = XY[0] - x_zero + XOrigin
-            self.model.coords[cnt][1] = XY[1] - y_zero + YOrigin
-            self.model.coords[cnt][2] = XY[2] - x_zero + XOrigin
-            self.model.coords[cnt][3] = XY[3] - y_zero + YOrigin
-            cnt += 1
+        for i, XY in enumerate(self.model.coords):
+            self.model.coords[i][0] = XY[0] - x_zero + XOrigin
+            self.model.coords[i][1] = XY[1] - y_zero + YOrigin
+            self.model.coords[i][2] = XY[2] - x_zero + XOrigin
+            self.model.coords[i][3] = XY[3] - y_zero + YOrigin
 
         self.MAXX = maxx - x_zero + XOrigin
         self.MINX = minx - x_zero + XOrigin
         self.MAXY = maxy - y_zero + YOrigin
         self.MINY = miny - y_zero + YOrigin
 
-        # TODO fix variables (crossing App and Model)
-        self.model.setMaxX(self.MAXX)
-        self.model.setMinX(self.MINX)
-        self.model.setMaxY(self.MAXY)
-        self.model.setMinY(self.MINY)
-
-        self.xzero = x_zero
-        self.yzero = y_zero
-
-        if not self.batch.get():
-            # Reset Status Bar and Entry Fields
-            self.Input.configure( bg='white' )
-            self.entry_set(self.Entry_Yscale,  self.Entry_Yscale_Check()  ,1)
-            self.entry_set(self.Entry_Xscale,  self.Entry_Xscale_Check()  ,1)
-            self.entry_set(self.Entry_Sthick,  self.Entry_Sthick_Check()  ,1)
-            self.entry_set(self.Entry_Lspace,  self.Entry_Lspace_Check()  ,1)
-            self.entry_set(self.Entry_Cspace,  self.Entry_Cspace_Check()  ,1)
-            self.entry_set(self.Entry_Wspace,  self.Entry_Wspace_Check()  ,1)
-            self.entry_set(self.Entry_Tangle,  self.Entry_Tangle_Check()  ,1)
-            self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check() ,1)
-            self.entry_set(self.Entry_Feed,    self.Entry_Feed_Check()    ,1)
-            self.entry_set(self.Entry_Plunge,  self.Entry_Plunge_Check()  ,1)
-            self.entry_set(self.Entry_Zsafe,   self.Entry_Zsafe_Check()   ,1)
-            self.entry_set(self.Entry_Zcut,    self.Entry_Zcut_Check()    ,1)
-            self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check()  ,1)
-            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(),1)
-
-            self.bounding_box.set("Bounding Box (WxH) = "    +
-                                   "%.3g" % (maxx-minx)      +
-                                   " %s " % self.units.get() +
-                                   " x " +
-                                   "%.3g" % (maxy-miny)      +
-                                   " %s " % self.units.get() +
-                                   " %s" % message2)
-            self.statusMessage.set(self.bounding_box.get())
-
-        if no_font_record != []:
-            if not self.batch.get():
-                self.statusbar.configure( bg='orange' )
-            fmessage('Characters not found in font file:',FALSE)
-            fmessage("(",FALSE)
-            for entry in no_font_record:
-                fmessage( "%s," %(entry),FALSE)
-            fmessage(")")
-
-        if not self.batch.get():
-            self.plot_data()
-
+        return (minx, maxx, miny, maxy)
 
     def v_carve_it(self, clean_flag=False, DXF_FLAG=False):
 
@@ -3812,7 +3789,7 @@ class Gui(Frame):
         elif self.model.clean_coords_sort != [] or self.model.v_clean_coords_sort != []:
             # If there is existing cleanup data clear the screen before computing
             self.model.init_clean_coords()
-            self.plot_data()
+            self.plot_tool_path()
 
         if not self.batch.get():
             self.statusbar.configure( bg='yellow' )
@@ -3828,7 +3805,7 @@ class Gui(Frame):
                 cszw = int(self.PreviewCanvas.cget("width"))
                 cszh = int(self.PreviewCanvas.cget("height"))
                 if self.v_pplot.get() == 1:
-                    self.plot_data()
+                    self.plot_tool_path()
 
             if (self.input_type.get() == "image" and clean_flag == False):
                 self.model.sort_for_v_carve()
