@@ -87,7 +87,7 @@ class SettingsTest(unittest.TestCase):
         self.assertEquals(s.get('default_text'), 'Test123')
 
         s.set('default_text', '"bla bla "foo" bla bla"')
-        self.assertEquals(s.get('text'), 'bla bla "foo" bla bla')
+        self.assertEquals(s.get('default_text'), 'bla bla "foo" bla bla')
 
     # def test_autoload(self):
     #     s = Settings(autoload=True)

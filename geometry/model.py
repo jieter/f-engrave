@@ -16,10 +16,14 @@ class Model():
     def __init__(self, controller, settings):
 
         self.controller = controller
+
+        self.progress_callback = None
+        self.plot_progress_callback = None
+        self.status_callback = None
+
         self.settings = settings
         self.init_coords()
 
-        self.batch = self.settings.get('batch')
         self.accuracy = self.settings.get('accuracy')
         self.v_pplot = self.settings.get('v_pplot')
         self.STOP_CALC = False
@@ -42,6 +46,15 @@ class Model():
 
     def stop_calc(self):
         self.STOP_CALC = True
+
+    def set_progress_callback(self, callback):
+        self.progress_callback = callback
+
+    def set_plot_progress_callback(self, callback):
+        self.plot_progress_callback = callback
+
+    def set_status_callback(self, callback):
+        self.status_callback = callback
 
     def refresh_v_pplot(self):
         self.v_pplot = self.settings.get('v_pplot')
@@ -153,14 +166,14 @@ class Model():
         else:
             rmax = rbit
 
-        midx = (self.maxX+self.minX)/2
-        midy = (self.maxY+self.minY)/2
-        xLength = self.maxX-self.minX
-        yLength = self.maxY-self.minY
+        midx = (self.maxX + self.minX) / 2
+        midy = (self.maxY + self.minY) / 2
+        xLength = self.maxX - self.minX
+        yLength = self.maxY - self.minY
         
         #TODO get rid of controller dependencies
-        cszw = int(self.controller.PreviewCanvas.cget("width"))
-        cszh = int(self.controller.PreviewCanvas.cget("height"))
+        # cszw = int(self.controller.PreviewCanvas.cget("width"))
+        # cszh = int(self.controller.PreviewCanvas.cget("height"))
             
         #########################
         # Setup Grid Partitions #
@@ -305,8 +318,10 @@ class Model():
         START_TIME = time()
 
         # Update canvas with modified paths
-        if not self.batch:
-            self.controller.plot_data()
+        # if not self.batch:
+        #     self.controller.plot_data()
+        if not self.progress_callback is None:
+            self.progress_callback()
 
         if TOT_LENGTH > 0.0:
 
@@ -332,10 +347,8 @@ class Model():
                     MIN_REMAIN = -1
                     MIN_TOTAL = -1
                     
-                if not self.batch:
-                    self.controller.statusMessage.set('%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' %( CUR_PCT, MIN_REMAIN, MIN_TOTAL ) )
-                    self.controller.statusbar.configure( bg='yellow' )
-                    self.controller.PreviewCanvas.update()
+                if not self.status_callback is None:
+                    self.status_callback('%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' %( CUR_PCT, MIN_REMAIN, MIN_TOTAL) )
 
                 if self.STOP_CALC:
 
@@ -423,8 +436,10 @@ class Model():
 
                        self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
 
-                       if (not self.batch) and self.v_pplot and (not clean_flag):
-                           self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, "blue", rv, 0)
+                       if self.v_pplot and (not self.plot_progress_callback is None) and (not clean_flag):
+                           ul = (xv, yv)
+                           br = (midx, midy)
+                           self.plot_progress_callback( ul, br, "blue", rv, 0)
 
                 theta = phi
                 x0 = x2
@@ -461,9 +476,10 @@ class Model():
 
                     self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
 
-                    if self.v_pplot and (not self.batch) and clean_flag == False:
-                        self.controller.update_idletasks()
-                        self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, "blue", rv, 0)
+                    if self.v_pplot and (not self.plot_progress_callback is None) and (not clean_flag):
+                       ul = (xv, yv)
+                       br = (midx, midy)
+                       self.plot_progress_callback( ul, br, "blue", rv, 0)
 
                     if New_Loop == 1 and cnt == 1:
                         xpta = xpt
@@ -500,8 +516,11 @@ class Model():
                             rout = self.find_max_circle(xa, ya, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
                             xv, yv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt, clean_flag)
                             self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
-                            if self.v_pplot and (not self.batch) and clean_flag == False:
-                                self.controller.plot_circle(xv, yv, midx, midy, cszw, cszh, "blue", rv, 0)
+
+                            if self.v_pplot and (not self.plot_progress_callback is None) and (not clean_flag):
+                                ul = (xv, yv)
+                                br = (midx, midy)
+                                self.plot_progress_callback(ul, br, "blue", rv, 0)
 
                         xv, yv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean_flag)
                         self.clean_segment[CUR_CNT] = bool(self.clean_segment[CUR_CNT]) or bool(clean_seg)
@@ -520,7 +539,7 @@ class Model():
 
         # TODO get rid of controller dependencies
         # r_clean = float(self.controller.clean_dia.get())/2.0
-        rbit = self.controller.calc_vbit_dia() / 2.0
+        rbit = self.calc_vbit_dia() / 2.0
 
         Lx, Ly = transform(0,rout,-phi)
         xnormv = x1+Lx
@@ -536,13 +555,40 @@ class Model():
                 need_clean = 1
 
         return xnormv, ynormv, rout, need_clean
-               
-    ############################################################################
-    # Routine finds the maximum radius that can be placed in the position      #
-    # xpt,ypt witout interfearing with other line segments (rmin is max R LOL) #
-    ############################################################################
-    def find_max_circle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
 
+    def calc_vbit_dia(self):
+
+        bit_dia = self.settings.get('v_bit_dia')
+        depth_lim = self.settings.get('v_depth_lim')
+        half_angle = radians(self.settings.get('v_bit_angle') / 2.0)
+
+        if self.settings.get('inlay') and self.settings.get('bit_shape') == "VBIT":
+            allowance = self.settings.get('allowance')
+            bit_dia = -2 * allowance * tan(half_angle)
+            bit_dia = max(bit_dia, 0.001)
+            return bit_dia
+
+        if depth_lim < 0.0:
+            if self.settings.get('bit_shape') == "VBIT":
+                bit_dia = -2 * depth_lim * tan(half_angle)
+            elif self.settings.get('bit_shape') == "BALL":
+                R = bit_dia / 2.0
+                if depth_lim > -R:
+                    bit_dia = 2 * sqrt(R ** 2 - (R + depth_lim) ** 2)
+                else:
+                    bit_dia = self.settings.get('v_bit_dia')
+            elif self.settings.get('bit_shape') == "FLAT":
+                R = bit_dia / 2.0
+            else:
+                pass
+
+        return bit_dia
+
+    def find_max_circle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
+        """
+        Routine finds the maximum radius that can be placed in the position
+        xpt,ypt witout interfearing with other line segments (rmin is max R LOL)
+        """
         global Zero
         rtmp = rmin
 
@@ -682,9 +728,11 @@ class Model():
 
         Lend.append(cnt)
 
-        if not self.batch:
-            self.controller.statusMessage.set('Checking Input Image Data')
-            self.controller.master.update()
+        # if not self.batch:
+        #     self.controller.statusMessage.set('Checking Input Image Data')
+        #     self.controller.master.update()
+        if not self.status_callback is None:
+            self.status_callback('Checking Input Image Data')
 
         ######################################################
         ### Fully Close Closed loops and Remove Open Loops ###
@@ -814,9 +862,11 @@ class Model():
         ###########################################
         ###   Determine loop directions CW/CCW  ###
         ###########################################
-        if not self.batch:
-            self.controller.statusMessage.set('Calculating Initial Loop Directions (CW/CCW)')
-            self.controller.master.update()
+        # if not self.batch:
+        #     self.controller.statusMessage.set('Calculating Initial Loop Directions (CW/CCW)')
+        #     self.controller.master.update()
+        if not self.status_callback is None:
+            self.status_callback('Calculating Initial Loop Directions (CW/CCW)')
 
         Lflip = []
         Lcw = []
@@ -854,10 +904,12 @@ class Model():
         #####################################################
         for iloop in range(Nloops):
             CUR_PCT = float(iloop)/Nloops*100.0
-            if not self.batch:
-                self.controller.statusMessage.set('Determining Which Side of Loop to Cut: %d of %d' %(iloop+1,Nloops))
-                self.controller.master.update()
-                
+            # if not self.batch:
+            #     self.controller.statusMessage.set('Determining Which Side of Loop to Cut: %d of %d' %(iloop+1,Nloops))
+            #     self.controller.master.update()
+            if not self.status_callback is None:
+                self.status_callback('Determining Which Side of Loop to Cut: %d of %d' %(iloop+1,Nloops))
+
             ipoly = ecoords[Lbeg[iloop]:Lend[iloop]]
 
             # Check points in other loops (could just check one)
@@ -884,9 +936,11 @@ class Model():
         #################################################
         # Find new order based on distance to next beg  #
         #################################################
-        if not self.batch:
-            self.controller.statusMessage.set('Re-Ordering Loops')
-            self.controller.master.update()
+        # if not self.batch:
+        #     self.controller.statusMessage.set('Re-Ordering Loops')
+        #     self.controller.master.update()
+        if not self.status_callback is None:
+            self.status_callback('Re-Ordering Loops')
 
         order_out = []
         if len(Lflip) > 0:
@@ -1156,13 +1210,15 @@ class Model():
                                         0])
         return path_coords_out
 
-    def clean_path_calc(self, rbit, bit_type="straight"):
+    def clean_path_calc(self, bit_type="straight"):
 
         v_flop = self.get_flop_status(CLEAN=True)
         if v_flop:
             edge = 1
         else:
             edge = 0
+
+        rbit = self.calc_vbit_dia() / 2.0
 
         loop_cnt = 0
         loop_cnt_out = 0
@@ -1179,9 +1235,6 @@ class Model():
                          self.settings.get('v_clean_Y')
 
         check_coords = []
-
-        # TODO remove controller dependency
-        self.controller.statusbar.configure(bg='yellow')
 
         if bit_type == "straight":
             # TODO get rid of controller dependency

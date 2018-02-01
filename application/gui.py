@@ -1,4 +1,3 @@
-import os
 import getopt
 from time import time
 import webbrowser
@@ -39,6 +38,24 @@ class Gui(Frame):
 
         self.bind_keys()
         self.create_widgets()
+
+        self.model.set_progress_callback(self.plot_data)
+        self.model.set_plot_progress_callback(self.plot_progress)
+        self.model.set_status_callback(self.status_update)
+
+    def status_update(self, msg):
+        self.statusMessage.set(msg)
+        self.statusbar.configure( bg='yellow' )
+        self.master.update()
+        # self.PreviewCanvas.update()
+
+    # def plot_progress(self, position, radius):
+    def plot_progress(self, ul, br, color, radius, fill=False):
+        xv, yv = ul
+        midx, midy = br
+        cszw = int(self.PreviewCanvas.cget("width"))
+        cszh = int(self.PreviewCanvas.cget("height"))
+        self.plot_circle(xv, yv, midx, midy, cszw, cszh, color, radius, fill)
 
     def f_engrave_init(self):
         self.master.update()
@@ -2036,7 +2053,9 @@ class Gui(Frame):
             except:
                 pass
 
-        rbit = self.calc_vbit_dia() / 2.0
+
+        self.statusbar.configure(bg='yellow')
+        # rbit = self.calc_vbit_dia() / 2.0
         self.model.clean_path_calc(rbit, bit_type)
 
         if self.model.clean_coords == []:
@@ -2526,7 +2545,7 @@ class Gui(Frame):
 
 
     def menu_View_Refresh(self):
-        if (not self.batch.get()) and self.initComplete and (not self.delay_calc):
+        if self.initComplete and (not self.batch.get()) and (not self.delay_calc):
             dummy_event = Event()
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, 1)
@@ -2988,6 +3007,9 @@ class Gui(Frame):
             thick = radius * 2 / self.plot_scale
         self.segID.append(self.PreviewCanvas.create_line(x1, y1, x2, y2, fill=col, capstyle="round", width=thick))
 
+    def _create_circle(self, x, y, r, **kwargs):
+        return self.create_oval(x - r, y - r, x + r, y + r, **kwargs)
+
     def plot_circle(self, XX1, YY1, midx, midy, cszw, cszh, color, Rad, fill):
         dd = Rad
         x1 = cszw / 2 + (XX1 - dd - midx) / self.plot_scale
@@ -3016,9 +3038,9 @@ class Gui(Frame):
 
 
     def plot_data(self):
-        '''
+        """
         Canvas plotting stuff
-        '''
+        """
         if self.delay_calc:
             return
 
@@ -3251,7 +3273,7 @@ class Gui(Frame):
         self.RADIUS_PLOT = 0
 
         if (self.font is None or len(self.font) == 0) and (not self.batch.get()):
-            self.statusbar.configure( bg='red' )
+            self.statusbar.configure(bg='red')
             if self.input_type.get() == "text":
                 self.statusMessage.set("No Font Characters Loaded")
             else:
@@ -3702,7 +3724,7 @@ class Gui(Frame):
         elif CASE == "Arc-Center":
             x_zero = 0
             y_zero = 0
-        else:          #"Default"
+        else: # "Default"
             x_zero = 0
             y_zero = 0
 
@@ -3809,7 +3831,6 @@ class Gui(Frame):
                     self.plot_data()
 
             if (self.input_type.get() == "image" and clean_flag == False):
-                #self.model.coords = self.model.sort_for_v_carve(self.model.coords)
                 self.model.sort_for_v_carve()
 
             if DXF_FLAG:
