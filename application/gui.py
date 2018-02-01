@@ -23,6 +23,12 @@ else:
 
 class Gui(Frame):
 
+    # value check return codes:
+    OK  = 0  # value is ok (may require recalculation)
+    NOR = 1  # value is a valid number change that does not require recalc
+    INV = 2  # value is invalid
+    NAN = 3  # value is not a number
+
     def __init__(self, master, settings):
         Frame.__init__(self, master)
         self.w = 780
@@ -570,10 +576,12 @@ class Gui(Frame):
         self.Entry_BoxGap = Entry()
         self.Entry_ArcAngle = Entry()
         self.Entry_Accuracy = Entry()
+
         # Bitmap Setting Window Entry initialization
         self.Entry_BMPturdsize = Entry()
         self.Entry_BMPalphamax = Entry()
         self.Entry_BMPoptTolerance = Entry()
+
         # V-Carve Setting Window Entry initialization
         self.Entry_Vbitangle = Entry()
         self.Entry_Vbitdia = Entry()
@@ -749,34 +757,34 @@ class Gui(Frame):
         self.IMAGE_FILE = (self.settings.get('IMAGE_FILE'))
 
     def entry_set(self, val2, calc_flag=0, new=0):
-        if calc_flag == 0 and new == 0:
+        if calc_flag == self.OK and new == 0:
             try:
                 self.statusbar.configure(bg='yellow')
                 val2.configure(bg='yellow')
                 self.statusMessage.set(" Recalculation required.")
             except:
                 pass
-        elif calc_flag == 3:
+        elif calc_flag == self.NAN:
             try:
                 val2.configure(bg='red')
                 self.statusbar.configure(bg='red')
                 self.statusMessage.set(" Value should be a number. ")
             except:
                 pass
-        elif calc_flag == 2:
+        elif calc_flag == self.INV:
             try:
                 self.statusbar.configure(bg='red')
                 val2.configure(bg='red')
             except:
                 pass
-        elif (calc_flag == 0 or calc_flag == 1) and new == 1:
+        elif (calc_flag == self.OK or calc_flag == self.NOR) and new == 1:
             try:
                 self.statusbar.configure(bg='white')
                 self.statusMessage.set(self.bounding_box.get())
                 val2.configure(bg='white')
             except:
                 pass
-        elif (calc_flag == 1) and new == 0:
+        elif calc_flag == self.NOR and new == 0:
             try:
                 self.statusbar.configure(bg='white')
                 self.statusMessage.set(self.bounding_box.get())
@@ -784,7 +792,7 @@ class Gui(Frame):
             except:
                 pass
 
-        elif (calc_flag == 0 or calc_flag == 1) and new == 2:
+        elif (calc_flag == self.OK or calc_flag == self.NOR) and new == 2:
             return 0
         return 1
 
@@ -917,7 +925,7 @@ class Gui(Frame):
     def WriteDXF(self,close_loops=False):
 
         if close_loops:
-            self.v_carve_it(clean_flag=False, DXF_FLAG=close_loops)
+            self.v_carve_it(clean=False, DXF_FLAG=close_loops)
 
         dxf_code = []
         # Create a header section just in case the reading software needs it
@@ -1196,11 +1204,13 @@ class Gui(Frame):
             pass
 
     def CLEAN_Recalculate_Click(self):
+
         TSTART = time()
         win_id = self.grab_current()
+
         if self.model.clean_segment == []:
-            mess = "Calculate V-Carve must be executed\n"
-            mess = mess + "prior to Calculating Cleanup"
+            mess =  "Calculate V-Carve must be executed\n"
+            mess += "prior to Calculating Cleanup"
             message_box("Cleanup Info", mess)
         else:
             stop = self.Clean_Calc_Click("straight")
@@ -1328,10 +1338,10 @@ class Gui(Frame):
             value = float(self.YSCALE.get())
             if value <= 0.0:
                 self.statusMessage.set(" Height should be greater than 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Yscale_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check())
@@ -1342,10 +1352,10 @@ class Gui(Frame):
             value = float(self.XSCALE.get())
             if value <= 0.0:
                 self.statusMessage.set(" Width should be greater than 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Xscale_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check())
@@ -1356,10 +1366,10 @@ class Gui(Frame):
             value = float(self.STHICK.get())
             if value < 0.0:
                 self.statusMessage.set(" Thickness should be greater than 0 ")
-                return 2  # Value is invalid number
+                return self.INV
         except:
-            return 3  # Value not a number
-        return 0  # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Sthick_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check())
@@ -1370,10 +1380,10 @@ class Gui(Frame):
             value = float(self.LSPACE.get())
             if value < 0.0:
                 self.statusMessage.set(" Line space should be greater than or equal to 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Lspace_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check())
@@ -1384,10 +1394,10 @@ class Gui(Frame):
             value = float(self.CSPACE.get())
             if value < 0.0:
                 self.statusMessage.set(" Character space should be greater than or equal to 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Cspace_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check())
@@ -1398,10 +1408,10 @@ class Gui(Frame):
             value = float(self.WSPACE.get())
             if value < 0.0:
                 self.statusMessage.set(" Word space should be greater than or equal to 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Wspace_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check())
@@ -1412,10 +1422,10 @@ class Gui(Frame):
             value = float(self.TANGLE.get())
             if value <= -360.0 or value >= 360.0:
                 self.statusMessage.set(" Angle should be between -360 and 360 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Tangle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check())
@@ -1426,10 +1436,10 @@ class Gui(Frame):
             value = float(self.TRADIUS.get())
             if value < 0.0:
                 self.statusMessage.set(" Radius should be greater than or equal to 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Tradius_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check())
@@ -1443,10 +1453,10 @@ class Gui(Frame):
             value = float(self.FEED.get())
             if value <= 0.0:
                 self.statusMessage.set(" Feed should be greater than 0.0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 1         # Value is a valid number changes do not require recalc
+            return self.NAN
+        return self.NOR
 
     def Entry_Feed_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Feed, self.Entry_Feed_Check())
@@ -1457,10 +1467,10 @@ class Gui(Frame):
             value = float(self.PLUNGE.get())
             if value < 0.0:
                 self.statusMessage.set(" Plunge rate should be greater than or equal to 0.0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 1         # Value is a valid number changes do not require recalc
+            return self.NAN
+        return self.NOR
 
     def Entry_Plunge_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Plunge, self.Entry_Plunge_Check())
@@ -1470,8 +1480,8 @@ class Gui(Frame):
         try:
             value = float(self.ZSAFE.get())
         except:
-            return 3     # Value not a number
-        return 1         # Value is a valid number changes do not require recalc
+            return self.NAN
+        return self.NOR
 
     def Entry_Zsafe_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check())
@@ -1481,8 +1491,8 @@ class Gui(Frame):
         try:
             value = float(self.ZCUT.get())
         except:
-            return 3     # Value not a number
-        return 1         # Value is a valid number changes do not require recalc
+            return self.NAN
+        return self.NOR
 
     def Entry_Zcut_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check())
@@ -1495,8 +1505,8 @@ class Gui(Frame):
         try:
             value = float(self.xorigin.get())
         except:
-            return 3     # Value not a number
-        return 1         # Value is a valid number changes do not require recalc
+            return self.NAN
+        return self.NOR
 
     def Entry_Xoffset_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check())
@@ -1506,8 +1516,8 @@ class Gui(Frame):
         try:
             value = float(self.yorigin.get())
         except:
-            return 3     # Value not a number
-        return 1         # Value is a valid number changes do not require recalc
+            return self.NAN
+        return self.NOR
 
     def Entry_Yoffset_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check())
@@ -1517,8 +1527,8 @@ class Gui(Frame):
         try:
             value = float(self.segarc.get())
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_ArcAngle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check())
@@ -1528,8 +1538,8 @@ class Gui(Frame):
         try:
             value = float(self.accuracy.get())
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Accuracy_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check())
@@ -1549,10 +1559,10 @@ class Gui(Frame):
             value = float(self.boxgap.get())
             if value <= 0.0:
                 self.statusMessage.set(" Gap should be greater than zero.")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_BoxGap_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check())
@@ -1599,10 +1609,10 @@ class Gui(Frame):
             value = float(self.v_bit_angle.get())
             if value < 0.0 or value > 180.0:
                 self.statusMessage.set(" Angle should be between 0 and 180 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 1         # Value is a valid number changes do not require recalc
+            return self.NAN
+        return self.NOR
 
     def Entry_Vbitangle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check() )
@@ -1614,14 +1624,14 @@ class Gui(Frame):
             value = float(self.v_bit_dia.get())
             if value <= 0.0:
                 self.statusMessage.set(" Diameter should be greater than 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Vbitdia_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check() )
-        self.settings.set('vbit_dia', self.v_bit_dia.get())
+        self.settings.set('v_bit_dia', self.v_bit_dia.get())
         self.calc_depth_limit()
 
     def Entry_VDepthLimit_Check(self):
@@ -1629,14 +1639,14 @@ class Gui(Frame):
             value = float(self.v_depth_lim.get())
             if value > 0.0:
                 self.statusMessage.set(" Depth should be less than 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_VDepthLimit_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check() )
-        self.settings.set('vbit_dia', self.v_depth_lim.get())
+        self.settings.set('v_bit_dia', self.v_depth_lim.get())
         self.calc_depth_limit()
 
     def Entry_InsideAngle_Check(self):
@@ -1644,10 +1654,10 @@ class Gui(Frame):
             value = float(self.v_drv_corner.get())
             if value <= 0.0 or value >= 180.0:
                 self.statusMessage.set(" Angle should be between 0 and 180 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_InsideAngle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check() )
@@ -1657,10 +1667,10 @@ class Gui(Frame):
             value = float(self.v_step_corner.get())
             if value <= 180.0 or value >= 360.0:
                 self.statusMessage.set(" Angle should be between 180 and 360 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_OutsideAngle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check() )
@@ -1670,10 +1680,10 @@ class Gui(Frame):
             value = float(self.v_step_len.get())
             if value <= 0.0:
                 self.statusMessage.set(" Step size should be greater than 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_StepSize_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check() )
@@ -1684,10 +1694,10 @@ class Gui(Frame):
             value = float(self.allowance.get())
             if value > 0.0:
                 self.statusMessage.set(" Allowance should be less than or equal to 0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_Allowance_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check() )
@@ -1713,10 +1723,10 @@ class Gui(Frame):
             value = float(self.v_max_cut.get())
             if value >= 0.0:
                 self.statusMessage.set(" Max Depth per Pass should be less than 0.0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 1         # Value is a valid number changes do not require recalc
+            return self.NAN
+        return self.NOR
 
     def Entry_v_max_cut_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check() )
@@ -1727,9 +1737,9 @@ class Gui(Frame):
             value = float(self.v_rough_stk.get())
             if value < 0.0:
                 self.statusMessage.set(" Finish Pass Stock should be positive or zero (Zero disables multi-pass)")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
+            return self.NAN
         try:
             if float(self.v_rough_stk.get()) == 0.0:
                 self.Label_v_max_cut.configure(state="disabled")
@@ -1741,7 +1751,7 @@ class Gui(Frame):
                 self.Entry_v_max_cut.configure(state="normal")
         except:
             pass
-        return 1         # Value is a valid number changes do not require recalc
+        return self.NOR
 
     def Entry_v_rough_stk_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check() )
@@ -1752,10 +1762,10 @@ class Gui(Frame):
             value = float(self.clean_v.get())
             if value < 0.0:
                 self.statusMessage.set(" Angle should be greater than 0.0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_V_CLEAN_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check() )
@@ -1766,10 +1776,10 @@ class Gui(Frame):
             value = float(self.clean_dia.get())
             if value <= 0.0:
                 self.statusMessage.set(" Angle should be greater than 0.0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_CLEAN_DIA_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check() )
@@ -1782,10 +1792,10 @@ class Gui(Frame):
             value = float(self.clean_step.get())
             if value <= 0.0:
                 self.statusMessage.set(" Step Over should be between 0% and 100% ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_STEP_OVER_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check() )
@@ -1838,10 +1848,10 @@ class Gui(Frame):
             value = float(self.bmp_turdsize.get())
             if value < 1.0:
                 self.statusMessage.set(" Step size should be greater or equal to 1.0 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_BMPturdsize_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check() )
@@ -1852,10 +1862,10 @@ class Gui(Frame):
             value = float(self.bmp_alphamax.get())
             if value < 0.0 or value > 4.0/3.0:
                 self.statusMessage.set(" Alpha Max should be between 0.0 and 1.333 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_BMPalphamax_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check() )
@@ -1865,18 +1875,22 @@ class Gui(Frame):
             value = float(self.bmp_opttolerance.get())
             if value < 0.0:
                 self.statusMessage.set(" Alpha Max should be between 0.0 and 1.333 ")
-                return 2 # Value is invalid number
+                return self.INV
         except:
-            return 3     # Value not a number
-        return 0         # Value is a valid number
+            return self.NAN
+        return self.OK
 
     def Entry_BMPoptTolerance_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check() )
 
     def Check_All_Variables(self):
-
+        """
+        Check all variables set.
+        :return: the number of vars in error.
+        :return: 0 if all variables are Ok.
+        """
         if self.batch.get():
-            return 0
+            return 0 # nothing to be done in batchmode
 
         MAIN_error_cnt= \
         self.entry_set(self.Entry_Yscale,  self.Entry_Yscale_Check()  , 2) +\
@@ -1987,7 +2001,7 @@ class Gui(Frame):
     def Clean_Calc_Click(self, bit_type="straight"):
 
         if self.Check_All_Variables() > 0:
-            return True # stop
+            return True # Stop
 
         if self.model.clean_coords == []:
 
@@ -3217,9 +3231,8 @@ class Gui(Frame):
                 self.V_Carve_Calc.configure(state="normal", command=None)
             else:
                 self.V_Carve_Calc.configure(state="disabled", command=None)
-
-        if self.Check_All_Variables() > 0:
-            return
+            if self.Check_All_Variables() > 0:
+                return
 
         if not self.batch.get():
             self.statusbar.configure(bg='yellow')
@@ -3768,7 +3781,7 @@ class Gui(Frame):
 
         return (minx, maxx, miny, maxy)
 
-    def v_carve_it(self, clean_flag=False, DXF_FLAG=False):
+    def v_carve_it(self, clean=False, DXF_FLAG=False):
 
         self.master.unbind("<Configure>")
         self.STOP_CALC = False
@@ -3783,7 +3796,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        if not clean_flag:
+        if not clean:
             self.do_it()
             self.model.init_clean_coords()
         elif self.model.clean_coords_sort != [] or self.model.v_clean_coords_sort != []:
@@ -3807,13 +3820,13 @@ class Gui(Frame):
                 if self.v_pplot.get() == 1:
                     self.plot_tool_path()
 
-            if (self.input_type.get() == "image" and clean_flag == False):
+            if self.input_type.get() == "image" and not clean:
                 self.model.sort_for_v_carve()
 
             if DXF_FLAG:
                 return
 
-            done = self.model.v_carve(clean_flag, DXF_FLAG)
+            done = self.model.v_carve(clean, DXF_FLAG)
 
             # Reset Entry Fields in V-Carve Settings
             if not self.batch.get():
