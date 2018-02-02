@@ -53,9 +53,11 @@ def translate(x1, y1, x2, y2):
 
 def point_inside_polygon(x, y, poly):
     """
-    determine if a point is inside a given polygon or not
-    Polygon is a list of (x,y) pairs.
+    Determine if a point is inside a given polygon. Polygon is a list of (x,y) pairs.
+    The ray casting method is used here.
+    Returns: 1 if a point is inside a given polygon, otherwise -1
     http://www.ariel.com.au/a/python-point-int-poly.html
+    https://stackoverflow.com/questions/16625507/python-checking-if-point-is-inside-a-polygon/23453678#23453678
     """
     n = len(poly)
     inside = -1

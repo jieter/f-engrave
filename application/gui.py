@@ -854,8 +854,7 @@ class Gui(Frame):
         mina =  99949.0
         miny =  99959.0
         minx =  99969.0
-        for line in self.model.coords:
-            XY = line
+        for XY in self.model.coords:
             maxx = max(maxx, XY[0], XY[2])
             minx = min(minx, XY[0], XY[2])
             miny = min(miny, XY[1], XY[3])
@@ -899,8 +898,7 @@ class Gui(Frame):
             self.svgcode.append('        fill="none" stroke="blue" stroke-width="%f"/>' %(Thick*dpi))
         # End Circle
 
-        for line in self.model.coords:
-            XY = line
+        for XY in self.model.coords:
             self.svgcode.append('  <path d="M %f %f L %f %f"' %(
                     ( XY[0]-minx)*dpi,
                     (-XY[1]+maxy)*dpi,
@@ -920,170 +918,6 @@ class Gui(Frame):
                 Delta = Thick/2 + float(self.boxgap.get())
         self.svgcode.append('</svg>')
 
-    # TODO move to Writers
-
-    def WriteDXF(self,close_loops=False):
-
-        if close_loops:
-            self.v_carve_it(clean=False, DXF_FLAG=close_loops)
-
-        dxf_code = []
-        # Create a header section just in case the reading software needs it
-        dxf_code.append("999")
-        dxf_code.append("DXF created by G-Code Ripper <by Scorch, www.scorchworks.com>")
-        dxf_code.append("0")
-        dxf_code.append("SECTION")
-        dxf_code.append("2")
-        dxf_code.append("HEADER")
-        #dxf_code.append("9")
-        #dxf_code.append("$INSUNITS")
-        #dxf_code.append("70")
-        #dxf_code.append("1") #units 1 = Inches; 4 = Millimeters;
-        dxf_code.append("0")
-        dxf_code.append("ENDSEC")
-
-        #         
-        #Tables Section
-        #These can be used to specify predefined constants, line styles, text styles, view
-        #tables, user coordinate systems, etc. We will only use tables to define some layers
-        #for use later on. Note: not all programs that support DXF import will support
-        #layers and those that do usually insist on the layers being defined before use
-        #
-        # The following will initialise layers 1 and 2 for use with moves and rapid moves.
-        dxf_code.append("0")
-        dxf_code.append("SECTION")
-        dxf_code.append("2")
-        dxf_code.append("TABLES")
-        dxf_code.append("0")
-        dxf_code.append("TABLE")
-        dxf_code.append("2")
-        dxf_code.append("LTYPE")
-        dxf_code.append("70")
-        dxf_code.append("1")
-        dxf_code.append("0")
-        dxf_code.append("LTYPE")
-        dxf_code.append("2")
-        dxf_code.append("CONTINUOUS")
-        dxf_code.append("70")
-        dxf_code.append("64")
-        dxf_code.append("3")
-        dxf_code.append("Solid line")
-        dxf_code.append("72")
-        dxf_code.append("65")
-        dxf_code.append("73")
-        dxf_code.append("0")
-        dxf_code.append("40")
-        dxf_code.append("0.000000")
-        dxf_code.append("0")
-        dxf_code.append("ENDTAB")
-        dxf_code.append("0")
-        dxf_code.append("TABLE")
-        dxf_code.append("2")
-        dxf_code.append("LAYER")
-        dxf_code.append("70")
-        dxf_code.append("6")
-        dxf_code.append("0")
-        dxf_code.append("LAYER")
-        dxf_code.append("2")
-        dxf_code.append("1")
-        dxf_code.append("70")
-        dxf_code.append("64")
-        dxf_code.append("62")
-        dxf_code.append("7")
-        dxf_code.append("6")
-        dxf_code.append("CONTINUOUS")
-        dxf_code.append("0")
-        dxf_code.append("LAYER")
-        dxf_code.append("2")
-        dxf_code.append("2")
-        dxf_code.append("70")
-        dxf_code.append("64")
-        dxf_code.append("62")
-        dxf_code.append("7")
-        dxf_code.append("6")
-        dxf_code.append("CONTINUOUS")
-        dxf_code.append("0")
-        dxf_code.append("ENDTAB")
-        dxf_code.append("0")
-        dxf_code.append("TABLE")
-        dxf_code.append("2")
-        dxf_code.append("STYLE")
-        dxf_code.append("70")
-        dxf_code.append("0")
-        dxf_code.append("0")
-        dxf_code.append("ENDTAB")
-        dxf_code.append("0")
-        dxf_code.append("ENDSEC")
-
-        # This block section is not necessary but apperantly it's good form to include one anyway.
-        # The following is an empty block section.
-        dxf_code.append("0")
-        dxf_code.append("SECTION")
-        dxf_code.append("2")
-        dxf_code.append("BLOCKS")
-        dxf_code.append("0")
-        dxf_code.append("ENDSEC")
-
-        # Start entities section
-        dxf_code.append("0")
-        dxf_code.append("SECTION")
-        dxf_code.append("2")
-        dxf_code.append("ENTITIES")
-        dxf_code.append("  0")
-
-        #################################
-        ## GCODE WRITING for Dxf_Write ##
-        #################################
-        #for line in side:
-        for line in self.model.coords:
-            XY = line
-
-            #if line[0] == 1 or (line[0] == 0 and Rapids):
-            dxf_code.append("LINE")
-            dxf_code.append("  5")
-            dxf_code.append("30")
-            dxf_code.append("100")
-            dxf_code.append("AcDbEntity")
-            dxf_code.append("  8") #layer Code #dxf_code.append("0")
-
-            ##########################
-            #if line[0] == 1:
-            #    dxf_code.append("1")
-            #else:
-            #    dxf_code.append("2")    
-            #dxf_code.append(" 62") #color code
-            #if line[0] == 1:
-            #    dxf_code.append("10")
-            #else:
-            #    dxf_code.append("150")
-            dxf_code.append("1")
-            dxf_code.append(" 62") #color code
-            dxf_code.append("150")
-            ###########################
-
-            dxf_code.append("100")
-            dxf_code.append("AcDbLine")
-            dxf_code.append(" 10")
-            dxf_code.append("%.4f" %(line[0])) #x1 coord
-            dxf_code.append(" 20")
-            dxf_code.append("%.4f" %(line[1])) #y1 coord
-            dxf_code.append(" 30")
-            dxf_code.append("%.4f" %(0))       #z1 coord
-            dxf_code.append(" 11")
-            dxf_code.append("%.4f" %(line[2])) #x2 coord
-            dxf_code.append(" 21")
-            dxf_code.append("%.4f" %(line[3])) #y2 coord
-            dxf_code.append(" 31")
-            dxf_code.append("%.4f" %(0))       #z2 coord
-            dxf_code.append("  0")
-
-        dxf_code.append("ENDSEC")
-        dxf_code.append("0")
-        dxf_code.append("EOF")
-        ######################################
-        ## END G-CODE WRITING for Dxf_Write ##
-        ######################################
-        return dxf_code
 
     def CopyClipboard_GCode(self):
         self.clipboard_clear()
@@ -1091,7 +925,7 @@ class Gui(Frame):
             return
         self.gcode = gcode(self.model)
         for line in self.gcode:
-            self.clipboard_append(str(line)+'\n')
+            self.clipboard_append(str(line) + '\n')
 
     def CopyClipboard_SVG(self):
         self.clipboard_clear()
@@ -1105,7 +939,7 @@ class Gui(Frame):
         self.gcode = gcode(self.model)
         for line in self.gcode:
             try:
-                sys.stdout.write(line+'\n')
+                sys.stdout.write(str(line) + '\n')
             except:
                 pass
         self.Quit_Click(None)
@@ -1208,7 +1042,7 @@ class Gui(Frame):
         TSTART = time()
         win_id = self.grab_current()
 
-        if self.model.clean_segment == []:
+        if self.model.number_of_clean_segments == 0:
             mess =  "Calculate V-Carve must be executed\n"
             mess += "prior to Calculating Cleanup"
             message_box("Cleanup Info", mess)
@@ -1234,7 +1068,7 @@ class Gui(Frame):
             self.v_clean_P.get() +
             self.v_clean_Y.get() +
             self.v_clean_X.get()) != 0:
-            if self.model.clean_coords_sort == []:
+            if self.model.number_of_clean_coords_sort == 0:
                 mess = "Calculate Cleanup must be executed\n"
                 mess = mess + "prior to saving G-Code\n"
                 mess = mess + "(Or no Cleanup paths were found)"
@@ -1262,7 +1096,7 @@ class Gui(Frame):
             self.v_clean_P.get() +
             self.v_clean_Y.get() +
             self.v_clean_X.get()) != 0:
-            if self.model.v_clean_coords_sort == []:
+            if self.model.number_of_v_clean_coords_sort == 0:
                 mess = "Calculate Cleanup must be executed\n"
                 mess = mess + "prior to saving V Cleanup G-Code\n"
                 mess = mess + "(Or no Cleanup paths were found)"
@@ -1784,8 +1618,9 @@ class Gui(Frame):
     def Entry_CLEAN_DIA_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check() )
         self.settings.set('clean_dia', self.clean_dia.get())
-        self.model.clean_coords=[]
-        self.model.v_clean_coords=[]
+        # self.model.clean_coords=[]
+        # self.model.v_clean_coords=[]
+        self.model.init_clean_coords()
 
     def Entry_STEP_OVER_Check(self):
         try:
@@ -2003,7 +1838,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return True # Stop
 
-        if self.model.clean_coords == []:
+        if self.model.number_of_clean_coords() == 0:
 
             vcalc_status = Toplevel(width=525, height=50)
             # Use grab_set to prevent user input in the main window during calculations
@@ -2044,7 +1879,7 @@ class Gui(Frame):
         self.statusbar.configure(bg='yellow')
         self.model.clean_path_calc(bit_type)
 
-        if self.model.clean_coords == []:
+        if self.model.number_of_clean_coords() == 0:
             return True # stop
         else:
             return False
@@ -2344,7 +2179,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        if self.model.vcoords == [] and self.cut_type.get() == "v-carve":
+        if self.model.number_of_v_coords() == 0 and self.cut_type.get() == "v-carve":
             mess = "V-carve path data does not exist.  "
             mess = mess + "Only settings will be saved.\n\n"
             mess = mess + "To generate V-Carve path data Click on the"
@@ -2485,7 +2320,7 @@ class Gui(Frame):
 
     def menu_File_Save_DXF_File(self, close_loops=False):
 
-        DXF_CODE = self.WriteDXF(close_loops=close_loops)
+        DXF_CODE = dxf(self.model.coords, close_loops=close_loops)
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
@@ -3028,7 +2863,7 @@ class Gui(Frame):
 
     def plot_tool_path(self):
         """
-        Show the tool path for engraving or V-carve, and the clean path
+        Plot the tool path for engraving or V-carve, and the clean path
         """
         if self.delay_calc:
             return
@@ -3106,8 +2941,7 @@ class Gui(Frame):
             self.segID.append(
                 self.PreviewCanvas.create_oval(Rpx_lft, Rpy_bot, Rpx_rgt, Rpy_top, outline="black", width=plot_width))
 
-        for line in self.model.coords:
-            XY = line
+        for XY in self.model.coords:
             x1 =  cszw/2 + (XY[0]-midx) / plot_scale
             x2 =  cszw/2 + (XY[2]-midx) / plot_scale
             y1 =  cszh/2 - (XY[1]-midy) / plot_scale
@@ -3129,8 +2963,7 @@ class Gui(Frame):
         if self.cut_type.get() == "v-carve":
             r_inlay_top = self.calc_r_inlay_top()
 
-            for line in self.model.vcoords:
-                XY = line
+            for XY in self.model.vcoords:
                 x1 = XY[0]
                 y1 = XY[1]
                 r = XY[2]
@@ -3287,8 +3120,8 @@ class Gui(Frame):
 
         line_maxx = []
         line_maxy = []
-        line_maxa = []
-        line_mina = []
+        # line_maxa = []
+        # line_mina = []
         line_minx = []
         line_miny = []
 
@@ -3809,9 +3642,7 @@ class Gui(Frame):
             self.statusMessage.set('Preparing for V-Carve Calculations')
             self.master.update()
 
-        #########################################
         # V-Carve Stuff
-        #########################################
         if self.cut_type.get() == "v-carve" and self.fontdex.get() == False:
 
             if not self.batch.get():
@@ -3820,6 +3651,7 @@ class Gui(Frame):
                 if self.v_pplot.get() == 1:
                     self.plot_tool_path()
 
+            # TODO move this to Model
             if self.input_type.get() == "image" and not clean:
                 self.model.sort_for_v_carve()
 
@@ -3848,18 +3680,18 @@ class Gui(Frame):
 
         self.master.bind("<Configure>", self.Master_Configure)
 
+    ################################################################################
+    #                         Bitmap Settings Window                               #
+    ################################################################################
     def PBM_Settings_Window(self):
-        '''
-        ################################################################################
-        #                         Bitmap Settings Window                               #
-        ################################################################################
+        """
         Algorithm options:
         -z, --turnpolicy policy    - how to resolve ambiguities in path decomposition
         -t, --turdsize n           - suppress speckles of up to this size (default 2)
         -a, --alphama n           - corner threshold parameter (default 1)
         -n, --longcurve            - turn off curve optimization
         -O, --opttolerance n       - curve optimization tolerance (default 0.2)
-        '''
+        """
         pbm_settings = Toplevel(width=525, height=250)
         pbm_settings.grab_set() # Use grab_set to prevent user input in the main window during calculations
         pbm_settings.resizable(0,0)

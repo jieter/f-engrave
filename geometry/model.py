@@ -1,5 +1,5 @@
 from time import time
-from math import ceil, fabs, floor, sqrt
+from math import ceil, fabs, floor, sqrt, tan
 
 from util import fmessage
 from geometry import *
@@ -35,11 +35,13 @@ class Model():
         self.set_minX(0)
 
     def init_coords(self):
+        # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt])
         self.coords = []
         self.vcoords = []
         self.init_clean_coords()
 
     def init_clean_coords(self):
+        # Clean coords format: ([xnormv, ynormv, rout, loop_cnt])
         self.clean_coords = []
         self.clean_coords_sort = []
         self.v_clean_coords_sort = []
@@ -83,6 +85,15 @@ class Model():
 
     def number_of_v_coords(self):
         return len(self.vcoords)
+
+    def number_of_clean_coords(self):
+        return len(self.clean_coords)
+
+    def number_of_clean_coords_sort(self):
+        return len(self.clean_coords_sort)
+
+    def number_of_v_clean_coords_sort(self):
+        return len(self.v_clean_coords_sort)
 
     def number_of_segments(self):
         return len(self.coords)
@@ -719,9 +730,6 @@ class Model():
 
         Lend.append(cnt)
 
-        # if not self.batch:
-        #     self.controller.statusMessage.set('Checking Input Image Data')
-        #     self.controller.master.update()
         if not self.status_callback is None:
             self.status_callback('Checking Input Image Data')
 
@@ -780,9 +788,6 @@ class Model():
                         k_min_end = k
 
                 if k_min_beg == -1 and k_min_end == -1:
-                    kbeg = End
-                    kend = Start
-
                     ecoords.append(ecoords[End])
                     ecoords.append(ecoords[Start])
 
@@ -844,7 +849,7 @@ class Model():
                 step = -1
             else:
                 step = 1
-            for i in range(Start, End + step, step):
+            for i in range(Start, End+step, step):
                 [x1, y1] = ecoords[i]
                 ecoords.append([x1, y1])
         if len(Lbeg) > len(Lend):
@@ -853,14 +858,11 @@ class Model():
         ###########################################
         ###   Determine loop directions CW/CCW  ###
         ###########################################
-        # if not self.batch:
-        #     self.controller.statusMessage.set('Calculating Initial Loop Directions (CW/CCW)')
-        #     self.controller.master.update()
         if not self.status_callback is None:
             self.status_callback('Calculating Initial Loop Directions (CW/CCW)')
 
-        Lflip = []
-        Lcw = []
+        Lflip = [] # normvector direction in (False) or out (True) for loopsegment [i]
+        Lcw = []   # loop direction clockwise (True) or counterclockwise for loopsegment [i]
 
         for k in range(len(Lbeg)):
             Start = Lbeg[k]
@@ -870,7 +872,7 @@ class Model():
             signedArea = 0.0
 
             [x1, y1] = ecoords[Start]
-            for i in range(Start + 1, End + step, step):
+            for i in range(Start+1, End+step, step):
                 [x2, y2] = ecoords[i]
                 signedArea += (x2 - x1) * (y2 + y1)
                 x1 = x2
@@ -894,10 +896,7 @@ class Model():
         # For each loop determine if other loops are inside #
         #####################################################
         for iloop in range(Nloops):
-            CUR_PCT = float(iloop) / Nloops * 100.0
-            # if not self.batch:
-            #     self.controller.statusMessage.set('Determining Which Side of Loop to Cut: %d of %d' %(iloop+1,Nloops))
-            #     self.controller.master.update()
+
             if not self.status_callback is None:
                 self.status_callback('Determining Which Side of Loop to Cut: %d of %d' % (iloop + 1, Nloops))
 
@@ -923,13 +922,9 @@ class Model():
             if Lflip[iloop]:
                 Lcw[iloop] = not Lcw[iloop]
 
-        CUR_PCT = 0.0
         #################################################
         # Find new order based on distance to next beg  #
         #################################################
-        # if not self.batch:
-        #     self.controller.statusMessage.set('Re-Ordering Loops')
-        #     self.controller.master.update()
         if not self.status_callback is None:
             self.status_callback('Re-Ordering Loops')
 
@@ -1013,9 +1008,8 @@ class Model():
 
         if direction == "Y":
             cnt = -1
-            for line in check_coords_in:
+            for XY in check_coords_in:
                 cnt += 1
-                XY = line
                 check_coords.append([XY[1], XY[0], XY[2]])
         else:
             check_coords = check_coords_in
@@ -1103,85 +1097,18 @@ class Model():
                 if line_cnt == skip:
                     line_cnt = 0
                 Y = Y + DY
-            #########################################################################
-
-        if True == False:
-            #########################################################################
-            # loop over circles recording "pixels" that are covered by the circles
-            #########################################################################
-            loop_cnt = 0
-            Y = miny_c
-            while Y <= maxy_c:
-                line_cnt = line_cnt + 1
-                X = minx_c
-                x1 = X
-                x2 = X
-                x1_old = x1
-                x2_old = x2
-
-                # Find relevant clean_coord_data
-                ################################
-                temp_coords = []
-                for line in check_coords:
-                    XY = line
-                    if Y < XY[1] + XY[2] and Y > XY[1] - XY[2]:
-                        temp_coords.append(XY)
-                ################################
-
-                while X <= maxx_c:
-                    for line in temp_coords:
-                        XY = line
-                        h = XY[0]
-                        k = XY[1]
-                        R = XY[2] - Radjust
-                        dist = sqrt((X - h) ** 2 + (Y - k) ** 2)
-                        if dist <= R:
-                            Root = sqrt(R ** 2 - (Y - k) ** 2)
-                            XL = h - Root
-                            XR = h + Root
-                            if XL < x1:
-                                x1 = XL
-                            if XR > x2:
-                                x2 = XR
-                    if x1 == x2:
-                        X = X + DX
-                        x1 = X
-                        x2 = X
-                    elif x1 == x1_old and x2 == x2_old:
-                        loop_cnt += 1
-                        print 'Loop over circles'
-                        Xclean_coords.append([x1, Y, loop_cnt])
-                        Xclean_coords.append([x2, Y, loop_cnt])
-                        if line_cnt == skip:
-                            Xclean_coords_short.append([x1, Y, loop_cnt])
-                            Xclean_coords_short.append([x2, Y, loop_cnt])
-
-                        X = X + DX
-                        x1 = X
-                        x2 = X
-                    else:
-                        X = x2
-                    x1_old = x1
-                    x2_old = x2
-                if line_cnt == skip:
-                    line_cnt = 0
-                Y = Y + DY
-            #########################################################################
 
         Xclean_coords_out = []
         Xclean_coords_short_out = []
+
         if direction == "Y":
-
             cnt = -1
-            for line in Xclean_coords:
+            for XY in Xclean_coords:
                 cnt += 1
-                XY = line
                 Xclean_coords_out.append([XY[1], XY[0], XY[2]])
-
             cnt = -1
-            for line in Xclean_coords_short:
+            for XY in Xclean_coords_short:
                 cnt += 1
-                XY = line
                 Xclean_coords_short_out.append([XY[1], XY[0], XY[2]])
         else:
             Xclean_coords_out = Xclean_coords
@@ -1191,12 +1118,12 @@ class Model():
 
     def _clean_coords_to_path_coords(self, clean_coords_in):
         path_coords_out = []
-        # Clean coords format ([xnormv, ynormv, rout, loop_cnt]) - self.clean_coords
-        # Path coords format  ([x1,y1,x2,y2,line_cnt,char_cnt])  - self.coords
+        # Clean coords format ([xnormv, ynormv, rout, loop_cnt])      - self.clean_coords
+        # Path coords format  ([x1, y1, x2, y2, line_cnt, char_cnt])  - self.coords
         for i in range(1, len(clean_coords_in)):
-            if clean_coords_in[i][3] == clean_coords_in[i - 1][3]:
-                path_coords_out.append([clean_coords_in[i - 1][0],
-                                        clean_coords_in[i - 1][1],
+            if clean_coords_in[i][3] == clean_coords_in[i-1][3]:
+                path_coords_out.append([clean_coords_in[i-1][0],
+                                        clean_coords_in[i-1][1],
                                         clean_coords_in[i][0],
                                         clean_coords_in[i][1],
                                         0,
@@ -1243,7 +1170,7 @@ class Model():
             check_coords = self.clean_coords
 
         elif bit_type == "v-bit":
-            # self.controller.statusMessage.set('Calculating V-Bit Cleanup Cut Paths')
+
             if not self.status_callback is None:
                 self.status_callback('Calculating V-Bit Cleanup Cut Paths')
 
@@ -1253,12 +1180,12 @@ class Model():
 
             self.v_clean_coords_sort = []
 
-            clean_dia = self.settings.get('clean_dia')  # effective diameter of clean-up v-bit
+            # effective diameter of clean-up v-bit
+            clean_dia = self.settings.get('clean_dia')
             if float(clean_dia) < Zero:
                 return
 
-            # The next line allows the cutter to get within 1/4 of the
-            # v-clean step of the v-carved surface.
+            # allow the cutter to get within 1/4 of the v-clean step of the v-carved surface
             offset = clean_dia / 4.0
             Radjust = rbit + offset
             flat_clean_r = self.settings.get('clean_dia') / 2.0
@@ -1281,28 +1208,23 @@ class Model():
             Yclean_coords = []
             clean_coords_out = []
 
-            print 'bit_type:', bit_type # TEST
-
             if bit_type == "straight":
-                clean_coords_out, clean_dia, loop_cnt_out = \
-                    self.make_straight_toolpath(DX, Xclean_coords, Yclean_coords, clean_coords_out, clean_dia, edge, loop_cnt, loop_cnt_out, rbit)
+                clean_coords_out, loop_cnt_out = \
+                    self.straight_toolpath(DX, Xclean_coords, Yclean_coords, clean_coords_out, edge, loop_cnt, loop_cnt_out, rbit)
 
             elif bit_type == "v-bit":
-
                 Xclean_coords, Yclean_coords, loop_cnt_out = \
-                    self.make_vbit_toolpath(MAXD, Radjust, Xclean_coords, Yclean_coords, check_coords, clean_coords_out, clean_dia, clean_step, loop_cnt_out, skip)
+                    self.vbit_toolpath(MAXD, Radjust, Xclean_coords, Yclean_coords, check_coords, clean_coords_out, clean_dia, clean_step, loop_cnt_out, skip)
 
-            # Now deal with the horizontal line cuts
+            # Now deal with the horizontal line cuts...
             if (self.settings.get('clean_X') == 1 and bit_type != "v-bit") or \
                     (self.settings.get('v_clean_X') == 1 and bit_type == "v-bit"):
                 loop_cnt_out = self.line_cuts(MAXD, Xclean_coords, clean_coords_out, clean_dia, loop_cnt_out)
-                print 'X lco:', loop_cnt_out # TEST
 
-            # Now deal with the vertical line cuts
+            # ...and with the vertical line cuts
             if (self.settings.get('clean_Y') == 1 and bit_type != "v-bit") or \
                     (self.settings.get('v_clean_Y') == 1 and bit_type == "v-bit"):
-                loop_cnt_out = self.line_cuts(MAXD, Yclean_coords, clean_coords_out, clean_dia, loop_cnt_out)
-                print 'Y lco:', loop_cnt_out #TEST
+                null = self.line_cuts(MAXD, Yclean_coords, clean_coords_out, clean_dia, loop_cnt_out)
 
             # TODO move to controller
             print 'TODO Move parts of code in Model.clean_path_calc() to GUI'
@@ -1328,14 +1250,12 @@ class Model():
         loop_old = -1
         for line in order_out:
 
-            temp = line
-
-            if temp[0] > temp[1]:
+            if line[0] > line[1]:
                 step = -1
             else:
                 step = 1
 
-            for i in range(temp[0], temp[1] + step, step):
+            for i in range(line[0], line[1]+step, step):
 
                 x1 = clean_coords[i][0]
                 y1 = clean_coords[i][1]
@@ -1346,7 +1266,7 @@ class Model():
                 dist = sqrt(dx * dx + dy * dy)
 
                 if dist > MAXD and loop != loop_old:
-                    loop_cnt_out = loop_cnt_out + 1
+                    loop_cnt_out += 1
 
                 clean_coords_out.append([x1, y1, clean_dia / 2, loop_cnt_out])
 
@@ -1356,40 +1276,35 @@ class Model():
 
         return loop_cnt_out
 
-    def make_vbit_toolpath(self, MAXD, Radjust, Xclean_coords, Yclean_coords, check_coords, clean_coords_out, clean_dia,
-                           clean_step, loop_cnt_out, skip):
-        #########################################################################
+    def vbit_toolpath(self, MAXD, Radjust, Xclean_coords, Yclean_coords, check_coords, clean_coords_out, clean_dia,
+                      clean_step, loop_cnt_out, skip):
+        """
+        Make V-Bit cutter toolpath
+        Returns the X and Y clean_coordinates, and the number of loops
+        """
         # Find ends of horizontal lines for carving clean-up
-        #########################################################################
         Xclean_perimeter, Xclean_coords = \
             self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip, "X")
-        #########################################################################
+
         # Find ends of Vertical lines for carving clean-up
-        #########################################################################
         Yclean_perimeter, Yclean_coords = \
             self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip, "Y")
-        #######################################################
-        # Find new order based on distance                    #
-        #######################################################
+
+        # Find new order based on distance
         if self.settings.get('v_clean_P') == 1:
-            ########################################
+
             ecoords = []
-            for line in Xclean_perimeter:
-                XY = line
+            for XY in Xclean_perimeter:
                 ecoords.append([XY[0], XY[1]])
 
-            for line in Yclean_perimeter:
-                XY = line
+            for XY in Yclean_perimeter:
                 ecoords.append([XY[0], XY[1]])
 
-            ################
-            ###   ends   ###
-            ################
+            # ends
             Lbeg = []
             for i in range(1, len(ecoords)):
                 Lbeg.append(i)
 
-            ########################################
             order_out = []
             if len(ecoords) > 0:
                 order_out.append(Lbeg[0])
@@ -1411,8 +1326,8 @@ class Model():
                     if dist < min_dist:
                         min_dist = dist
                         inext = j
+
                 order_out.append(Lbeg[inext])
-            ###########################################################
 
             x_start_loop = -8888
             y_start_loop = -8888
@@ -1440,16 +1355,19 @@ class Model():
 
         return Xclean_coords, Yclean_coords, loop_cnt_out
 
-    def make_straight_toolpath(self, DX, Xclean_coords, Yclean_coords, clean_coords_out, clean_dia, edge, loop_cnt,
-                               loop_cnt_out, rbit):
+    def straight_toolpath(self, DX, Xclean_coords, Yclean_coords, clean_coords_out, clean_dia, edge, loop_cnt,
+                          loop_cnt_out, rbit):
+        """
+        Make straight bit toolpath
+        Returns the clean coordinates and the number of loops
+        """
         MaxLoop = 0
         clean_dia = self.settings.get('clean_dia')  # diameter of cleanup bit
         step_over = self.settings.get('clean_step')  # percent of cut DIA
         clean_step = step_over / 100.0
         Rperimeter = rbit + (clean_dia / 2.0)
-        ###################################################
+
         # Extract straight bit points from clean_coords
-        ###################################################
         check_coords = []
         junk = -1
         for line in self.clean_coords:
@@ -1461,16 +1379,13 @@ class Model():
                 junk = junk - 1
                 check_coords.append([None, None, None, junk])
                 # check_coords[len(check_coords)-1][3]=junk
-        ###################################################
-        # Calculate Straight bit "Perimeter" tool path ####
-        ###################################################
+
+        # Calculate Straight bit "Perimeter" tool path
         P_coords = []
         loop_coords = self._clean_coords_to_path_coords(check_coords)
         loop_coords = self._sort_for_v_carve(loop_coords, LN_START=0)
-        #######################
+
         # Line fit loop_coords
-        #######################
-        P_coords = []
         if loop_coords:
             loop_coords_lin = []
             cuts = []
@@ -1487,7 +1402,9 @@ class Model():
             if cuts:
                 for move, (x, y, z), cent in douglas(cuts, tolerance=0.0001, plane=None):
                     P_coords.append([x, y, clean_dia / 2, Ln_last])
+
         loop_coords = self._clean_coords_to_path_coords(P_coords)
+
         # Find min/max values for x,y and the highest loop number
         x_pmin = 99999
         x_pmax = -99999
@@ -1504,6 +1421,7 @@ class Model():
 
         if self.settings.get('clean_P') == 1:
             clean_coords_out = P_coords
+
         offset = DX / 2.0
 
         if self.settings.get('clean_X') == 1:
@@ -1525,7 +1443,7 @@ class Model():
                         x2 = intXYlist[i + 1][0]
                         y2 = intXYlist[i + 1][1]
                         if x2 - x1 > offset * 2:
-                            loop_cnt = loop_cnt + 1
+                            loop_cnt += 1
                             Xclean_coords.append([x1 + offset, y1, loop_cnt])
                             Xclean_coords.append([x2 - offset, y2, loop_cnt])
 
@@ -1547,11 +1465,11 @@ class Model():
                         x2 = intXYlist[i + 1][0]
                         y2 = intXYlist[i + 1][1]
                         if y2 - y1 > offset * 2:
-                            loop_cnt = loop_cnt + 1
+                            loop_cnt += 1
                             Yclean_coords.append([x1, y1 + offset, loop_cnt])
                             Yclean_coords.append([x2, y2 - offset, loop_cnt])
 
-        return clean_coords_out, clean_dia, loop_cnt_out
+        return clean_coords_out, loop_cnt_out
 
     def get_flop_status(self, CLEAN=False):
 
