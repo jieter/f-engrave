@@ -17,7 +17,9 @@ circle_template = '<circle cx="%f" cy="%f" r="%f" fill="none" stroke="' + color 
 
 
 def svg(job):
+
     settings = job.settings
+
     if settings.get('cut_type') == "v-carve":
         thickness = 0.001
     else:
