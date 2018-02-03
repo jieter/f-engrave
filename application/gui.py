@@ -45,7 +45,7 @@ class Gui(Frame):
         self.bind_keys()
         self.create_widgets()
 
-        self.model.set_progress_callback(self.plot_tool_path)
+        self.model.set_progress_callback(self.plot_toolpath)
         self.model.set_plot_progress_callback(self.plot_progress)
         self.model.set_status_callback(self.status_update)
 
@@ -135,7 +135,6 @@ class Gui(Frame):
         self.PLUNGE = StringVar()
         self.fontfile = StringVar()
         self.H_CALC = StringVar()
-        # self.plotbox = StringVar()
         self.boxgap = StringVar()
         self.fontdir = StringVar()
         self.cut_type = StringVar()
@@ -187,7 +186,6 @@ class Gui(Frame):
 
         self.xzero = float(0.0)
         self.yzero = float(0.0)
-
         self.current_input_file.set(" ")
         self.bounding_box.set(" ")
 
@@ -713,7 +711,6 @@ class Gui(Frame):
         self.PLUNGE.set(self.settings.get('plunge_rate'))
         self.fontfile.set(self.settings.get('fontfile'))
         self.H_CALC.set(self.settings.get('height_calculation'))
-        # self.plotbox.set()
         self.boxgap.set(self.settings.get('boxgap'))
         self.fontdir.set(self.settings.get('fontdir'))
         self.cut_type.set(self.settings.get('cut_type'))
@@ -756,44 +753,48 @@ class Gui(Frame):
         self.NGC_FILE = (self.settings.get('NGC_FILE'))
         self.IMAGE_FILE = (self.settings.get('IMAGE_FILE'))
 
-    def entry_set(self, val2, calc_flag=0, new=0):
-        if calc_flag == self.OK and new == 0:
+    def entry_set(self, val, check_flag=0, new=0, setting=None):
+
+        if check_flag == self.OK and new == 0:
             try:
                 self.statusbar.configure(bg='yellow')
-                val2.configure(bg='yellow')
+                val.configure(bg='yellow')
                 self.statusMessage.set(" Recalculation required.")
             except:
                 pass
-        elif calc_flag == self.NAN:
+        elif check_flag == self.NAN:
             try:
-                val2.configure(bg='red')
+                val.configure(bg='red')
                 self.statusbar.configure(bg='red')
                 self.statusMessage.set(" Value should be a number. ")
             except:
                 pass
-        elif calc_flag == self.INV:
+        elif check_flag == self.INV:
             try:
                 self.statusbar.configure(bg='red')
-                val2.configure(bg='red')
+                val.configure(bg='red')
             except:
                 pass
-        elif (calc_flag == self.OK or calc_flag == self.NOR) and new == 1:
+        elif (check_flag == self.OK or check_flag == self.NOR) and new == 1:
             try:
                 self.statusbar.configure(bg='white')
                 self.statusMessage.set(self.bounding_box.get())
-                val2.configure(bg='white')
+                val.configure(bg='white')
             except:
                 pass
-        elif calc_flag == self.NOR and new == 0:
+        elif check_flag == self.NOR and new == 0:
             try:
                 self.statusbar.configure(bg='white')
                 self.statusMessage.set(self.bounding_box.get())
-                val2.configure(bg='white')
+                val.configure(bg='white')
             except:
                 pass
+        elif (check_flag == self.OK or check_flag == self.NOR) and new == 2:
+                return 0
 
-        elif (calc_flag == self.OK or calc_flag == self.NOR) and new == 2:
-            return 0
+        if (not setting is None) and check_flag == self.OK and new == 0:
+            self.settings.set(setting, val.get())
+
         return 1
 
     def write_config_file(self, event):
@@ -968,7 +969,7 @@ class Gui(Frame):
             stop = self.Clean_Calc_Click("straight")
             if not stop:
                 self.Clean_Calc_Click("v-bit")
-            self.plot_tool_path()
+            self.plot_toolpath()
 
         try:
             win_id.withdraw()
@@ -1096,8 +1097,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Yscale_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check())
-        self.settings.set('yscale', self.YSCALE.get())
+        self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale')
 
     def Entry_Xscale_Check(self):
         try:
@@ -1110,8 +1110,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Xscale_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check())
-        self.settings.set('xscale', self.XSCALE.get())
+        self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale')
 
     def Entry_Sthick_Check(self):
         try:
@@ -1124,8 +1123,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Sthick_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check())
-        self.settings.set('line_thickness', self.STHICK.get())
+        self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness')
 
     def Entry_Lspace_Check(self):
         try:
@@ -1138,8 +1136,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Lspace_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check())
-        self.settings.set('line_space', self.LSPACE.get())
+        self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), setting='line_space')
 
     def Entry_Cspace_Check(self):
         try:
@@ -1152,8 +1149,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Cspace_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check())
-        self.settings.set('char_space', self.CSPACE.get())
+        self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), setting='char_space')
 
     def Entry_Wspace_Check(self):
         try:
@@ -1166,8 +1162,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Wspace_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check())
-        self.settings.set('word_space', self.WSPACE.get())
+        self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), setting='word_space')
 
     def Entry_Tangle_Check(self):
         try:
@@ -1180,8 +1175,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Tangle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check())
-        self.settings.set('text_angle', self.TANGLE.get())
+        self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), setting='text_angle')
 
     def Entry_Tradius_Check(self):
         try:
@@ -1194,8 +1188,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Tradius_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check())
-        self.settings.set('text_radius', self.TRADIUS.get())
+        self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), setting='text_radius')
 
     ################
     # Right Column #
@@ -1211,8 +1204,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_Feed_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Feed, self.Entry_Feed_Check())
-        self.settings.set('feedrate', self.FEED.get())
+        self.entry_set(self.Entry_Feed, self.Entry_Feed_Check(), setting='feedrate')
 
     def Entry_Plunge_Check(self):
         try:
@@ -1225,8 +1217,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_Plunge_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Plunge, self.Entry_Plunge_Check())
-        self.settings.set('plunge_rate', self.PLUNGE.get())
+        self.entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), setting='plunge_rate')
 
     def Entry_Zsafe_Check(self):
         try:
@@ -1236,8 +1227,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_Zsafe_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check())
-        self.settings.set('zsafe', self.ZSAFE.get())
+        self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), setting='zsafe')
 
     def Entry_Zcut_Check(self):
         try:
@@ -1247,8 +1237,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_Zcut_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check())
-        self.settings.set('zcut', self.ZCUT.get())
+        self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
 
     ######################################
     #    Settings Window Call Backs      #
@@ -1261,8 +1250,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_Xoffset_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check())
-        self.settings.set('xorigin', self.xorigin.get())
+        self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xoffset')
 
     def Entry_Yoffset_Check(self):
         try:
@@ -1272,8 +1260,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_Yoffset_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check())
-        self.settings.set('yorigin', self.yorigin.get())
+        self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yoffset')
 
     def Entry_ArcAngle_Check(self):
         try:
@@ -1283,8 +1270,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_ArcAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check())
-        self.settings.set('segarc', self.segarc.get())
+        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='arc_angle')
 
     def Entry_Accuracy_Check(self):
         try:
@@ -1294,17 +1280,16 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Accuracy_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check())
-        self.settings.set('accuracy', self.accuracy.get())
+        self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy')
 
     def Entry_Gpre_Callback(self, varName, index, mode):
-        self.settings.set('gcode_preamble', self.gpre.get())
+        self.settings.set('gcode_preamble', self.gpre.get(), setting='gcode_preamble')
 
     def Entry_Gpost_Callback(self, varName, index, mode):
-        self.settings.set('gcode_postamble', self.gpost.get())
+        self.settings.set('gcode_postamble', self.gpost.get(), setting='gcode_postamble')
 
     def Checkbutton_var_dis_Callback(self, varName, index, mode):
-        self.settings.set('var_dis', self.var_dis.get())
+        self.settings.set('var_dis', self.var_dis.get(), setting='var_dis')
 
     def Entry_BoxGap_Check(self):
         try:
@@ -1317,7 +1302,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_BoxGap_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check())
+        self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
         try:
             if not bool(self.plotbox.get()):
                 self.Label_BoxGap.configure(state="disabled")
@@ -1331,7 +1316,7 @@ class Gui(Frame):
             pass
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
-        self.settings.set('v_pplot', self.v_pplot.get())
+        self.settings.set('v_pplot', self.v_pplot.get(), setting='v_pplot')
         self.model.refresh_v_pplot() # TODO only needed when plotting
 
     def Entry_Box_Callback(self, varName, index, mode):
@@ -1339,6 +1324,7 @@ class Gui(Frame):
             self.Entry_BoxGap_Callback(varName, index, mode)
         except:
             pass
+        self.settings.set('plotbox', self.plotbox.get())
         self.Recalc_RQD()
 
     def Fontdir_Click(self, event):
@@ -1367,8 +1353,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_Vbitangle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check() )
-        # TODO settings
+        self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), setting='v_bit_angle')
         self.calc_depth_limit()
 
     def Entry_Vbitdia_Check(self):
@@ -1382,8 +1367,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Vbitdia_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check() )
-        self.settings.set('v_bit_dia', self.v_bit_dia.get())
+        self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), setting='v_bit_dia')
         self.calc_depth_limit()
 
     def Entry_VDepthLimit_Check(self):
@@ -1397,8 +1381,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_VDepthLimit_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check() )
-        self.settings.set('v_bit_dia', self.v_depth_lim.get())
+        self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), setting='v_depth_lim')
         self.calc_depth_limit()
 
     def Entry_InsideAngle_Check(self):
@@ -1413,6 +1396,7 @@ class Gui(Frame):
 
     def Entry_InsideAngle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check() )
+        # TODO setting
 
     def Entry_OutsideAngle_Check(self):
         try:
@@ -1426,6 +1410,7 @@ class Gui(Frame):
 
     def Entry_OutsideAngle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check() )
+        # TODO setting
 
     def Entry_StepSize_Check(self):
         try:
@@ -1438,8 +1423,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_StepSize_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check() )
-        self.settings.set('v_step-len', self.v_step_len.get())
+        self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), setting='step_len' )
 
     def Entry_Allowance_Check(self):
         try:
@@ -1452,8 +1436,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_Allowance_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check() )
-        self.settings.set('allowance', self.allowance.get())
+        self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), setting='allowance' )
 
     def Entry_Prismatic_Callback(self, varName, index, mode):
         try:
@@ -1481,8 +1464,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_v_max_cut_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check() )
-        self.settings.set('v_max_cut', self.v_max_cut.get())
+        self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut' )
 
     def Entry_v_rough_stk_Check(self):
         try:
@@ -1506,8 +1488,7 @@ class Gui(Frame):
         return self.NOR
 
     def Entry_v_rough_stk_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check() )
-        self.settings.set('v_rough_stk', self.v_rough_stk.get())
+        self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), setting='v_rough_stk' )
 
     def Entry_V_CLEAN_Check(self):
         try:
@@ -1520,8 +1501,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_V_CLEAN_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check() )
-        self.settings.set('clean_v', self.clean_v.get())
+        self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), setting='clean_v' )
 
     def Entry_CLEAN_DIA_Check(self):
         try:
@@ -1534,10 +1514,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_CLEAN_DIA_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check() )
-        self.settings.set('clean_dia', self.clean_dia.get())
-        # self.model.clean_coords=[]
-        # self.model.v_clean_coords=[]
+        self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), setting='clean_dia' )
         self.model.init_clean_coords()
 
     def Entry_STEP_OVER_Check(self):
@@ -1551,7 +1528,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_STEP_OVER_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check() )
+        self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), setting='clean_step' )
 
     def Checkbutton_clean_P_Callback(self, varName, index, mode):
         self.settings.set('clean_P', self.clean_P.get())
@@ -1607,8 +1584,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_BMPturdsize_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check() )
-        # TODO settings
+        self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), setting='bmp_turdsize' )
 
     def Entry_BMPalphamax_Check(self):
         try:
@@ -1621,7 +1597,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_BMPalphamax_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check() )
+        self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), setting='bmp_alphamax' )
 
     def Entry_BMPoptTolerance_Check(self):
         try:
@@ -1634,7 +1610,7 @@ class Gui(Frame):
         return self.OK
 
     def Entry_BMPoptTolerance_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check() )
+        self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), setting='bmp_opttolerance' )
 
     def Check_All_Variables(self):
         """
@@ -2724,7 +2700,7 @@ class Gui(Frame):
             else:
                 pass
             ###########################################################
-            self.plot_tool_path()
+            self.plot_toolpath()
 
 
     def coord_scale(self, x, y, xscale, yscale):
@@ -2779,9 +2755,9 @@ class Gui(Frame):
         self.do_it()
 
 
-    def plot_tool_path(self):
+    def plot_toolpath(self):
         """
-        Plot the tool path for engraving or V-carve, and the clean path
+        Plot the toolpath for straight or V-bit, and the clean path
         """
         if self.delay_calc:
             return
@@ -2847,10 +2823,9 @@ class Gui(Frame):
         else:
             plot_width = 1.0
 
+        # Plot circle radius with radius equal to Radius_plot
         x_zero = self.xzero
         y_zero = self.yzero
-
-        # Plot circle radius with radius equal to Radius_plot
         if Radius_plot != 0:
             Rpx_lft = cszw / 2 + (-Radius_plot - midx - x_zero) / plot_scale
             Rpx_rgt = cszw / 2 + (Radius_plot - midx - x_zero) / plot_scale
@@ -3184,15 +3159,11 @@ class Gui(Frame):
                 line_maxx.append(maxx_tmp)
                 line_maxy.append(maxy_tmp)
 
-                # line_maxa.append(maxa_tmp)
-                # line_mina.append(mina_tmp)
-
                 maxx_tmp = -99919.0
                 maxy_tmp = -99929.0
-                # maxa_tmp = -99939.0
-                # mina_tmp = 99949.0
                 miny_tmp = 99959.0
                 minx_tmp = 99969.0
+
                 continue
 
             # first_stroke = True
@@ -3230,41 +3201,36 @@ class Gui(Frame):
 
         #END Char in String
 
-
-        # TODO split up code
+        # TODO clean up code
         minx, maxx, miny, maxy = \
-            self.calc_maxX_maxY(line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale)
+            self.calc_xmax_ymax(line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale)
 
         # x_length = self.MAXX - self.MINX
         # y_length = self.MAXY - self.MINY
         # self.model.set_x_length(x_length)
         # self.model.set_y_length(y_length)
-
         self.model.set_maxX(self.MAXX)
         self.model.set_minX(self.MINX)
         self.model.set_maxY(self.MAXY)
         self.model.set_minY(self.MINY)
 
-        # self.xzero = x_zero
-        # self.yzero = y_zero
-
         if not self.batch.get():
             # Reset Status Bar and Entry Fields
             self.Input.configure(bg='white')
-            self.entry_set(self.Entry_Yscale,  self.Entry_Yscale_Check()  ,1)
-            self.entry_set(self.Entry_Xscale,  self.Entry_Xscale_Check()  ,1)
-            self.entry_set(self.Entry_Sthick,  self.Entry_Sthick_Check()  ,1)
-            self.entry_set(self.Entry_Lspace,  self.Entry_Lspace_Check()  ,1)
-            self.entry_set(self.Entry_Cspace,  self.Entry_Cspace_Check()  ,1)
-            self.entry_set(self.Entry_Wspace,  self.Entry_Wspace_Check()  ,1)
-            self.entry_set(self.Entry_Tangle,  self.Entry_Tangle_Check()  ,1)
-            self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check() ,1)
-            self.entry_set(self.Entry_Feed,    self.Entry_Feed_Check()    ,1)
-            self.entry_set(self.Entry_Plunge,  self.Entry_Plunge_Check()  ,1)
-            self.entry_set(self.Entry_Zsafe,   self.Entry_Zsafe_Check()   ,1)
-            self.entry_set(self.Entry_Zcut,    self.Entry_Zcut_Check()    ,1)
-            self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check()  ,1)
-            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(),1)
+            self.entry_set(self.Entry_Yscale,  self.Entry_Yscale_Check(),    1)
+            self.entry_set(self.Entry_Xscale,  self.Entry_Xscale_Check(),    1)
+            self.entry_set(self.Entry_Sthick,  self.Entry_Sthick_Check(),    1)
+            self.entry_set(self.Entry_Lspace,  self.Entry_Lspace_Check(),    1)
+            self.entry_set(self.Entry_Cspace,  self.Entry_Cspace_Check(),    1)
+            self.entry_set(self.Entry_Wspace,  self.Entry_Wspace_Check(),    1)
+            self.entry_set(self.Entry_Tangle,  self.Entry_Tangle_Check(),    1)
+            self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(),   1)
+            self.entry_set(self.Entry_Feed,    self.Entry_Feed_Check(),      1)
+            self.entry_set(self.Entry_Plunge,  self.Entry_Plunge_Check(),    1)
+            self.entry_set(self.Entry_Zsafe,   self.Entry_Zsafe_Check(),     1)
+            self.entry_set(self.Entry_Zcut,    self.Entry_Zcut_Check(),      1)
+            self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check(),    1)
+            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 1)
 
             self.bounding_box.set("Bounding Box (WxH) = " +
                                   "%.3g" % (maxx - minx) +
@@ -3285,17 +3251,12 @@ class Gui(Frame):
             fmessage(")")
 
         if not self.batch.get():
-            self.plot_tool_path()
+            self.plot_toolpath()
 
 
-    def calc_maxX_maxY(self, line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale):
+    def calc_xmax_ymax(self, line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale):
 
         try:
-            # SegArc    = float(self.segarc.get())
-            # YScale_in = float(self.YSCALE.get() )
-            # CSpaceP   = float(self.CSPACE.get() )
-            # WSpaceP   = float(self.WSPACE.get() )
-            # LSpace    = float(self.LSPACE.get() )
             Angle     = float(self.TANGLE.get() )
             Thick     = float(self.STHICK.get() )
             XOrigin   = float(self.xorigin.get())
@@ -3409,46 +3370,38 @@ class Gui(Frame):
         maxr2 = 0.0
 
         for XY in self.model.coords:
-
             if Angle != 0.0:
                 XY[0], XY[1], A1 = rotation(XY[0], XY[1], Angle, 0)
                 XY[2], XY[3], A2 = rotation(XY[2], XY[3], Angle, 0)
-
             if mirror_flag == True:
                 XY[0] = -XY[0]
                 XY[2] = -XY[2]
                 v_flop = not (v_flop)
-
             if flip_flag == True:
                 XY[1] = -XY[1]
                 XY[3] = -XY[3]
                 v_flop = not (v_flop)
 
-            maxx = max(maxx, XY[0], XY[2])
-            maxy = max(maxy, XY[1], XY[3])
-
             minx = min(minx, XY[0], XY[2])
+            maxx = max(maxx, XY[0], XY[2])
             miny = min(miny, XY[1], XY[3])
-
+            maxy = max(maxy, XY[1], XY[3])
             maxr2 = max(maxr2, float(XY[0] * XY[0] + XY[1] * XY[1]), float(XY[2] * XY[2] + XY[3] * XY[3]))
 
-        maxx = maxx + Thick / 2
-        maxy = maxy + Thick / 2
         minx = minx - Thick / 2
+        maxx = maxx + Thick / 2
         miny = miny - Thick / 2
-
+        maxy = maxy + Thick / 2
         midx = (minx + maxx) / 2
         midy = (miny + maxy) / 2
 
         #############################
         #   Engrave Box or circle   #
         #############################
-        # Delta = 0
-        # Radius_plot = 0
         # Thick_Border = float(self.STHICK.get())
         Delta = Thick / 2 + float(self.boxgap.get())
 
-        if self.plotbox.get():  # and self.cut_type.get() != "v-carve":
+        if self.plotbox.get():
 
             if Radius_in == 0 or self.cut_type.get() == "v-carve":
                 if bool(self.mirror.get()) ^ bool(self.flip.get()):
@@ -3478,43 +3431,43 @@ class Gui(Frame):
                 midx = 0
                 midy = 0
                 self.RADIUS_PLOT = Radius_plot
-                # Don't create the circle coords here a g-code circle command
+                # Don't create the circle coords here, a G-code circle command
                 # is generated later when not v-carving
 
         ##########################################
         #         ORIGIN LOCATING STUFF          #
         ##########################################
-        CASE = str(self.origin.get())
-        if CASE == "Top-Left":
-            x_zero = minx
-            y_zero = maxy
-        elif CASE == "Top-Center":
-            x_zero = midx
-            y_zero = maxy
-        elif CASE == "Top-Right":
-            x_zero = maxx
-            y_zero = maxy
-        elif CASE == "Mid-Left":
-            x_zero = minx
-            y_zero = midy
-        elif CASE == "Mid-Center":
-            x_zero = midx
-            y_zero = midy
-        elif CASE == "Mid-Right":
-            x_zero = maxx
-            y_zero = midy
-        elif CASE == "Bot-Left":
-            x_zero = minx
-            y_zero = miny
-        elif CASE == "Bot-Center":
-            x_zero = midx
-            y_zero = miny
-        elif CASE == "Bot-Right":
-            x_zero = maxx
-            y_zero = miny
-        elif CASE == "Arc-Center":
-            x_zero = 0
-            y_zero = 0
+        origin = self.origin.get()
+        if origin == 'Default':
+            origin = 'Arc-Center'
+        vertical, horizontal = origin.split('-')
+        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
+            if vertical is 'Top':
+                y_zero = maxy
+            elif vertical is 'Mid':
+                y_zero = midy
+            elif vertical is 'Bot':
+                y_zero = miny
+
+            if horizontal is 'Center':
+                x_zero = midx
+            elif horizontal is 'Right':
+                x_zero = maxx
+            elif horizontal is 'Left':
+                x_zero = minx
+        #     if vertical is 'Top':
+        #         y_zero = self.text_bbox.ymax
+        #     elif vertical is 'Mid':
+        #         y_zero = self.text_bbox.height() / 2
+        #     elif vertical is 'Bot':
+        #         y_zero = self.text_bbox.ymin
+        #
+        #     if horizontal is 'Center':
+        #         x_zero = self.text_bbox.width() / 2
+        #     elif horizontal is 'Right':
+        #         x_zero = self.text_bbox.xmax
+        #     elif horizontal is 'Left':
+        #         x_zero = self.text_bbox.xmin
         else:  # "Default"
             x_zero = 0
             y_zero = 0
@@ -3525,10 +3478,13 @@ class Gui(Frame):
             self.model.coords[i][2] = XY[2] - x_zero + XOrigin
             self.model.coords[i][3] = XY[3] - y_zero + YOrigin
 
-        self.MAXX = maxx - x_zero + XOrigin
         self.MINX = minx - x_zero + XOrigin
-        self.MAXY = maxy - y_zero + YOrigin
+        self.MAXX = maxx - x_zero + XOrigin
         self.MINY = miny - y_zero + YOrigin
+        self.MAXY = maxy - y_zero + YOrigin
+
+        self.xzero = x_zero
+        self.yzero = y_zero
 
         return (minx, maxx, miny, maxy)
 
@@ -3553,7 +3509,7 @@ class Gui(Frame):
         elif self.model.clean_coords_sort != [] or self.model.v_clean_coords_sort != []:
             # If there is existing cleanup data clear the screen before computing
             self.model.init_clean_coords()
-            self.plot_tool_path()
+            self.plot_toolpath()
 
         if not self.batch.get():
             self.statusbar.configure( bg='yellow' )
@@ -3567,7 +3523,7 @@ class Gui(Frame):
                 cszw = int(self.PreviewCanvas.cget("width"))
                 cszh = int(self.PreviewCanvas.cget("height"))
                 if self.v_pplot.get() == 1:
-                    self.plot_tool_path()
+                    self.plot_toolpath()
 
             # TODO move this to Model
             if self.input_type.get() == "image" and not clean:
@@ -4005,7 +3961,7 @@ class Gui(Frame):
         self.Entry_Vbitdia.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
         self.Entry_Vbitdia.configure(textvariable=self.v_bit_dia)
         self.v_bit_dia.trace_variable("w", self.Entry_Vbitdia_Callback)
-        self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), 2)
+        self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), 2, 'v_bit_dia')
 
         D_Yloc = D_Yloc + D_dY
         self.Label_VDepthLimit = Label(vcarve_settings, text="Cut Depth Limit")
