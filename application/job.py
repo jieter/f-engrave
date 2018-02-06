@@ -127,11 +127,14 @@ class Job(object):
         lines_bboxes = []
 
         for char_count, char in enumerate(engrave_text):
+
             if char == ' ':
                 xposition += font_word_space
                 continue
+
             elif char == '\t':
                 xposition += 3 * font_word_space
+
             elif char == '\n':
                 xposition = 0
                 yposition += font_line_space
@@ -178,7 +181,7 @@ class Job(object):
         if settings.get('flip'):
             self._transform_flip()
 
-        if settings.get('plotbox') != "no_box":
+        if settings.get('plotbox'):
             self._draw_box()
 
     def _transform_justify(self):
@@ -229,8 +232,6 @@ class Job(object):
     def _transform_radius(self):
         """Transform the coordinates to a radius"""
         radius = self.get_plot_radius()
-
-        # print radius
         if radius == 0.0:
             return
 
@@ -246,7 +247,7 @@ class Job(object):
             max_alpha = max(alpha1, alpha2, max_alpha)
 
     def _draw_circle(self):
-        # only for vcarving
+        # only for v-carving
         pass
 
     def _move_origin(self):
@@ -259,6 +260,7 @@ class Job(object):
 
         vertical, horizontal = origin.split('-')
         if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
+
             if vertical is 'Top':
                 y_zero = self.text_bbox.ymax
             elif vertical is 'Mid':
@@ -275,13 +277,14 @@ class Job(object):
 
         xorigin = self.settings.get('xorigin')
         yorigin = self.settings.get('yorigin')
+
         for i, line in enumerate(self.coords):
             self.coords[i][0] = line[0] - x_zero + xorigin
             self.coords[i][1] = line[1] - y_zero + yorigin
             self.coords[i][2] = line[2] - x_zero + xorigin
             self.coords[i][3] = line[3] - y_zero + yorigin
 
-        self.zero = x_zero
+        self.xzero = x_zero
         self.yzero = y_zero
 
     def vcarve(self):

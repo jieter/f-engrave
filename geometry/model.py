@@ -8,7 +8,223 @@ from geometry.pathsorter import sort_paths
 from writers import douglas
 
 
-class Model():
+
+# TODO set tk root and use it as prefix in all Tkinter class and method calls
+# TODO then rename MyImage to Image and MyText to Text
+
+class MyImage(object):
+    """
+    Manage all loops derived from an image file,
+    as coordinate lists.
+    """
+    def __init__(self):
+
+        self.init_coords()
+        self.bbox = BoundingBox()
+        self.show_boundingbox = False
+
+    def __len__(self):
+        return len(self.coords)
+
+    def init_coords(self):
+        # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt])
+        self.coords = []
+
+    def set_coords_from_strokes(self, strokes):
+
+        line_cnt = char_cnt = 0
+
+        for line in strokes:
+            # print 'Line:', line
+            # TODO, why are there non Line instances in the character stroke_list?
+            if isinstance(line, Line):
+                # print 'line is a Line:', line
+                x1 = line.xstart
+                y1 = line.ystart
+                x2 = line.xend
+                y2 = line.yend
+                self.coords.append([x1, y1, x2, y2, line_cnt, char_cnt])
+            # else:
+            #     print 'line is not a Line:', line
+
+        self._set_bbox()
+
+    def get_coords(self):
+        return self.coords
+
+    def _set_bbox(self):
+        xmin = ymin = 1e10
+        xmax = ymax = -1e10
+        for line in self.coords:
+            xmax = max(line[0], line[2], xmax)
+            ymax = max(line[1], line[3], ymax)
+            xmin = min(line[0], line[2], xmin)
+            ymin = min(line[1], line[3], ymin)
+        self.bbox = BoundingBox( xmin, xmax, ymin, ymax)
+
+
+class MyText(MyImage):
+    """
+    Manage all loops derived from a textfile,
+    as coordinate lists.
+    """
+    def __init__(self):
+
+        super(MyText, self).__init__()
+
+        self.font = None
+
+        # TODO handle unicode string
+        self.text = u''
+
+        self.no_font_record = []
+
+        self.line_space = 1.1  # TODO set LSPACE
+        self.char_space = 1.0  # TODO set CSPACE
+        self.word_space = 0.25 # TODO set WSPACE
+
+        self.radius = 0.0
+        self.angle = 0.0
+        self.thickness = 0.25
+
+    def __str__(self):
+        # string = ' '.join(self.text)
+        ascii_text = self.text.encode('ascii','replace')
+        return ascii_text
+
+    def set_font(self, font):
+        self.font = font
+        if self.text != u'':
+            self.bbox = self.font.get_char_bbox_used(self.text)
+
+    def set_text(self, text):
+        self.text = text
+        if not self.font is None:
+            self.bbox = self.font.get_char_bbox_used(self.text)
+
+    def set_angle(self, angle):
+        self.angle = angle
+
+    def set_radius(self, radius):
+        self.radius = radius
+
+    def set_line_space(self, line_space):
+        self.line_space = line_space
+
+    def set_char_space(self, char_space):
+        self.char_space = char_space
+
+    def set_word_space(self, word_space):
+        self.word_space = word_space
+
+    def set_thickness(self, thickness):
+        self.thickness = thickness
+
+    # def get_bbox_used(self):
+    #     return self.font.get_char_bbox_used(self.text)
+
+    def set_coords_from_strokes(self):
+        """
+        Create coordinates list from characters strokelists
+        Returns True when one or more characters from text were not found in the font set,
+        otherwise False if all went fine
+        """
+        self.init_coords()
+        font_line_height = self.font.line_height()
+        font_line_depth = self.font.line_depth()
+        font_char_width = self.font.get_character_width()
+
+        # font_line_space = (font_line_height - font_line_depth + self.thickness / self.y_scale) * self.line_space
+        font_line_space = (font_line_height - font_line_depth + self.thickness ) * self.line_space
+        font_word_space = font_char_width * (self.word_space / 100.0)
+        font_char_space = font_char_width * (self.char_space /100.0)
+
+        no_font_record = []
+        xposition = 0
+        yposition = 0
+        line_cnt = 0
+
+        for char_cnt, char in enumerate(self.text):
+
+            # space
+            if char == ' ':
+                xposition += font_word_space
+                continue
+
+            # tab
+            if char == '\t':
+                xposition += 3 * font_word_space
+                continue
+
+            # linefeed
+            if char == '\n':
+                xposition = 0
+                yposition += font_line_space
+                line_cnt += 1
+                continue
+
+            try:
+                font_line_height = self.font[ord(char)].get_ymax()
+            except:
+                no_font = False
+                for norec in no_font_record:
+                    if norec == char:
+                        no_font = True
+                if no_font:
+                    no_font_record.append(char)
+                continue
+
+            for stroke in self.font[ord(char)].stroke_list:
+                x1 = stroke.xstart + xposition
+                y1 = stroke.ystart - yposition
+                x2 = stroke.xend + xposition
+                y2 = stroke.yend - yposition
+                self.coords.append([x1, y1, x2, y2, line_cnt, char_cnt])
+
+            char_width = self.font[ord(char)].get_xmax()  # move over for next character
+            xposition += font_char_space + char_width
+
+            self.no_font_record = no_font_record
+
+# TODO Move following to new package, something like 'Engrave' or 'Carve'
+
+class Tool(object):
+
+    def __init__(self):
+        self.diameter = 0.0
+        self.radius = 0.0
+
+    def set_diameter(self, diameter):
+        self.diameter = diameter
+        self.radius = diameter / 2
+
+    def set_radius(self, radius):
+        self.radius = radius
+
+    def get_type(self):
+        return 'None'
+
+
+class Straight(Tool):
+
+    def __init__(self):
+        super(Tool, self).__init__()
+
+    def get_type(self):
+        return 'Straight'
+
+
+class VCarve(Tool):
+
+    def __init__(self):
+        super(Tool, self).__init__()
+
+    def get_type(self):
+        return 'V-Bit'
+
+
+
+class Model(object):
     """
     Manage all loops, derived from the data in the font or image file,
     as coordinate lists.
@@ -128,10 +344,10 @@ class Model():
             rmax = rbit
 
         # TODO Extracted code, to be further refactored
-        coord_radius, xN, xPartitionLength, yN, yPartitionLength = self.setup_grid_partitions(dline, rmax)
+        xN, xPartitionLength, yN, yPartitionLength = self.setup_grid_partitions(dline, rmax)
 
         # TODO Extracted code, to be further refactored
-        self.determine_active_partitions(coord_radius, rmax, xN, xPartitionLength, yN, yPartitionLength)
+        self.determine_active_partitions(rmax, xN, xPartitionLength, yN, yPartitionLength)
 
         # Update GUI with the modified toolpath
         if not self.progress_callback is None:
@@ -174,7 +390,7 @@ class Model():
 
         not_b_carve = not bool(self.settings.get('bit_shape') == "BALL")
         CHK_STRING = self.settings.get('v_check_all')
-        # TODO has check not been set before, else add set check in settings
+        # TODO has CHK_STRING not been set before, else add set check in settings
         if self.settings.get('input_type') != "text":
             CHK_STRING = "all"
 
@@ -400,7 +616,7 @@ class Model():
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
         return done
 
-    def determine_active_partitions(self, coord_radius, rmax, xN, xPartitionLength, yN, yPartitionLength):
+    def determine_active_partitions(self, rmax, xN, xPartitionLength, yN, yPartitionLength):
         """
         Determine active paritions for each line segment
         """
@@ -416,7 +632,6 @@ class Model():
             R_R = LENGTH / 2 + rmax
             X_R = (x1_R + x2_R) / 2
             Y_R = (y1_R + y2_R) / 2
-            coord_radius.append([X_R, Y_R, R_R])
 
             coded_index = []
 
@@ -499,12 +714,12 @@ class Model():
                 line_R_appended.append(R_R)
                 self.partitionList[int(thisIndex % xN)][int(thisIndex / xN)].append(line_R_appended)
 
+        return
+
     def setup_grid_partitions(self, dline, rmax):
         """
         Setup Grid Partitions for the cleaning toolpath
         """
-        coord_radius = []
-
         xLength = self.maxX - self.minX
         yLength = self.maxY - self.minY
 
@@ -532,7 +747,7 @@ class Model():
             for yCount in range(0, yN):
                 self.partitionList[xCount].append([])
 
-        return coord_radius, xN, xPartitionLength, yN, yPartitionLength
+        return xN, xPartitionLength, yN, yPartitionLength
 
     def record_v_carve_data(self, x1, y1, phi, rout, loop_cnt, clean):
 
@@ -589,9 +804,8 @@ class Model():
     def find_max_circle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
         """
         Routine finds the maximum radius that can be placed in the position
-        xpt,ypt witout interfearing with other line segments (rmin is max R LOL)
+        xpt,ypt witout interfering with other line segments (rmin is max R LOL)
         """
-        global Zero
         rtmp = rmin
 
         xIndex = int((xpt - self.minX) / self.xPartitionLength)
@@ -1221,13 +1435,12 @@ class Model():
                     (self.settings.get('v_clean_X') == 1 and bit_type == "v-bit"):
                 loop_cnt_out = self.line_cuts(MAXD, Xclean_coords, clean_coords_out, clean_dia, loop_cnt_out)
 
-            # ...and with the vertical line cuts
+            # ...and deal with the vertical line cuts
             if (self.settings.get('clean_Y') == 1 and bit_type != "v-bit") or \
                     (self.settings.get('v_clean_Y') == 1 and bit_type == "v-bit"):
                 null = self.line_cuts(MAXD, Yclean_coords, clean_coords_out, clean_dia, loop_cnt_out)
 
             # TODO move to controller
-            print 'TODO Move parts of code in Model.clean_path_calc() to GUI'
             # self.controller.entry_set(self.controller.Entry_CLEAN_DIA, self.controller.Entry_CLEAN_DIA_Check(), 1)
             # self.controller.entry_set(self.controller.Entry_STEP_OVER, self.controller.Entry_STEP_OVER_Check(), 1)
             # self.controller.entry_set(self.controller.Entry_V_CLEAN, self.controller.Entry_V_CLEAN_Check(), 1)
@@ -1355,7 +1568,7 @@ class Model():
 
         return Xclean_coords, Yclean_coords, loop_cnt_out
 
-    def straight_toolpath(self, DX, Xclean_coords, Yclean_coords, clean_coords_out, clean_dia, edge, loop_cnt,
+    def straight_toolpath(self, DX, Xclean_coords, Yclean_coords, clean_coords_out, edge, loop_cnt,
                           loop_cnt_out, rbit):
         """
         Make straight bit toolpath
@@ -1387,7 +1600,6 @@ class Model():
 
         # Line fit loop_coords
         if loop_coords:
-            loop_coords_lin = []
             cuts = []
             Ln_last = loop_coords[0][4]
             for i in range(len(loop_coords)):
@@ -1430,10 +1642,8 @@ class Model():
             Ysize = y_pmax - y_pmin
             Ysteps = ceil(Ysize / (clean_dia * clean_step))
             if Ysteps > 0:
-                dY = Ysize / Ysteps
                 for iY in range(0, int(Ysteps + 1)):
                     y = y_pmin + iY / Ysteps * (y_pmax - y_pmin)
-                    intXYlist = []
                     intXYlist = detect_intersect([x_pmin - 1, y], [x_pmax + 1, y], loop_coords, XY_T_F=True)
                     intXY_len = len(intXYlist)
 
@@ -1453,7 +1663,6 @@ class Model():
             Xsize = x_pmax - x_pmin
             Xsteps = ceil(Xsize / (clean_dia * clean_step))
             if Xsteps > 0:
-                dX = Xsize / Xsteps
                 for iX in range(0, int(Xsteps + 1)):
                     x = x_pmin + iX / Xsteps * (x_pmax - x_pmin)
                     intXYlist = []

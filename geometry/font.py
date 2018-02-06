@@ -2,7 +2,9 @@ from geometry.boundingbox import BoundingBox
 
 
 class Character(object):
-
+    """
+    The strokes which make up a fontcharacter
+    """
     def __init__(self, key, stroke_list):
         self.key = key
         self.stroke_list = stroke_list
@@ -44,7 +46,9 @@ class Character(object):
 
 
 class Font(object):
-
+    """
+    The complete characterset of a font
+    """
     def __init__(self):
         self.characters = {}
         self.bbox = BoundingBox()
@@ -54,6 +58,7 @@ class Font(object):
 
     def __getitem__(self, key):
 
+        # Space or Linefeed
         if key in (32, 10):
             return Character(' ', [])
 

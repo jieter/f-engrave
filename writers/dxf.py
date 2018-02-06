@@ -133,10 +133,12 @@ AcDbLine
   0'''
 
 
-def dxf(coords, close_loops=False):
+def dxf(job, close_loops=False):
 
     if close_loops:
-        self.v_carve_it(clean=False, DXF_FLAG=close_loops)
+        job.v_carve(clean=False, DXF_FLAG=close_loops)
+
+    coords = job.coords
 
     dxf_code = []
 

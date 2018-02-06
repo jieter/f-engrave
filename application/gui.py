@@ -6,7 +6,7 @@ import webbrowser
 from util import *
 from tooltip import ToolTip
 
-from geometry.model import Model
+from geometry.model import Model, MyImage, MyText, Tool, VCarve, Straight
 
 import readers
 from writers import *
@@ -41,6 +41,10 @@ class Gui(Frame):
 
         self.settings = settings
         self.model = Model(self.settings)
+
+        self.text = MyText()
+        self.image = MyImage()
+        self.tool = Tool()
 
         self.bind_keys()
         self.create_widgets()
@@ -176,7 +180,7 @@ class Gui(Frame):
         self.gcode = []
         self.svgcode = []
 
-        self.font = {}
+        self.font = Font()
 
         self.RADIUS_PLOT = 0
         self.MAXX = 0
@@ -267,7 +271,8 @@ class Gui(Frame):
 
                 self.default_text = value
             if option in ('-b','--batch'):
-                self.batch.set(1)
+                self.batch.set(True)
+                self.settings.set('batch', True)
 
         if self.batch.get():
             fmessage('(F-Engrave Batch Mode)')
@@ -566,7 +571,6 @@ class Gui(Frame):
         scrollbar.pack(side=RIGHT, fill=Y)
         self.Input.pack(side=LEFT, fill=BOTH, expand=1)
         self.Input.bind("<Key>", self.recalculate_RQD_Nocalc)
-        ## self.master.unbind("<Alt>")
 
         # GENERAL Settings Window Entry initialization
         self.Entry_Xoffset = Entry()
@@ -956,7 +960,7 @@ class Gui(Frame):
         except:
             pass
 
-    def CLEAN_Recalculate_Click(self):
+    def Calculate_CLEAN_Click(self):
 
         TSTART = time()
         win_id = self.grab_current()
@@ -1316,7 +1320,7 @@ class Gui(Frame):
             pass
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
-        self.settings.set('v_pplot', self.v_pplot.get(), setting='v_pplot')
+        self.settings.set('v_pplot', self.v_pplot.get())
         self.model.refresh_v_pplot() # TODO only needed when plotting
 
     def Entry_Box_Callback(self, varName, index, mode):
@@ -1735,6 +1739,7 @@ class Gui(Frame):
         if self.model.number_of_clean_coords() == 0:
 
             vcalc_status = Toplevel(width=525, height=50)
+
             # Use grab_set to prevent user input in the main window during calculations
             vcalc_status.grab_set()
 
@@ -1761,15 +1766,16 @@ class Gui(Frame):
                 except:
                     pass
 
-            clean_cut = 1
-            self.v_carve_it(clean_cut)
+            self.v_carve_it(clean=True)
+
             vcalc_status.grab_release()
+
             try:
                 vcalc_status.destroy()
             except:
                 pass
 
-        # prepare statusbar (color) for progress updates
+        # prepare statusbar(color) for progress updates
         self.statusbar.configure(bg='yellow')
         self.model.clean_path_calc(bit_type)
 
@@ -1783,6 +1789,7 @@ class Gui(Frame):
     ######################################
     def Entry_recalc_var_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
+        self.settings.set('outer', self.outer.get())
         self.Recalc_RQD()
 
     def Entry_units_var_Callback(self):
@@ -1955,6 +1962,11 @@ class Gui(Frame):
             self.IMAGE_FILE = fileselect
             self.settings.set('IMAGE_FILE', fileselect)
             self.font = readers.read_image_file(self.settings)
+
+            # TODO future read_image_file will return a MyImage instead of a Font instance
+            # self.image.coords = self.font[ord("F")].stroke_list
+            self.image.set_coords_from_strokes( self.font[ord("F")].stroke_list )
+
             self.input_type.set(self.settings.get('input_type')) # input_type may have been changed by read_image_file
             self.do_it()
 
@@ -2018,10 +2030,6 @@ class Gui(Frame):
             self.funits.set('mm/min')
 
         self.calc_depth_limit()
-
-        # TODO cleanup
-        # temp_name, fileExtension = os.path.splitext(filename)
-        # file_base = os.path.basename(temp_name)
 
         self.delay_calc = False
         if self.initComplete:
@@ -2089,8 +2097,6 @@ class Gui(Frame):
             init_dir = self.HOME_DIR
 
         fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        init_file = os.path.basename(fileName)
-
         if self.input_type.get() == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
@@ -2133,8 +2139,6 @@ class Gui(Frame):
             init_dir = self.HOME_DIR
 
         fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        init_file = os.path.basename(fileName)
-
         if self.input_type.get() != "text":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
@@ -2214,13 +2218,12 @@ class Gui(Frame):
 
     def menu_File_Save_DXF_File(self, close_loops=False):
 
-        DXF_CODE = dxf(self.model.coords, close_loops=close_loops)
+        DXF_CODE = dxf(self.model, close_loops=close_loops)
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
         fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        init_file = os.path.basename(fileName)
         if self.input_type.get() != "text":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
@@ -2512,7 +2515,6 @@ class Gui(Frame):
                 self.Checkbutton_fontdex.place(x=x_label_R, y=self.h - 145, width=185, height=23)
 
                 # Buttons etc.
-
                 Ybut = self.h - 60
                 self.Recalculate.place(x=12, y=Ybut, width=95, height=30)
 
@@ -2694,12 +2696,6 @@ class Gui(Frame):
                 self.Input_Label.place_forget()
                 self.Input_frame.place_forget()
 
-            ###########################################################
-            if self.cut_type.get() == "v-carve":
-                pass
-            else:
-                pass
-            ###########################################################
             self.plot_toolpath()
 
 
@@ -2757,25 +2753,30 @@ class Gui(Frame):
 
     def plot_toolpath(self):
         """
-        Plot the toolpath for straight or V-bit, and the clean path
+        Plot the toolpath for straight tool or V-bit, and the clean path
         """
         if self.delay_calc:
             return
 
         self.master.update_idletasks()
 
-        # erase old segs/display objects
+        # erase old segments/display objects
         self.PreviewCanvas.delete(ALL)
         self.segID = []
 
+        # origin
         cszw = int(self.PreviewCanvas.cget("width"))
         cszh = int(self.PreviewCanvas.cget("height"))
         buff=10
 
-        maxx = self.MAXX
-        minx = self.MINX
-        maxy = self.MAXY
-        miny = self.MINY
+        # maxx = self.MAXX
+        # minx = self.MINX
+        # maxy = self.MAXY
+        # miny = self.MINY
+        if self.input_type.get() == "text":
+            minx, maxx, miny, maxy = self.text.bbox.tuple()
+        else:
+            minx, maxx, miny, maxy = self.image.bbox.tuple()
         midx = (maxx + minx) / 2
         midy = (maxy + miny) / 2
 
@@ -2818,14 +2819,19 @@ class Gui(Frame):
             self.segID.append(
                 self.PreviewCanvas.create_oval(Rx_lft, Ry_bot, Rx_rgt, Ry_top, outline="gray90", width=0, dash=3))
 
-        if self.show_thick.get() == True:
+        if self.show_thick.get():
             plot_width = Thick / plot_scale
         else:
             plot_width = 1.0
 
-        # Plot circle radius with radius equal to Radius_plot
+        # Plot circle
         x_zero = self.xzero
         y_zero = self.yzero
+
+        if self.settings.get('outer'):
+            Radius_plot -= 2* self.settings.get('boxgap')
+            Radius_plot -= self.settings.get('yscale')
+
         if Radius_plot != 0:
             Rpx_lft = cszw / 2 + (-Radius_plot - midx - x_zero) / plot_scale
             Rpx_rgt = cszw / 2 + (Radius_plot - midx - x_zero) / plot_scale
@@ -2834,21 +2840,51 @@ class Gui(Frame):
             self.segID.append(
                 self.PreviewCanvas.create_oval(Rpx_lft, Rpy_bot, Rpx_rgt, Rpy_top, outline="black", width=plot_width))
 
-        for XY in self.model.coords:
-            x1 =  cszw/2 + (XY[0]-midx) / plot_scale
-            x2 =  cszw/2 + (XY[2]-midx) / plot_scale
-            y1 =  cszh/2 - (XY[1]-midy) / plot_scale
-            y2 =  cszh/2 - (XY[3]-midy) / plot_scale
+        #########################################
+        # Plot the original lines
+        #########################################
+
+        # scale
+        # TODO Organise scale vars
+        YScale = float(self.YSCALE.get())
+        XScale = float(self.XSCALE.get()) * YScale / 100
+        scaled_coords = []
+
+        if self.input_type.get() == "text":
+            if len(self.text) > 0:
+                for line in self.text.get_coords():
+                    sl = line
+                    sl[0], sl[1] = self.coord_scale(line[0], line[1], XScale, YScale)
+                    sl[2], sl[3] = self.coord_scale(line[2], line[3], XScale, YScale)
+                    scaled_coords.append(sl)
+        else:
+            if len(self.image) > 0:
+                for line in self.image.get_coords():
+                    # print 'XY:', XY
+                    if isinstance(line, Line):
+                        pass
+                    else:
+                        sl = line
+                        sl[0], sl[1] = self.coord_scale(line[0], line[1], XScale, YScale)
+                        sl[2], sl[3] = self.coord_scale(line[2], line[3], XScale, YScale)
+                        scaled_coords.append(sl)
+
+        for XY in scaled_coords:
+            x1 = cszw / 2 + (XY[0] - midx) / plot_scale
+            x2 = cszw / 2 + (XY[2] - midx) / plot_scale
+            y1 = cszh / 2 - (XY[1] - midy) / plot_scale
+            y2 = cszh / 2 - (XY[3] - midy) / plot_scale
             self.segID.append(
                 self.PreviewCanvas.create_line(x1, y1, x2, y2, fill='black', width=plot_width, capstyle='round'))
 
+        # draw coordinate axis
         XOrigin = float(self.xorigin.get())
         YOrigin = float(self.yorigin.get())
-        axis_length = (maxx-minx)/4
-        axis_x1 = cszw/2 + (-midx + XOrigin)/plot_scale
-        axis_x2 = cszw/2 + (axis_length - midx + XOrigin)/plot_scale
-        axis_y1 = cszh/2 - (-midy + YOrigin)/plot_scale
-        axis_y2 = cszh/2 - (axis_length - midy+YOrigin)/plot_scale
+        axis_length = (maxx - minx) / 4
+        axis_x1 = cszw / 2 + (-midx + XOrigin) / plot_scale
+        axis_x2 = cszw / 2 + (axis_length - midx + XOrigin) / plot_scale
+        axis_y1 = cszh / 2 - (-midy + YOrigin) / plot_scale
+        axis_y2 = cszh / 2 - (axis_length - midy + YOrigin) / plot_scale
 
         #########################################
         # V-carve Plotting Stuff
@@ -2922,7 +2958,6 @@ class Gui(Frame):
             loop_old = -1
             for line in self.model.v_clean_coords_sort:
                 new = (line[0], line[1])
-                r = XY[2]
                 loop = XY[3]
                 color = "yellow"
                 if loop == loop_old:
@@ -2966,254 +3001,120 @@ class Gui(Frame):
             self.master.update_idletasks()
             self.PreviewCanvas.delete(ALL)
 
-        # erase old data
         self.segID = []
         self.gcode = []
         self.svgcode = []
-        self.model.init_coords()
 
-        self.RADIUS_PLOT = 0
+        if self.input_type.get() == "text":
+            self.do_it_text()
+        elif self.input_type.get() == "image":
+            self.do_it_image()
+        else:
+            pass # TODO
+
+        if not self.batch.get():
+            self.plot_toolpath()
+
+    def do_it_text(self):
 
         if (self.font is None or len(self.font) == 0) and (not self.batch.get()):
             self.statusbar.configure(bg='red')
-            if self.input_type.get() == "text":
-                self.statusMessage.set("No Font Characters Loaded")
-            else:
-                self.statusMessage.set("No Image Loaded")
+            self.statusMessage.set("No Font Characters Loaded")
             return
 
-        if self.input_type.get() == "text":
-            if not self.batch.get():
-                String = self.Input.get(1.0, END)
-            else:
-                String = self.default_text
-            Radius_in = float(self.TRADIUS.get())
-        else:
-            String = "F"
-            Radius_in = 0.0
-
+        # TODO Check completeness necessary? All vars should have a valid entry?
         try:
-            # SegArc    = float(self.segarc.get())
-            YScale_in = float(self.YSCALE.get() )
-            CSpaceP   = float(self.CSPACE.get() )
-            WSpaceP   = float(self.WSPACE.get() )
-            LSpace    = float(self.LSPACE.get() )
-            Angle     = float(self.TANGLE.get() )
-            Thick     = float(self.STHICK.get() )
-            # XOrigin   = float(self.xorigin.get())
-            # YOrigin   = float(self.yorigin.get())
-            # v_flop    = bool(self.v_flop.get())
+            SegArc = float(self.segarc.get())
+            YScale_in = float(self.YSCALE.get())
+            CSpaceP = float(self.CSPACE.get())
+            WSpaceP = float(self.WSPACE.get())
+            LSpace = float(self.LSPACE.get())
+            Angle = float(self.TANGLE.get())
+            Thick = float(self.STHICK.get())
+            XOrigin = float(self.xorigin.get())
+            YOrigin = float(self.yorigin.get())
+            v_flop = bool(self.v_flop.get())
         except:
             self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
             self.statusbar.configure( bg='red' )
             return
 
-        if self.cut_type.get() == "v-carve":
-            Thick = 0.0
+        self.text.set_font(self.font)
+        self.text.set_radius(float(self.TRADIUS.get()))
 
-        line_maxx = []
-        line_maxy = []
-        # line_maxa = []
-        # line_mina = []
-        line_minx = []
-        line_miny = []
-
-        maxx_tmp = -99991.0
-        maxy_tmp = -99992.0
-        # maxa_tmp = -99993.0
-        # mina_tmp =  99993.0
-        miny_tmp =  99994.0
-        minx_tmp =  99995.0
-
-        font_word_space = 0
-        INF = 1e10
-        font_line_height = -INF
-        font_char_width =  -INF
-        font_used_height = -INF
-        font_used_width  = -INF
-        font_used_depth  =  INF
-
-        ################################
-        ##      Font Index Preview    ##
-        ################################
-        # if self.fontdex.get() == True:
-        #     Radius_in = 0.0
-        #     String = ""
-        #     for key in self.font:
-        #         if self.ext_char:
-        #             String = String + unichr(key)
-        #         elif int(key) < 256:
-        #             String = String + unichr(key)
-        #
-        #     Strings = sorted(String)
-        #     mcnt = 0
-        #     String = ""
-        #
-        #     if self.ext_char.get():
-        #         pcols = int(1.5 * sqrt(float(len(self.font))))
-        #     else:
-        #         pcols = 15
-        #
-        #     for char in Strings:
-        #         mcnt += 1
-        #         String += char
-        #         if mcnt > pcols:
-        #             String = String + '\n'
-        #             mcnt = 0
-
-        ##################################
-        ## Font Height/Width Calculation #
-        ##################################
-        for char in String:
-            try:
-                font_used_height = max(self.font[ord(char)].get_ymax(), font_used_height)
-                font_used_width = max(self.font[ord(char)].get_xmax(), font_used_width)
-                font_used_depth = min(self.font[ord(char)].get_ymin(), font_used_depth)
-            except:
-                pass
-
-        if self.H_CALC.get() == "max_all":
-            font_line_height = max(self.font[key].get_ymax() for key in self.font)
-            font_line_depth = min(self.font[key].get_ymin() for key in self.font)
-        elif self.H_CALC.get() == "max_use":
-            font_line_height = font_used_height
-            font_line_depth = font_used_depth
-
-        if font_line_height > -INF:
-            if self.useIMGsize.get() and self.input_type.get() == "image":
-                YScale = YScale_in / 100.0
-            else:
-                try:
-                    YScale = (YScale_in - Thick) / (font_line_height - font_line_depth)
-                except:
-                    YScale = .1
-                if YScale <= Zero:
-                    YScale = .1
+        if self.batch.get():
+            self.text.set_text(self.default_text)
         else:
+            self.text.set_text(self.Input.get(1.0, END))
+
+        # TODO use settings instead of Tkinter strings
+        self.text.set_char_space(float(self.CSPACE.get()))
+        self.text.set_word_space(float(self.WSPACE.get()))
+        self.text.set_line_space(float(self.LSPACE.get()))
+
+        if self.cut_type.get() == "v-carve":
+            self.text.set_thickness(float(self.STHICK.get()))
+        else:
+            self.text.set_thickness(0.0)
+
+        self.text.set_coords_from_strokes()
+
+        font_line_height = self.font.line_height()
+        font_line_depth = self.font.line_depth()
+        if font_line_height <= -1e10:
+
             if not self.batch.get():
-                self.statusbar.configure( bg='red' )
+                    self.statusbar.configure( bg='red' )
 
             if self.H_CALC.get() == "max_all":
                 if not self.batch.get():
                     self.statusMessage.set("No Font Characters Found")
                 else:
                     fmessage("(No Font Characters Found)")
-            elif self.H_CALC.get() == "max_use":
-                if self.input_type.get()=="image":
-                    error_text = "Image contains no design information. (Empty DXF File)"
-                else:
-                    error_text = "Input Characters Were Not Found in the Current Font"
 
+            elif self.H_CALC.get() == "max_use":
+                error_text = "Input Characters Were Not Found in the Current Font"
                 if not self.batch.get():
                     self.statusMessage.set(error_text)
                 else:
                     fmessage( "("+error_text+")" )
+
             return
 
-        font_char_width = self.font.get_character_width()
-        font_word_space = font_char_width * (WSpaceP / 100.0)
-        font_char_space = font_char_width * (CSpaceP / 100.0)
+        try:
+            YScale = (YScale_in - Thick) / (font_line_height - font_line_depth)
+        except:
+            YScale = .1
 
-        XScale = float(self.XSCALE.get()) * YScale / 100
+        if YScale <= Zero:
+            YScale = .1
 
+        self.YSCALE.set(YScale)
+        # self.XSCALE.set(XScale)
+
+        # text outside or inside circle
+        Radius_in = float(self.TRADIUS.get())
         if Radius_in != 0.0:
             if self.outer.get() == True:
                 if self.upper.get() == True:
-                    Radius = Radius_in + Thick/2 + YScale*(-font_line_depth)
+                    Radius = Radius_in + Thick / 2 + YScale * (-font_line_depth)
                 else:
-                    Radius = -Radius_in - Thick/2 - YScale*(font_line_height)
+                    Radius = -Radius_in - Thick / 2 - YScale * (font_line_height)
             else:
                 if self.upper.get() == True:
-                    Radius = Radius_in - Thick/2 - YScale*(font_line_height)
+                    Radius = Radius_in - Thick / 2 - YScale * (font_line_height)
                 else:
-                    Radius = -Radius_in + Thick/2 + YScale*(-font_line_depth)
+                    Radius = -Radius_in + Thick / 2 + YScale * (-font_line_depth)
         else:
             Radius = Radius_in
 
-        font_line_space = (font_line_height - font_line_depth + Thick/YScale) * LSpace
+        # there were characters missing in the Font set
+        if self.text.no_font_record == []:
+            msg = ""
+        else:
+            msg = ", CHECK OUTPUT! Some characters not found in font file."
 
-        xposition = 0.0
-        yposition = 0.0
-        line_cnt = 0.0
-        char_cnt = 0
-        no_font_record = []
-        message2 = ""
-        for char in String:
-            char_cnt += 1
-
-            if char == ' ':
-                xposition += font_word_space
-                continue
-
-            if char == '\t':
-                xposition += 3 * font_word_space
-                continue
-
-            if char == '\n':
-                xposition = 0
-                yposition += font_line_space
-                line_cnt += 1
-
-                line_minx.append(minx_tmp)
-                line_miny.append(miny_tmp)
-                line_maxx.append(maxx_tmp)
-                line_maxy.append(maxy_tmp)
-
-                maxx_tmp = -99919.0
-                maxy_tmp = -99929.0
-                miny_tmp = 99959.0
-                minx_tmp = 99969.0
-
-                continue
-
-            # first_stroke = True
-            try:
-                font_line_height = self.font[ord(char)].get_ymax()
-            except:
-                flag = 0
-                for norec in no_font_record:
-                    if norec == char:
-                        flag = 1
-                if flag == 0:
-                    no_font_record.append(char)
-                    message2 = ", CHECK OUTPUT! Some characters not found in font file."
-                continue
-
-            for stroke in self.font[ord(char)].stroke_list:
-                x1 = stroke.xstart + xposition
-                y1 = stroke.ystart - yposition
-                x2 = stroke.xend + xposition
-                y2 = stroke.yend - yposition
-
-                # Perform scaling
-                x1,y1 = self.coord_scale(x1,y1,XScale,YScale)
-                x2,y2 = self.coord_scale(x2,y2,XScale,YScale)
-
-                self.model.coords.append([x1, y1, x2, y2, line_cnt, char_cnt])
-
-                maxx_tmp = max(maxx_tmp, x1, x2)
-                minx_tmp = min(minx_tmp, x1, x2)
-                miny_tmp = min(miny_tmp, y1, y2)
-                maxy_tmp = max(maxy_tmp, y1, y2)
-
-            char_width = self.font[ord(char)].get_xmax() # move over for next character
-            xposition += font_char_space + char_width
-
-        #END Char in String
-
-        # TODO clean up code
-        minx, maxx, miny, maxy = \
-            self.calc_xmax_ymax(line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale)
-
-        # x_length = self.MAXX - self.MINX
-        # y_length = self.MAXY - self.MINY
-        # self.model.set_x_length(x_length)
-        # self.model.set_y_length(y_length)
-        self.model.set_maxX(self.MAXX)
-        self.model.set_minX(self.MINX)
-        self.model.set_maxY(self.MAXY)
-        self.model.set_minY(self.MINY)
-
+        minx, maxx, miny, maxy = self.text.bbox.tuple()
         if not self.batch.get():
             # Reset Status Bar and Entry Fields
             self.Input.configure(bg='white')
@@ -3238,21 +3139,84 @@ class Gui(Frame):
                                   " x " +
                                   "%.3g" % (maxy - miny) +
                                   " %s " % self.units.get() +
-                                  " %s" % message2)
+                                  " %s" % msg)
             self.statusMessage.set(self.bounding_box.get())
 
-        if no_font_record != []:
+        if self.text.no_font_record != []:
             if not self.batch.get():
-                self.statusbar.configure( bg='orange' )
-            fmessage('Characters not found in font file:',FALSE)
-            fmessage("(",FALSE)
-            for entry in no_font_record:
-                fmessage( "%s," %(entry),FALSE)
+                self.statusbar.configure(bg='orange')
+            fmessage('Characters not found in font file:', FALSE)
+            fmessage("(", FALSE)
+            for entry in self.text.no_font_record:
+                fmessage("%s," % (entry), FALSE)
             fmessage(")")
 
-        if not self.batch.get():
-            self.plot_toolpath()
+    def do_it_image(self):
 
+        # if (self.font is None or len(self.font) == 0) and (not self.batch.get()):
+        if len(self.image) == 0 and (not self.batch.get()):
+            self.statusbar.configure(bg='red')
+            self.statusMessage.set("No Image Loaded")
+            return
+
+        try:
+            YScale = YScale_in = float(self.YSCALE.get() )
+        except:
+            self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
+            self.statusbar.configure( bg='red' )
+            return
+
+        font_line_height = self.font.line_height()
+        if font_line_height <= -1e10:
+
+            if not self.batch.get():
+                self.statusbar.configure( bg='red' )
+
+            if self.H_CALC.get() == "max_all":
+                if not self.batch.get():
+                    self.statusMessage.set("No Font Characters Found")
+                else:
+                    fmessage("(No Font Characters Found)")
+
+            elif self.H_CALC.get() == "max_use":
+                error_text = "Image contains no design information. (Empty DXF File)"
+                if not self.batch.get():
+                    self.statusMessage.set(error_text)
+                else:
+                    fmessage( "("+error_text+")" )
+
+            return
+
+        if self.useIMGsize.get():
+            YScale = YScale_in / 100.0
+
+        minx, maxx, miny, maxy = self.image.bbox.tuple()
+        if not self.batch.get():
+            # Reset Status Bar and Entry Fields
+            self.Input.configure(bg='white')
+            self.entry_set(self.Entry_Yscale,  self.Entry_Yscale_Check(),    1)
+            self.entry_set(self.Entry_Xscale,  self.Entry_Xscale_Check(),    1)
+            self.entry_set(self.Entry_Sthick,  self.Entry_Sthick_Check(),    1)
+            self.entry_set(self.Entry_Lspace,  self.Entry_Lspace_Check(),    1)
+            self.entry_set(self.Entry_Cspace,  self.Entry_Cspace_Check(),    1)
+            self.entry_set(self.Entry_Wspace,  self.Entry_Wspace_Check(),    1)
+            self.entry_set(self.Entry_Tangle,  self.Entry_Tangle_Check(),    1)
+            self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(),   1)
+            self.entry_set(self.Entry_Feed,    self.Entry_Feed_Check(),      1)
+            self.entry_set(self.Entry_Plunge,  self.Entry_Plunge_Check(),    1)
+            self.entry_set(self.Entry_Zsafe,   self.Entry_Zsafe_Check(),     1)
+            self.entry_set(self.Entry_Zcut,    self.Entry_Zcut_Check(),      1)
+            self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check(),    1)
+            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 1)
+
+            self.bounding_box.set("Bounding Box (WxH) = " +
+                                  "%.3g" % (maxx - minx) +
+                                  " %s " % self.units.get() +
+                                  " x " +
+                                  "%.3g" % (maxy - miny) +
+                                  " %s " % self.units.get()
+                                  )
+            self.statusMessage.set(self.bounding_box.get())
 
     def calc_xmax_ymax(self, line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale):
 
@@ -3437,6 +3401,7 @@ class Gui(Frame):
         ##########################################
         #         ORIGIN LOCATING STUFF          #
         ##########################################
+        # TODO single out method (maxx, maxy, ... object properties, e.g. the Boundingbox or similar class)
         origin = self.origin.get()
         if origin == 'Default':
             origin = 'Arc-Center'
@@ -3455,19 +3420,6 @@ class Gui(Frame):
                 x_zero = maxx
             elif horizontal is 'Left':
                 x_zero = minx
-        #     if vertical is 'Top':
-        #         y_zero = self.text_bbox.ymax
-        #     elif vertical is 'Mid':
-        #         y_zero = self.text_bbox.height() / 2
-        #     elif vertical is 'Bot':
-        #         y_zero = self.text_bbox.ymin
-        #
-        #     if horizontal is 'Center':
-        #         x_zero = self.text_bbox.width() / 2
-        #     elif horizontal is 'Right':
-        #         x_zero = self.text_bbox.xmax
-        #     elif horizontal is 'Left':
-        #         x_zero = self.text_bbox.xmin
         else:  # "Default"
             x_zero = 0
             y_zero = 0
@@ -4134,7 +4086,7 @@ class Gui(Frame):
         self.Label_clean = Label(vcarve_settings, text="Cleanup Operations")
         self.Label_clean.place(x=center_loc, y=D_Yloc, width=w_label, height=21, anchor=CENTER)
 
-        self.CLEAN_Recalculate = Button(vcarve_settings, text="Calculate\nCleanup", command=self.CLEAN_Recalculate_Click)
+        self.CLEAN_Recalculate = Button(vcarve_settings, text="Calculate\nCleanup", command=self.Calculate_CLEAN_Click)
         self.CLEAN_Recalculate.place(x=right_but_loc, y=D_Yloc, width=width_cb, height=height_cb * 1.5, anchor="ne")
 
         D_Yloc = D_Yloc + D_dY

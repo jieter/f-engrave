@@ -20,6 +20,7 @@ def readFontFile(settings):
 
     segarc = settings.get('segarc')
     TYPE = fileExtension.upper()
+
     if TYPE == '.CXF':
         with open(filename, 'r') as fontfile:
             # build stroke lists from font file

@@ -216,19 +216,23 @@ def engrave_gcode(job):
             loop_old = loop
 
     # Make Circle
-    xorigin, yorigin = settings.get('xorigin'), settings.get('yorigin')
     plot_radius = settings.get('text_radius')
+    plot_radius += settings.get('boxgap')
+    if settings.get('outer'):
+        plot_radius -= settings.get('yscale') / 2
 
-    if plot_radius != 0 and settings.get('cut_type') == "engrave":
+    if settings.get('plotbox') and plot_radius != 0 and settings.get('cut_type') == "engrave":
+        xorigin, yorigin = settings.get('xorigin'), settings.get('yorigin')
         code.append('( Engraving Circle )')
         code.append('G0 Z%s' % safe_val)
 
         FORMAT = 'G0 X%%.%df Y%%.%df' % (dp, dp)
-        code.append(FORMAT % (-plot_radius - job.xzero + xorigin, yorigin - job.yzero))
+        # code.append(FORMAT % (-plot_radius - job.xzero + xorigin, yorigin - job.yzero))
+        code.append(FORMAT % (-plot_radius - xorigin, yorigin))
         code.append('G1 Z%s' % depth_val)
+
         FORMAT = 'G2 I%%.%df J%%.%df' % (dp, dp)
         code.append(FORMAT % (plot_radius, 0.0))
-    # End Circle
 
     # final engraver up
     code.append('G0 Z%s' % safe_val)
@@ -355,17 +359,7 @@ def vcarve_gcode(job):
             zmin = zmin + maxDZ
 
             loop_old = -1
-
-            #TODO These variables are set, but not used?
-            # R_last = 999
-            # x_center_last = 999
-            # y_center_last = 999
-            # FLAG_arc = 0
-            # FLAG_line = 0
-            # code = []
-
             v_index = -1
-
             while v_index < len(new_coords) - 1:
                 v_index = v_index + 1
                 x1 = new_coords[v_index][0]
@@ -570,14 +564,10 @@ def write_clean_up(job, bit_type="straight"):
         rough_again = False
         zmin = zmin + maxDZ
 
-        # code.append( 'G0 Z%s' %(safe_val))
-        oldx = oldy = -99990.0
-        first_stroke = True
-
         ########################################################################
         # The clean coords have already been sorted so we can just write them  #
         ########################################################################
-        order_out = sort_paths(coords_out, 3)  # TODO
+        order_out = sort_paths(coords_out, 3)
         new_coords = []
         for line in order_out:
             temp = line
@@ -589,31 +579,14 @@ def write_clean_up(job, bit_type="straight"):
                 new_coords.append(coords_out[i])
         coords_out = new_coords
 
-        # TODO FLAG_, next_, and last_ vars are not used
         if len(coords_out) > 0:
             loop_old = -1
-            # FLAG_arc = 0
-            # FLAG_line = 0
-            # code = []
             v_index = -1
             while v_index < len(coords_out) - 1:
                 v_index = v_index + 1
                 x1 = coords_out[v_index][0]
                 y1 = coords_out[v_index][1]
-                r1 = coords_out[v_index][2]
                 loop = coords_out[v_index][3]
-
-                #TODO Variables are set, but not used?
-                # if v_index + 1 < len(coords_out):
-                #     nextx = coords_out[v_index + 1][0]
-                #     nexty = coords_out[v_index + 1][1]
-                #     nextr = coords_out[v_index + 1][2]
-                #     nextloop = coords_out[v_index + 1][3]
-                # else:
-                #     nextx = 0
-                #     nexty = 0
-                #     nextr = 0
-                #     nextloop = -99
 
                 # check and see if we need to move to a new discontinuous start point
                 if loop == loop_old:
@@ -625,8 +598,6 @@ def write_clean_up(job, bit_type="straight"):
 
                     FORMAT = 'G1 X%%.%df Y%%.%df' % (dp, dp)
                     code.append(FORMAT % (x1, y1) + FEED_STRING)
-                    # lastx = x1
-                    # lasty = y1
                 else:
                     # lift engraver
                     code.append("G0 Z%s" % (safe_val))
