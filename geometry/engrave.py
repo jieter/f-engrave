@@ -8,65 +8,62 @@ from geometry.pathsorter import sort_paths
 from writers import douglas
 
 
-
 # TODO set tk root and use it as prefix in all Tkinter class and method calls
 # TODO then rename MyImage to Image and MyText to Text
 
 class MyImage(object):
     """
-    Manage all loops derived from an image file,
-    as coordinate lists.
+    Manage the loops, derived from an image file, as coordinate list.
     """
     def __init__(self):
 
         self.init_coords()
         self.bbox = BoundingBox()
-        self.show_boundingbox = False
 
     def __len__(self):
         return len(self.coords)
 
     def init_coords(self):
-        # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt])
+        # Loop coordinates, format: ([x1, y1, x2, y2, line_cnt, char_cnt])
         self.coords = []
 
     def set_coords_from_strokes(self, strokes):
 
+        self.init_coords()
         line_cnt = char_cnt = 0
 
         for line in strokes:
-            # print 'Line:', line
-            # TODO, why are there non Line instances in the character stroke_list?
-            if isinstance(line, Line):
-                # print 'line is a Line:', line
-                x1 = line.xstart
-                y1 = line.ystart
-                x2 = line.xend
-                y2 = line.yend
-                self.coords.append([x1, y1, x2, y2, line_cnt, char_cnt])
-            # else:
-            #     print 'line is not a Line:', line
+            x1 = line.xstart
+            y1 = line.ystart
+            x2 = line.xend
+            y2 = line.yend
+            self.coords.append([x1, y1, x2, y2, line_cnt, char_cnt])
 
         self._set_bbox()
 
     def get_coords(self):
         return self.coords
 
+    def get_bbox(self):
+        return self.bbox.tuple()
+
     def _set_bbox(self):
+
         xmin = ymin = 1e10
         xmax = ymax = -1e10
+
         for line in self.coords:
             xmax = max(line[0], line[2], xmax)
             ymax = max(line[1], line[3], ymax)
             xmin = min(line[0], line[2], xmin)
             ymin = min(line[1], line[3], ymin)
-        self.bbox = BoundingBox( xmin, xmax, ymin, ymax)
+
+        self.bbox = BoundingBox(xmin, xmax, ymin, ymax)
 
 
 class MyText(MyImage):
     """
-    Manage all loops derived from a textfile,
-    as coordinate lists.
+    Manage the loops, derived from a textfile, as coordinate list.
     """
     def __init__(self):
 
@@ -76,31 +73,28 @@ class MyText(MyImage):
 
         # TODO handle unicode string
         self.text = u''
+        self.nrlines = 0
 
+        # Keys of characters, if any, that were not found in the font set
         self.no_font_record = []
 
         self.line_space = 1.1  # TODO set LSPACE
-        self.char_space = 1.0  # TODO set CSPACE
-        self.word_space = 0.25 # TODO set WSPACE
+        self.char_space = 25   # TODO set CSPACE
+        self.word_space = 1.0  # TODO set WSPACE
 
         self.radius = 0.0
         self.angle = 0.0
         self.thickness = 0.25
 
     def __str__(self):
-        # string = ' '.join(self.text)
         ascii_text = self.text.encode('ascii','replace')
         return ascii_text
 
     def set_font(self, font):
         self.font = font
-        if self.text != u'':
-            self.bbox = self.font.get_char_bbox_used(self.text)
 
     def set_text(self, text):
         self.text = text
-        if not self.font is None:
-            self.bbox = self.font.get_char_bbox_used(self.text)
 
     def set_angle(self, angle):
         self.angle = angle
@@ -120,14 +114,9 @@ class MyText(MyImage):
     def set_thickness(self, thickness):
         self.thickness = thickness
 
-    # def get_bbox_used(self):
-    #     return self.font.get_char_bbox_used(self.text)
-
     def set_coords_from_strokes(self):
         """
-        Create coordinates list from characters strokelists
-        Returns True when one or more characters from text were not found in the font set,
-        otherwise False if all went fine
+        Create a coordinates list from character strokelists
         """
         self.init_coords()
         font_line_height = self.font.line_height()
@@ -140,9 +129,13 @@ class MyText(MyImage):
         font_char_space = font_char_width * (self.char_space /100.0)
 
         no_font_record = []
+        max_vals = []
         xposition = 0
         yposition = 0
         line_cnt = 0
+
+        xmin_tmp = ymin_tmp = 1e10
+        xmax_tmp = ymax_tmp = -1e10
 
         for char_cnt, char in enumerate(self.text):
 
@@ -161,10 +154,15 @@ class MyText(MyImage):
                 xposition = 0
                 yposition += font_line_space
                 line_cnt += 1
+
+                max_vals.append([xmin_tmp, xmax_tmp, ymin_tmp, ymax_tmp])
+                xmin_tmp = ymin_tmp = 1e10
+                xmax_tmp = ymax_tmp = -1e10
+
                 continue
 
             try:
-                font_line_height = self.font[ord(char)].get_ymax()
+                null = self.font[ord(char)].get_ymax()
             except:
                 no_font = False
                 for norec in no_font_record:
@@ -181,12 +179,31 @@ class MyText(MyImage):
                 y2 = stroke.yend - yposition
                 self.coords.append([x1, y1, x2, y2, line_cnt, char_cnt])
 
+                xmin_tmp = min(xmin_tmp, x1, x2)
+                xmax_tmp = max(xmax_tmp, x1, x2)
+                ymin_tmp = min(ymin_tmp, y1, y2)
+                ymax_tmp = max(ymax_tmp, y1, y2)
+
             char_width = self.font[ord(char)].get_xmax()  # move over for next character
             xposition += font_char_space + char_width
 
-            self.no_font_record = no_font_record
+        self.no_font_record = no_font_record
+        self.nrlines = line_cnt
+        self._set_bbox(max_vals)
 
-# TODO Move following to new package, something like 'Engrave' or 'Carve'
+    def _set_bbox(self, max_vals):
+
+        xmin = ymin = 1e10
+        xmax = ymax = -1e10
+
+        for i, vals in enumerate(max_vals):
+            xmin = min(xmin, vals[0])
+            xmax = max(xmax, vals[1])
+            ymin = min(ymin, vals[2])
+            ymax = max(ymax, vals[3])
+
+        self.bbox = BoundingBox(xmin, xmax, ymin, ymax)
+
 
 class Tool(object):
 
@@ -223,20 +240,19 @@ class VCarve(Tool):
         return 'V-Bit'
 
 
-
-class Model(object):
+class Engrave(object):
     """
-    Manage all loops, derived from the data in the font or image file,
-    as coordinate lists.
+    Generate toolpaths
     """
-
-    def __init__(self, settings):
+    def __init__(self, settings, image=None):
 
         self.progress_callback = None
         self.plot_progress_callback = None
         self.status_callback = None
 
         self.settings = settings
+        self.image = image
+
         self.init_coords()
 
         self.accuracy = self.settings.get('accuracy')
@@ -245,14 +261,22 @@ class Model(object):
 
         self.set_x_length(0)
         self.set_y_length(0)
-        self.set_maxX(0)
-        self.set_minX(0)
-        self.set_maxY(0)
-        self.set_minX(0)
+
+        if image is None:
+            minx, maxx, miny, maxy = (0, 0, 0, 0)
+        else:
+            minx, maxx, miny, maxy = self.image.get_bbox()
+        self.set_minX(minx)
+        self.set_maxX(maxx)
+        self.set_minY(miny)
+        self.set_maxY(maxy)
 
     def init_coords(self):
-        # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt])
-        self.coords = []
+        # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt]) ?
+        if self.image is None:
+            self.coords = []
+        else:
+            self.coords = self.image.coords
         self.vcoords = []
         self.init_clean_coords()
 
@@ -265,6 +289,18 @@ class Model(object):
 
     def stop_calc(self):
         self.STOP_CALC = True
+
+    def set_image(self, image):
+        self.image = image
+        self.init_coords()
+        minx, maxx, miny, maxy = self.image.get_bbox()
+        self.set_minX(minx)
+        self.set_maxX(maxx)
+        self.set_minY(miny)
+        self.set_maxY(maxy)
+
+    def set_coords(self, coords):
+        self.coords = coords
 
     def set_progress_callback(self, callback):
         self.progress_callback = callback
@@ -417,7 +453,6 @@ class Model(object):
             calc_flag = 1
 
             for curr in range(self.number_of_segments()):
-                # for curr in range(len(len(self.coords)):
 
                 if not clean:
                     self.clean_segment.append(0)
@@ -907,6 +942,8 @@ class Model(object):
                         rmin = 0.0
 
         return rmin
+
+    # TODO Do not change the self.coords object, use intermediate, preferably not a deep copy...
 
     def sort_for_v_carve(self, LN_START=0):
         self.coords = self._sort_for_v_carve(self.coords, LN_START)

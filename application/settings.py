@@ -81,6 +81,7 @@ class Settings(object):
 
         'config_filename': CONFIG_FILENAME,
         'batch': False,
+
         'show_axis': True,
         'show_box': True,
         'show_thick': True,
@@ -89,7 +90,7 @@ class Settings(object):
 
         # text plotted on a circle with radius
         'text_radius': 0.0,
-        'outer': True,  # outside circle
+        'outer': False,  # outside circle
         'upper': True,  # on top of cirle
         'fontdex': False,
         'useIMGsize': False,

@@ -6,7 +6,7 @@ import webbrowser
 from util import *
 from tooltip import ToolTip
 
-from geometry.model import Model, MyImage, MyText, Tool, VCarve, Straight
+from geometry.engrave import Engrave, MyImage, MyText, Tool, VCarve, Straight
 
 import readers
 from writers import *
@@ -40,7 +40,7 @@ class Gui(Frame):
         self.delay_calc = False
 
         self.settings = settings
-        self.model = Model(self.settings)
+        self.engrave = Engrave(self.settings)
 
         self.text = MyText()
         self.image = MyImage()
@@ -49,9 +49,9 @@ class Gui(Frame):
         self.bind_keys()
         self.create_widgets()
 
-        self.model.set_progress_callback(self.plot_toolpath)
-        self.model.set_plot_progress_callback(self.plot_progress)
-        self.model.set_status_callback(self.status_update)
+        self.engrave.set_progress_callback(self.plot_toolpath)
+        self.engrave.set_plot_progress_callback(self.plot_progress)
+        self.engrave.set_status_callback(self.status_update)
 
     def status_update(self, msg, color='yellow'):
         self.statusMessage.set(msg)
@@ -288,7 +288,7 @@ class Gui(Frame):
                 self.v_carve_it()
 
             # self.write_gcode()
-            self.gcode = gcode(self.model)
+            self.gcode = gcode(self.engrave)
 
             for line in self.gcode:
                 try:
@@ -846,7 +846,7 @@ class Gui(Frame):
         self.clipboard_clear()
         if self.Check_All_Variables() > 0:
             return
-        self.gcode = gcode(self.model)
+        self.gcode = gcode(self.engrave)
         for line in self.gcode:
             self.clipboard_append(str(line) + '\n')
 
@@ -859,7 +859,7 @@ class Gui(Frame):
     def WriteToAxis(self):
         if self.Check_All_Variables() > 0:
             return
-        self.gcode = gcode(self.model)
+        self.gcode = gcode(self.engrave)
         for line in self.gcode:
             try:
                 sys.stdout.write(str(line) + '\n')
@@ -965,7 +965,7 @@ class Gui(Frame):
         TSTART = time()
         win_id = self.grab_current()
 
-        if self.model.number_of_clean_segments == 0:
+        if self.engrave.number_of_clean_segments == 0:
             mess =  "Calculate V-Carve must be executed\n"
             mess += "prior to Calculating Cleanup"
             message_box("Cleanup Info", mess)
@@ -991,7 +991,7 @@ class Gui(Frame):
             self.v_clean_P.get() +
             self.v_clean_Y.get() +
             self.v_clean_X.get()) != 0:
-            if self.model.number_of_clean_coords_sort == 0:
+            if self.engrave.number_of_clean_coords_sort == 0:
                 mess = "Calculate Cleanup must be executed\n"
                 mess = mess + "prior to saving G-Code\n"
                 mess = mess + "(Or no Cleanup paths were found)"
@@ -1019,7 +1019,7 @@ class Gui(Frame):
             self.v_clean_P.get() +
             self.v_clean_Y.get() +
             self.v_clean_X.get()) != 0:
-            if self.model.number_of_v_clean_coords_sort == 0:
+            if self.engrave.number_of_v_clean_coords_sort == 0:
                 mess = "Calculate Cleanup must be executed\n"
                 mess = mess + "prior to saving V Cleanup G-Code\n"
                 mess = mess + "(Or no Cleanup paths were found)"
@@ -1045,11 +1045,11 @@ class Gui(Frame):
 
     def Stop_Click(self, event):
         self.STOP_CALC = True
-        self.model.stop_calc()
+        self.engrave.stop_calc()
 
     def v_pplot_Click(self, event):
         self.settings.set('v_pplot', self.v_pplot.get())
-        self.model.refresh_v_pplot()
+        self.engrave.refresh_v_pplot()
 
     def calc_depth_limit(self):
         try:
@@ -1321,7 +1321,7 @@ class Gui(Frame):
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
-        self.model.refresh_v_pplot() # TODO only needed when plotting
+        self.engrave.refresh_v_pplot() # TODO only needed when plotting
 
     def Entry_Box_Callback(self, varName, index, mode):
         try:
@@ -1519,7 +1519,7 @@ class Gui(Frame):
 
     def Entry_CLEAN_DIA_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), setting='clean_dia' )
-        self.model.init_clean_coords()
+        self.engrave.init_clean_coords()
 
     def Entry_STEP_OVER_Check(self):
         try:
@@ -1736,7 +1736,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return True # Stop
 
-        if self.model.number_of_clean_coords() == 0:
+        if self.engrave.number_of_clean_coords() == 0:
 
             vcalc_status = Toplevel(width=525, height=50)
 
@@ -1777,9 +1777,9 @@ class Gui(Frame):
 
         # prepare statusbar(color) for progress updates
         self.statusbar.configure(bg='yellow')
-        self.model.clean_path_calc(bit_type)
+        self.engrave.clean_path_calc(bit_type)
 
-        if self.model.number_of_clean_coords() == 0:
+        if self.engrave.number_of_clean_coords() == 0:
             return True # stop
         else:
             return False
@@ -1961,9 +1961,9 @@ class Gui(Frame):
         if fileselect != '' and fileselect != ():
             self.IMAGE_FILE = fileselect
             self.settings.set('IMAGE_FILE', fileselect)
-            self.font = readers.read_image_file(self.settings)
 
             # TODO future read_image_file will return a MyImage instead of a Font instance
+            self.font = readers.read_image_file(self.settings)
             # self.image.coords = self.font[ord("F")].stroke_list
             self.image.set_coords_from_strokes( self.font[ord("F")].stroke_list )
 
@@ -2081,7 +2081,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        if self.model.number_of_v_coords() == 0 and self.cut_type.get() == "v-carve":
+        if self.engrave.number_of_v_coords() == 0 and self.cut_type.get() == "v-carve":
             mess = "V-carve path data does not exist.  "
             mess = mess + "Only settings will be saved.\n\n"
             mess = mess + "To generate V-Carve path data Click on the"
@@ -2089,14 +2089,13 @@ class Gui(Frame):
             if not message_ask_ok_cancel("Continue", mess):
                 return
 
-        #self.write_gcode()
-        self.gcode = gcode(self.model)
+        self.gcode = gcode(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        fileName, fileExtension = os.path.splitext(self.NGC_FILE)
+        # fileName, fileExtension = os.path.splitext(self.NGC_FILE)
         if self.input_type.get() == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
@@ -2131,14 +2130,13 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        #self.WRITE_CLEAN_UP(bit_type)
-        self.gcode = write_clean_up(self.model, bit_type)
+        self.gcode = write_clean_up(self.engrave, bit_type)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        fileName, fileExtension = os.path.splitext(self.NGC_FILE)
+        # fileName, fileExtension = os.path.splitext(self.NGC_FILE)
         if self.input_type.get() != "text":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
@@ -2218,12 +2216,12 @@ class Gui(Frame):
 
     def menu_File_Save_DXF_File(self, close_loops=False):
 
-        DXF_CODE = dxf(self.model, close_loops=close_loops)
+        DXF_CODE = dxf(self.engrave, close_loops=close_loops)
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        fileName, fileExtension = os.path.splitext(self.NGC_FILE)
+        # fileName, fileExtension = os.path.splitext(self.NGC_FILE)
         if self.input_type.get() != "text":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
@@ -2769,16 +2767,12 @@ class Gui(Frame):
         cszh = int(self.PreviewCanvas.cget("height"))
         buff=10
 
-        # maxx = self.MAXX
-        # minx = self.MINX
-        # maxy = self.MAXY
-        # miny = self.MINY
         if self.input_type.get() == "text":
-            minx, maxx, miny, maxy = self.text.bbox.tuple()
+            minx, maxx, miny, maxy = self.text.get_bbox()
         else:
-            minx, maxx, miny, maxy = self.image.bbox.tuple()
-        midx = (maxx + minx) / 2
-        midy = (maxy + miny) / 2
+            minx, maxx, miny, maxy = self.image.get_bbox()
+        midx = (minx + maxx) / 2
+        midy = (miny + maxy) / 2
 
         if self.cut_type.get() == "v-carve":
             Thick = 0.0
@@ -2790,7 +2784,7 @@ class Gui(Frame):
         else:
             Radius_in = 0.0
 
-        plot_scale = max((maxx-minx+Thick)/(cszw-buff), (maxy-miny+Thick)/(cszh-buff))
+        plot_scale = max( (maxx-minx+Thick)/(cszw-buff), (maxy-miny+Thick)/(cszh-buff) )
         if plot_scale <= 0:
             plot_scale = 1.0
         self.plot_scale = plot_scale
@@ -2800,11 +2794,11 @@ class Gui(Frame):
             if Radius_in != 0:
                 Radius_plot = float(self.RADIUS_PLOT)
 
-        x_lft = cszw/2 + (minx-midx) / plot_scale
-        x_rgt = cszw/2 + (maxx-midx) / plot_scale
-        y_bot = cszh/2 + (maxy-midy) / plot_scale
-        y_top = cszh/2 + (miny-midy) / plot_scale
-
+        x_lft = cszw / 2 + (minx - midx) / plot_scale
+        x_rgt = cszw / 2 + (maxx - midx) / plot_scale
+        y_bot = cszh / 2 + (maxy - midy) / plot_scale
+        y_top = cszh / 2 + (miny - midy) / plot_scale
+        # show shaded background with the size of the image bounding box
         if self.show_box.get() == True:
             self.segID.append(
                 self.PreviewCanvas.create_rectangle(x_lft, y_bot, x_rgt, y_top, fill="gray80",
@@ -2845,41 +2839,33 @@ class Gui(Frame):
         #########################################
 
         # scale
-        # TODO Organise scale vars
-        YScale = float(self.YSCALE.get())
-        XScale = float(self.XSCALE.get()) * YScale / 100
         scaled_coords = []
-
         if self.input_type.get() == "text":
             if len(self.text) > 0:
-                for line in self.text.get_coords():
-                    sl = line
-                    sl[0], sl[1] = self.coord_scale(line[0], line[1], XScale, YScale)
-                    sl[2], sl[3] = self.coord_scale(line[2], line[3], XScale, YScale)
-                    scaled_coords.append(sl)
+                for XY in self.text.get_coords():
+                    x1 = cszw / 2 + (XY[0] - midx) / plot_scale
+                    y1 = cszh / 2 - (XY[1] - midy) / plot_scale
+                    x2 = cszw / 2 + (XY[2] - midx) / plot_scale
+                    y2 = cszh / 2 - (XY[3] - midy) / plot_scale
+                    scaled_coords.append((x1, y1, x2, y2))
         else:
             if len(self.image) > 0:
-                for line in self.image.get_coords():
-                    # print 'XY:', XY
-                    if isinstance(line, Line):
-                        pass
-                    else:
-                        sl = line
-                        sl[0], sl[1] = self.coord_scale(line[0], line[1], XScale, YScale)
-                        sl[2], sl[3] = self.coord_scale(line[2], line[3], XScale, YScale)
-                        scaled_coords.append(sl)
+                for XY in self.image.get_coords():
+                    x1 = cszw / 2 + (XY[0] - midx) / plot_scale
+                    y1 = cszh / 2 - (XY[1] - midy) / plot_scale
+                    x2 = cszw / 2 + (XY[2] - midx) / plot_scale
+                    y2 = cszh / 2 - (XY[3] - midy) / plot_scale
+                    scaled_coords.append((x1, y1, x2, y2))
 
         for XY in scaled_coords:
-            x1 = cszw / 2 + (XY[0] - midx) / plot_scale
-            x2 = cszw / 2 + (XY[2] - midx) / plot_scale
-            y1 = cszh / 2 - (XY[1] - midy) / plot_scale
-            y2 = cszh / 2 - (XY[3] - midy) / plot_scale
+            x1, y1, x2, y2 = XY[0], XY[1], XY[2], XY[3]
             self.segID.append(
                 self.PreviewCanvas.create_line(x1, y1, x2, y2, fill='black', width=plot_width, capstyle='round'))
 
-        # draw coordinate axis
         XOrigin = float(self.xorigin.get())
         YOrigin = float(self.yorigin.get())
+
+        # draw coordinate axis
         axis_length = (maxx - minx) / 4
         axis_x1 = cszw / 2 + (-midx + XOrigin) / plot_scale
         axis_x2 = cszw / 2 + (axis_length - midx + XOrigin) / plot_scale
@@ -2892,13 +2878,13 @@ class Gui(Frame):
         if self.cut_type.get() == "v-carve":
             r_inlay_top = self.calc_r_inlay_top()
 
-            for XY in self.model.vcoords:
+            for XY in self.engrave.vcoords:
                 x1 = XY[0]
                 y1 = XY[1]
                 r = XY[2]
                 color = "black"
 
-                rbit = self.model.calc_vbit_radius()
+                rbit = self.engrave.calc_vbit_radius()
                 if self.bit_shape.get() == "FLAT":
                     if r >= rbit:
                         self.plot_circle( (x1, y1), midx, midy, cszw, cszh, color, r, 1)
@@ -2910,7 +2896,7 @@ class Gui(Frame):
 
             loop_old = -1
             rold = -1
-            for line in self.model.vcoords:
+            for line in self.engrave.vcoords:
                 new = (line[0], line[1])
                 r = XY[2]
                 loop = XY[3]
@@ -2934,7 +2920,7 @@ class Gui(Frame):
         ########################################
         if self.cut_type.get() == "v-carve":
             loop_old = -1
-            for line in self.model.clean_coords_sort:
+            for line in self.engrave.clean_coords_sort:
                 new = (line[0], line[1])
                 r = XY[2]
                 loop = XY[3]
@@ -2945,7 +2931,7 @@ class Gui(Frame):
                 old = new
 
             loop_old = -1
-            for line in self.model.clean_coords_sort:
+            for line in self.engrave.clean_coords_sort:
                 new = (line[0], line[1])
                 loop = XY[3]
                 color = "white"
@@ -2956,7 +2942,7 @@ class Gui(Frame):
                 old = new
 
             loop_old = -1
-            for line in self.model.v_clean_coords_sort:
+            for line in self.engrave.v_clean_coords_sort:
                 new = (line[0], line[1])
                 loop = XY[3]
                 color = "yellow"
@@ -2980,7 +2966,7 @@ class Gui(Frame):
 
     def do_it(self):
         """
-        Perform  Calculations
+        Show the original data and plot toolpaths, if any were generated
         """
         if self.delay_calc:
             return
@@ -3007,10 +2993,16 @@ class Gui(Frame):
 
         if self.input_type.get() == "text":
             self.do_it_text()
+            # self.engrave = Engrave(self.settings, self.text)
+            self.engrave.set_image(self.text)
+
         elif self.input_type.get() == "image":
             self.do_it_image()
+            # self.engrave = Engrave(self.settings, self.image)
+            self.engrave.set_image(self.image)
+
         else:
-            pass # TODO
+            pass # TODO cannot occur
 
         if not self.batch.get():
             self.plot_toolpath()
@@ -3085,12 +3077,8 @@ class Gui(Frame):
             YScale = (YScale_in - Thick) / (font_line_height - font_line_depth)
         except:
             YScale = .1
-
         if YScale <= Zero:
             YScale = .1
-
-        self.YSCALE.set(YScale)
-        # self.XSCALE.set(XScale)
 
         # text outside or inside circle
         Radius_in = float(self.TRADIUS.get())
@@ -3114,7 +3102,7 @@ class Gui(Frame):
         else:
             msg = ", CHECK OUTPUT! Some characters not found in font file."
 
-        minx, maxx, miny, maxy = self.text.bbox.tuple()
+        minx, maxx, miny, maxy = self.text.get_bbox()
         if not self.batch.get():
             # Reset Status Bar and Entry Fields
             self.Input.configure(bg='white')
@@ -3140,6 +3128,7 @@ class Gui(Frame):
                                   "%.3g" % (maxy - miny) +
                                   " %s " % self.units.get() +
                                   " %s" % msg)
+
             self.statusMessage.set(self.bounding_box.get())
 
         if self.text.no_font_record != []:
@@ -3153,7 +3142,6 @@ class Gui(Frame):
 
     def do_it_image(self):
 
-        # if (self.font is None or len(self.font) == 0) and (not self.batch.get()):
         if len(self.image) == 0 and (not self.batch.get()):
             self.statusbar.configure(bg='red')
             self.statusMessage.set("No Image Loaded")
@@ -3185,8 +3173,7 @@ class Gui(Frame):
                 else:
                     fmessage( "("+error_text+")" )
 
-            return
-
+        # TODO move to image calculkations
         if self.useIMGsize.get():
             YScale = YScale_in / 100.0
 
@@ -3216,6 +3203,7 @@ class Gui(Frame):
                                   "%.3g" % (maxy - miny) +
                                   " %s " % self.units.get()
                                   )
+
             self.statusMessage.set(self.bounding_box.get())
 
     def calc_xmax_ymax(self, line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale):
@@ -3225,7 +3213,6 @@ class Gui(Frame):
             Thick     = float(self.STHICK.get() )
             XOrigin   = float(self.xorigin.get())
             YOrigin   = float(self.yorigin.get())
-            v_flop    = bool(self.v_flop.get())
         except:
             self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
             self.statusbar.configure( bg='red' )
@@ -3246,16 +3233,16 @@ class Gui(Frame):
             pass
 
         elif self.justify.get() == "Center":
-            for i, XY in enumerate(self.model.coords):
+            for i, XY in enumerate(self.engrave.coords):
                 line_num = int(XY[4])
                 try:
-                    self.model.coords[i][0] = XY[0] + (maxx - line_maxx[line_num]) / 2
-                    self.model.coords[i][2] = XY[2] + (maxx - line_maxx[line_num]) / 2
+                    self.engrave.coords[i][0] = XY[0] + (maxx - line_maxx[line_num]) / 2
+                    self.engrave.coords[i][2] = XY[2] + (maxx - line_maxx[line_num]) / 2
                 except:
                     pass
 
         elif self.justify.get() == "Right":
-            for XY in iter(self.model.coords):
+            for XY in iter(self.engrave.coords):
                 line_num = int(XY[4])
                 try:
                     XY[0] = XY[0] + (maxx - line_maxx[line_num])
@@ -3269,7 +3256,7 @@ class Gui(Frame):
         mina = 99996.0
         maxa = -99993.0
         if Radius != 0.0:
-            for XY in self.model.coords:
+            for XY in self.engrave.coords:
                 XY[0], XY[1], A1 = rotation(XY[0], XY[1], 0, Radius)
                 XY[2], XY[3], A2 = rotation(XY[2], XY[3], 0, Radius)
                 maxa = max(maxa, A1, A2)
@@ -3283,12 +3270,12 @@ class Gui(Frame):
                 pass
 
             elif self.justify.get() == "Center":
-                for XY in self.model.coords:
+                for XY in self.engrave.coords:
                     XY[0], XY[1] = transform(XY[0], XY[1], mida)
                     XY[2], XY[3] = transform(XY[2], XY[3], mida)
 
             elif self.justify.get() == "Right":
-                for XY in self.model.coords:
+                for XY in self.engrave.coords:
                     if self.upper.get() == True:
                         XY[0], XY[1] = transform(XY[0], XY[1], maxa)
                         XY[2], XY[3] = transform(XY[2], XY[3], maxa)
@@ -3333,7 +3320,7 @@ class Gui(Frame):
 
         maxr2 = 0.0
 
-        for XY in self.model.coords:
+        for XY in self.engrave.coords:
             if Angle != 0.0:
                 XY[0], XY[1], A1 = rotation(XY[0], XY[1], Angle, 0)
                 XY[2], XY[3], A2 = rotation(XY[2], XY[3], Angle, 0)
@@ -3369,15 +3356,15 @@ class Gui(Frame):
 
             if Radius_in == 0 or self.cut_type.get() == "v-carve":
                 if bool(self.mirror.get()) ^ bool(self.flip.get()):
-                    self.model.coords.append([minx - Delta, miny - Delta, minx - Delta, maxy + Delta, 0, 0])
-                    self.model.coords.append([minx - Delta, maxy + Delta, maxx + Delta, maxy + Delta, 0, 0])
-                    self.model.coords.append([maxx + Delta, maxy + Delta, maxx + Delta, miny - Delta, 0, 0])
-                    self.model.coords.append([maxx + Delta, miny - Delta, minx - Delta, miny - Delta, 0, 0])
+                    self.engrave.coords.append([minx - Delta, miny - Delta, minx - Delta, maxy + Delta, 0, 0])
+                    self.engrave.coords.append([minx - Delta, maxy + Delta, maxx + Delta, maxy + Delta, 0, 0])
+                    self.engrave.coords.append([maxx + Delta, maxy + Delta, maxx + Delta, miny - Delta, 0, 0])
+                    self.engrave.coords.append([maxx + Delta, miny - Delta, minx - Delta, miny - Delta, 0, 0])
                 else:
-                    self.model.coords.append([minx - Delta, miny - Delta, maxx + Delta, miny - Delta, 0, 0])
-                    self.model.coords.append([maxx + Delta, miny - Delta, maxx + Delta, maxy + Delta, 0, 0])
-                    self.model.coords.append([maxx + Delta, maxy + Delta, minx - Delta, maxy + Delta, 0, 0])
-                    self.model.coords.append([minx - Delta, maxy + Delta, minx - Delta, miny - Delta, 0, 0])
+                    self.engrave.coords.append([minx - Delta, miny - Delta, maxx + Delta, miny - Delta, 0, 0])
+                    self.engrave.coords.append([maxx + Delta, miny - Delta, maxx + Delta, maxy + Delta, 0, 0])
+                    self.engrave.coords.append([maxx + Delta, maxy + Delta, minx - Delta, maxy + Delta, 0, 0])
+                    self.engrave.coords.append([minx - Delta, maxy + Delta, minx - Delta, miny - Delta, 0, 0])
 
                 if self.cut_type.get() != "v-carve":
                     Delta = Delta + Thick / 2
@@ -3424,11 +3411,11 @@ class Gui(Frame):
             x_zero = 0
             y_zero = 0
 
-        for i, XY in enumerate(self.model.coords):
-            self.model.coords[i][0] = XY[0] - x_zero + XOrigin
-            self.model.coords[i][1] = XY[1] - y_zero + YOrigin
-            self.model.coords[i][2] = XY[2] - x_zero + XOrigin
-            self.model.coords[i][3] = XY[3] - y_zero + YOrigin
+        for i, XY in enumerate(self.engrave.coords):
+            self.engrave.coords[i][0] = XY[0] - x_zero + XOrigin
+            self.engrave.coords[i][1] = XY[1] - y_zero + YOrigin
+            self.engrave.coords[i][2] = XY[2] - x_zero + XOrigin
+            self.engrave.coords[i][3] = XY[3] - y_zero + YOrigin
 
         self.MINX = minx - x_zero + XOrigin
         self.MAXX = maxx - x_zero + XOrigin
@@ -3457,10 +3444,10 @@ class Gui(Frame):
 
         if not clean:
             self.do_it()
-            self.model.init_clean_coords()
-        elif self.model.clean_coords_sort != [] or self.model.v_clean_coords_sort != []:
+            self.engrave.init_clean_coords()
+        elif self.engrave.clean_coords_sort != [] or self.engrave.v_clean_coords_sort != []:
             # If there is existing cleanup data clear the screen before computing
-            self.model.init_clean_coords()
+            self.engrave.init_clean_coords()
             self.plot_toolpath()
 
         if not self.batch.get():
@@ -3479,12 +3466,12 @@ class Gui(Frame):
 
             # TODO move this to Model
             if self.input_type.get() == "image" and not clean:
-                self.model.sort_for_v_carve()
+                self.engrave.sort_for_v_carve()
 
             if DXF_FLAG:
                 return
 
-            done = self.model.v_carve(clean, DXF_FLAG)
+            done = self.engrave.v_carve(clean, DXF_FLAG)
 
             # Reset Entry Fields in V-Carve Settings
             if not self.batch.get():

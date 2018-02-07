@@ -4,6 +4,8 @@ from geometry.boundingbox import BoundingBox
 from dxf_class import DXF_CLASS
 
 
+# TODO dedicated image reader instead of using Font instance to exchange image data
+
 def parse(dxf_file, segarc, new_origin=True):
 
     # Initialize / reset
@@ -27,7 +29,6 @@ def parse(dxf_file, segarc, new_origin=True):
 
     for line in dxfcoords:
         line = Line(line[0:4])
-
         stroke_list.append(line)
         bbox.extend(line)
 
