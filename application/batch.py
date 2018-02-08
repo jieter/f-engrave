@@ -22,10 +22,10 @@ class Batch(object):
         # self.WriteGCode()
         # self.WriteSVG()
 
-        # for line in self.svgcode:
+        # for line in svgcode:
             # print line
 
-        # for line in self.gcode:
+        # for line in gcode:
         #     try:
         #         sys.stdout.write(line+'\n')
         #     except:

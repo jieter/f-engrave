@@ -17,6 +17,7 @@ class MyImage(object):
     """
     def __init__(self):
 
+        self.strokes = []
         self.init_coords()
         self.bbox = BoundingBox()
 
@@ -27,10 +28,19 @@ class MyImage(object):
         # Loop coordinates, format: ([x1, y1, x2, y2, line_cnt, char_cnt])
         self.coords = []
 
-    def set_coords_from_strokes(self, strokes):
+    def set_coords_from_strokes(self, strokes=[]):
 
         self.init_coords()
         line_cnt = char_cnt = 0
+
+        if strokes == []:
+            if self.strokes == []:
+                raise ValueError, 'Image stroke list is missing'
+            else:
+                # use the most recent strokes
+                strokes = self.strokes
+        else:
+            self.strokes = strokes
 
         for line in strokes:
             x1 = line.xstart
@@ -46,6 +56,42 @@ class MyImage(object):
 
     def get_bbox(self):
         return self.bbox.tuple()
+
+    def transform_scale(self, xscale, yscale):
+        for XY in self.coords:
+            XY[0] = XY[0] * xscale
+            XY[1] = XY[1] * yscale
+            XY[2] = XY[2] * xscale
+            XY[3] = XY[3] * yscale
+        self._set_bbox()
+
+    def transform_flip(self):
+        for XY in self.coords:
+            XY[1] = -XY[1]
+            XY[3] = -XY[3]
+        self._set_bbox()
+
+    def transform_mirror(self):
+        for XY in self.coords:
+            XY[0] = -XY[0]
+            XY[2] = -XY[2]
+        self._set_bbox()
+
+    def transform_angle(self, angle):
+
+        maxr = 0
+
+        for XY in self.coords:
+
+            if angle != 0.0:
+                XY[0], XY[1], A1 = rotation(XY[0], XY[1], angle, 0)
+                XY[2], XY[3], A2 = rotation(XY[2], XY[3], angle, 0)
+
+            maxr = max(maxr, float(XY[0]*XY[0]+XY[1]*XY[1]), float(XY[2]*XY[2]+XY[3]*XY[3]))
+
+        self._set_bbox()
+
+        return maxr
 
     def _set_bbox(self):
 
@@ -124,7 +170,6 @@ class MyText(MyImage):
         font_line_depth = self.font.line_depth()
         font_char_width = self.font.get_character_width()
 
-        # font_line_space = (font_line_height - font_line_depth + self.thickness / self.y_scale) * self.line_space
         font_line_space = (font_line_height - font_line_depth + self.thickness ) * self.line_space
         font_word_space = font_char_width * (self.word_space / 100.0)
         font_char_space = font_char_width * (self.char_space /100.0)
@@ -263,20 +308,27 @@ class MyText(MyImage):
 
             self._set_bbox()
 
-    def transform_angle(self, angle, mirror, flip):
+    def add_box(self, delta, mirror, flip):
+        """
+        Add box outline
+        """
+        minx, maxx, miny, maxy = self.get_bbox()
 
-        for XY in self.coords:
-            if angle != 0.0:
-                XY[0], XY[1], A1 = rotation(XY[0], XY[1], angle, 0)
-                XY[2], XY[3], A2 = rotation(XY[2], XY[3], angle, 0)
-            if mirror:
-                XY[0] = -XY[0]
-                XY[2] = -XY[2]
-            if flip:
-                XY[1] = -XY[1]
-                XY[3] = -XY[3]
+        if mirror ^ flip:
+            self.coords.append([minx - delta, miny - delta, minx - delta, maxy + delta, 0, 0])
+            self.coords.append([minx - delta, maxy + delta, maxx + delta, maxy + delta, 0, 0])
+            self.coords.append([maxx + delta, maxy + delta, maxx + delta, miny - delta, 0, 0])
+            self.coords.append([maxx + delta, miny - delta, minx - delta, miny - delta, 0, 0])
+        else:
+            self.coords.append([minx - delta, miny - delta, maxx + delta, miny - delta, 0, 0])
+            self.coords.append([maxx + delta, miny - delta, maxx + delta, maxy + delta, 0, 0])
+            self.coords.append([maxx + delta, maxy + delta, minx - delta, maxy + delta, 0, 0])
+            self.coords.append([minx - delta, maxy + delta, minx - delta, miny - delta, 0, 0])
 
         self._set_bbox()
+
+
+# TODO cutter tool objects
 
 class Tool(object):
 
@@ -332,9 +384,6 @@ class Engrave(object):
         self.v_pplot = self.settings.get('v_pplot')
         self.STOP_CALC = False
 
-        self.set_x_length(0)
-        self.set_y_length(0)
-
     def init_coords(self):
         # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt]) ?
         if self.image is None:
@@ -373,12 +422,6 @@ class Engrave(object):
     def refresh_v_pplot(self):
         self.v_pplot = self.settings.get('v_pplot')
 
-    def set_x_length(self, xl):
-        self.x_length = xl
-
-    def set_y_length(self, yl):
-        self.y_length = yl
-
     def number_of_clean_segments(self):
         return len(self.clean_segment)
 
@@ -416,7 +459,7 @@ class Engrave(object):
 
         return total_length
 
-    def v_carve(self, clean=False, DXF_FLAG=False):
+    def v_carve(self, clean=False):
 
         rbit = self.calc_vbit_radius()
         dline = self.settings.get('v_step_len')
@@ -602,13 +645,10 @@ class Engrave(object):
                         sub_seg_sin = sin(sub_phi)
 
                         rout = self.find_max_circle(x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
-
-                        xv, yv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rout, loop_cnt, clean)
-
+                        normv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rout, loop_cnt, clean)
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                         if self.v_pplot and (not self.plot_progress_callback is None) and (not clean):
-                            normv = (xv, yv)
                             self.plot_progress_callback(normv, "blue", rv, 0)
 
                 theta = phi
@@ -618,7 +658,7 @@ class Engrave(object):
                 seg_cos0 = seg_cos
                 char_num0 = char_num
 
-                # Calculate the number of steps then the dx and dy for each step.
+                # Calculate the number of steps, then dx and dy for each step.
                 # Don't calculate at the joints.
                 nsteps = max(floor(Lseg / dline), 2)
                 dxpt = dx / nsteps
@@ -642,11 +682,10 @@ class Engrave(object):
                     # make the first cut drive down at an angle instead of straight down plunge
                     if cnt == 0 and not_b_carve:
                         rout = 0.0
-                    xv, yv, rv, clean_seg = self.record_v_carve_data(xpt, ypt, phi2, rout, loop_cnt, clean)
+                    normv, rv, clean_seg = self.record_v_carve_data(xpt, ypt, phi2, rout, loop_cnt, clean)
                     self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                     if self.v_pplot and (not self.plot_progress_callback is None) and (not clean):
-                        normv = (xv, yv)
                         self.plot_progress_callback(normv, "blue", rv, 0)
 
                     if New_Loop == 1 and cnt == 1:
@@ -682,19 +721,18 @@ class Engrave(object):
                             sub_seg_sin = sin(sub_phi)
 
                             rout = self.find_max_circle(xa, ya, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
-                            xv, yv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt,
-                                                                             clean)
+                            normv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt, clean)
                             self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                             if self.v_pplot and (not self.plot_progress_callback is None) and (not clean):
-                                normv = (xv, yv)
                                 self.plot_progress_callback(normv, "blue", rv, 0)
 
-                        xv, yv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean)
+                        normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean)
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
+
                     else:
                         # add closing segment
-                        xv, yv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean)
+                        normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean)
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
         return done
 
@@ -709,9 +747,9 @@ class Engrave(object):
             y1_R = XY_R[1]
             x2_R = XY_R[2]
             y2_R = XY_R[3]
-            LENGTH = sqrt((x2_R - x1_R) * (x2_R - x1_R) + (y2_R - y1_R) * (y2_R - y1_R))
+            length = sqrt((x2_R - x1_R) * (x2_R - x1_R) + (y2_R - y1_R) * (y2_R - y1_R))
 
-            R_R = LENGTH / 2 + rmax
+            R_R = length / 2 + rmax
             X_R = (x1_R + x2_R) / 2
             Y_R = (y1_R + y2_R) / 2
 
@@ -730,7 +768,7 @@ class Engrave(object):
             Y1i = int(y1_G / yPartitionLength)
             Y2i = int(y2_G / yPartitionLength)
 
-            ## Find the max/min grid box locations
+            # find the max/min grid box locations
             Xindex_min = min(X1i, X2i)
             Xindex_max = max(X1i, X2i)
             Yindex_min = min(Y1i, Y2i)
@@ -833,6 +871,9 @@ class Engrave(object):
 
         return xN, xPartitionLength, yN, yPartitionLength
 
+
+    # TODO optimize (now vbit radius calc is within a loop)
+
     def record_v_carve_data(self, x1, y1, phi, rout, loop_cnt, clean):
 
         rbit = self.calc_vbit_radius()
@@ -850,7 +891,7 @@ class Engrave(object):
             if abs(rbit - rout) <= Zero:
                 need_clean = 1
 
-        return xnormv, ynormv, rout, need_clean
+        return (xnormv, ynormv), rout, need_clean
 
     def calc_vbit_radius(self):
         """
@@ -888,7 +929,7 @@ class Engrave(object):
     def find_max_circle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
         """
         Routine finds the maximum radius that can be placed in the position
-        xpt,ypt witout interfering with other line segments (rmin is max R LOL)
+        xpt,ypt without interfering with other line segments (rmin is max R LOL)
         """
         rtmp = rmin
 
@@ -897,7 +938,7 @@ class Engrave(object):
         xIndex = int((xpt - minx) / self.xPartitionLength)
         yIndex = int((ypt - miny) / self.yPartitionLength)
 
-        self.coords_check = []
+        coords_check= []
 
         R_A = abs(rmin)
         Bcnt = -1
@@ -910,11 +951,11 @@ class Engrave(object):
             X_B = line_B[len(line_B) - 3]
             Y_B = line_B[len(line_B) - 2]
             R_B = line_B[len(line_B) - 1]
-            GAP = sqrt((X_B - xpt) * (X_B - xpt) + (Y_B - ypt) * (Y_B - ypt))
-            if GAP < abs(R_A + R_B):
-                self.coords_check.append(line_B)
+            gap = sqrt((X_B - xpt) * (X_B - xpt) + (Y_B - ypt) * (Y_B - ypt))
+            if gap < abs(R_A + R_B):
+                coords_check.append(line_B)
 
-        for linec in self.coords_check:
+        for linec in coords_check:
             XYc = linec
             xmaxt = max(XYc[0], XYc[2]) + rmin * 2
             xmint = min(XYc[0], XYc[2]) - rmin * 2

@@ -21,8 +21,6 @@ class Job(object):
     def execute(self):
         # erase old data
         self.segID = []
-        self.gcode = []
-        self.svgcode = []
         self.coords = []
         self.vcoords = []
         self.clean_coords = []

@@ -136,7 +136,7 @@ AcDbLine
 def dxf(job, close_loops=False):
 
     if close_loops:
-        job.v_carve(clean=False, DXF_FLAG=close_loops)
+        job.v_carve(clean=False)
 
     coords = job.coords
 

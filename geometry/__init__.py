@@ -20,7 +20,6 @@ def transform(x, y, angle):
 
     return newx, newy
 
-
 def rotation(x, y, angle, radius):
     """
     routine takes an x and y the point is rotated by angle returns new x,y,alpha
@@ -42,14 +41,11 @@ def rotation(x, y, angle, radius):
 
     return newx, newy, alpha
 
-
 def scale(x, y, xscale, yscale):
     return x * xscale, y * yscale
 
-
 def translate(x1, y1, x2, y2):
     return x1 + x2, y1 + y2
-
 
 def point_inside_polygon(x, y, poly):
     """
@@ -76,7 +72,6 @@ def point_inside_polygon(x, y, poly):
         p1x, p1y = p2x, p2y
 
     return inside
-
 
 def detect_intersect(coords0, coords1, lcoords, XY_T_F=True):
     """
@@ -222,7 +217,6 @@ def dist_lseg(l1, l2, p, z_only=False):
 
     return dist2 ** .5
 
-
 def rad1(x1, y1, x2, y2, x3, y3):
     x12 = x1 - x2
     y12 = y1 - y2
@@ -282,7 +276,6 @@ def cent1(x1, y1, x2, y2, x3, y3):
     Pc = alpha * P1 + beta * P2 + gamma * P3
     return Pc.x, Pc.y
 
-
 def arc_center(plane, p1, p2, p3):
     x1, y1, z1 = p1
     x2, y2, z2 = p2
@@ -291,7 +284,6 @@ def arc_center(plane, p1, p2, p3):
     if plane == 17: return cent1(x1, y1, x2, y2, x3, y3)
     if plane == 18: return cent1(x1, z1, x2, z2, x3, z3)
     if plane == 19: return cent1(y1, z1, y2, z2, y3, z3)
-
 
 def arc_rad(plane, P1, P2, P3):
     if plane is None: return MAXINT
@@ -305,12 +297,10 @@ def arc_rad(plane, P1, P2, P3):
     if plane == 19: return rad1(y1, z1, y2, z2, y3, z3)
     return None, 0
 
-
 def get_pts(plane, x, y, z):
     if plane == 17: return x, y
     if plane == 18: return x, z
     if plane == 19: return y, z
-
 
 def one_quadrant(plane, c, p1, p2, p3):
     xc, yc = c
@@ -346,7 +336,6 @@ def one_quadrant(plane, c, p1, p2, p3):
 
     if len(signs) == 1: return True
 
-
 def arc_dir(plane, c, p1, p2, p3):
     xc, yc = c
     x1, y1 = get_pts(plane, p1[0], p1[1], p1[2])
@@ -378,7 +367,6 @@ def arc_dir(plane, c, p1, p2, p3):
     # xc, yc = 0.141980825, 1.032178989
     return ccw
 
-
 def get_angle(s, c):
     """
     routine takes a sin and cos and returns the angle (between 0 and 360)
@@ -389,7 +377,6 @@ def get_angle(s, c):
         angle = 360 + angle
 
     return angle
-
 
 def arc_fmt(plane, c1, c2, p1):
     x, y, z = p1

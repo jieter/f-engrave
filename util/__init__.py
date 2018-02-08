@@ -2,7 +2,6 @@ import sys
 import datetime
 
 import externals
-#import icon
 from icon import *
 
 IN_AXIS = "AXIS_PROGRESS_BAR" in os.environ
@@ -11,6 +10,12 @@ IN_AXIS = "AXIS_PROGRESS_BAR" in os.environ
 QUIET = False
 
 VERSION = sys.version_info[0]
+
+# entry value check return codes:
+OK = 0  # value is ok (may require recalculation)
+NOR = 1  # value is a valid number change that does not require recalc
+INV = 2  # value is invalid
+NAN = 3  # value is not a number
 
 if VERSION == 3:
     from tkinter import *
@@ -32,7 +37,6 @@ def fmessage(text, newline=True):
             sys.stdout.write("\n")
     except:
         pass
-
 
 try:
     PIL = externals.check_pil()
@@ -57,14 +61,12 @@ def header_text():
 
     return header
 
-
 def message_box(title, message):
     if VERSION == 3:
         tkinter.messagebox.showinfo(title, message)
     else:
         tkMessageBox.showinfo(title, message)
         pass
-
 
 def message_ask_ok_cancel(title, message):
     if VERSION == 3:

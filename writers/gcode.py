@@ -301,7 +301,6 @@ def vcarve_gcode(job):
             loop_old = loop
         Lend.append(i)
 
-        #####################################################
         # Find new order based on distance to next begining #
         #####################################################
         order_out = []
@@ -427,17 +426,16 @@ def vcarve_gcode(job):
                     FORMAT = 'G1 Z%%.%df' % (dp)
                     code.append(FORMAT % (z1))
 
-                    # lastx = x1
-                    # lasty = y1
-                    # lastz = z1
-
                     g.cut(x1, y1, z1)
+                    lastx = x1
+                    lasty = y1
+                    lastz = z1
 
                 else:
                     g.cut(x1, y1, z1)
-                    # lastx = x1
-                    # lasty = y1
-                    # lastz = z1
+                    lastx = x1
+                    lasty = y1
+                    lastz = z1
 
                 loop_old = loop
 

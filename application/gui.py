@@ -4,7 +4,10 @@ import webbrowser
 
 # from util import VERSION, POTRACE_AVAILABLE, TTF_AVAILABLE, PIL, IN_AXIS, header_text
 from util import *
+
 from tooltip import ToolTip
+from bitmap_settings import BitmapSettings
+from vcarve_settings import VCarveSettings
 
 from geometry.engrave import Engrave, MyImage, MyText, Tool, VCarve, Straight
 
@@ -22,12 +25,6 @@ else:
 
 
 class Gui(Frame):
-
-    # value check return codes:
-    OK  = 0  # value is ok (may require recalculation)
-    NOR = 1  # value is a valid number change that does not require recalc
-    INV = 2  # value is invalid
-    NAN = 3  # value is not a number
 
     def __init__(self, master, settings):
         Frame.__init__(self, master)
@@ -52,6 +49,12 @@ class Gui(Frame):
         self.engrave.set_progress_callback(self.plot_toolpath)
         self.engrave.set_plot_progress_callback(self.plot_progress)
         self.engrave.set_status_callback(self.status_update)
+
+    def bitmap_settings_window(self):
+        self.bitmap_settings_window = BitmapSettings(self, self.settings)
+
+    def vcarve_settings_window(self):
+        self.vcarve_settings_window = VCarveSettings(self, self.settings)
 
     def status_update(self, msg, color='yellow'):
         self.statusMessage.set(msg)
@@ -146,18 +149,6 @@ class Gui(Frame):
         self.cut_type = StringVar()
         self.input_type = StringVar()
 
-        self.bit_shape = StringVar()
-        self.v_bit_angle = StringVar()
-        self.v_bit_dia = StringVar()
-        self.v_depth_lim = StringVar()
-        self.v_drv_corner = StringVar()
-        self.v_step_corner = StringVar()
-        self.v_step_len = StringVar()
-        self.allowance = StringVar()
-        self.v_check_all = StringVar()
-        self.v_max_cut = StringVar()
-        self.v_rough_stk = StringVar()
-
         self.clean_dia = StringVar()
         self.clean_step = StringVar()
         self.clean_v = StringVar()
@@ -166,12 +157,6 @@ class Gui(Frame):
         self.gpre = StringVar()
         self.gpost = StringVar()
 
-        self.bmp_turnpol = StringVar()
-        self.bmp_turdsize = StringVar()
-        self.bmp_alphamax = StringVar()
-        self.bmp_opttolerance = StringVar()
-        self.bmp_longcurve = BooleanVar()
-
         self.maxcut = StringVar()
         self.current_input_file = StringVar()
         self.bounding_box = StringVar()
@@ -179,9 +164,6 @@ class Gui(Frame):
         self.initialise_settings()
 
         self.segID = []
-        self.gcode = []
-        self.svgcode = []
-
         self.font = Font()
 
         self.RADIUS_PLOT = 0
@@ -289,10 +271,8 @@ class Gui(Frame):
             if self.cut_type.get() == "v-carve":
                 self.v_carve_it()
 
-            # self.write_gcode()
-            self.gcode = gcode(self.engrave)
-
-            for line in self.gcode:
+            g_code = gcode(self.engrave)
+            for line in g_code:
                 try:
                     sys.stdout.write(line + '\n')
                 except:
@@ -342,7 +322,7 @@ class Gui(Frame):
             'Character height of a single line of text.')
         # or the height of an imported image. (DXF, BMP, etc.)')
 
-        self.NormalColor = self.Entry_Yscale.cget('bg')
+        NORmalColor = self.Entry_Yscale.cget('bg')
 
         self.Label_Sthick = Label(self.master, text="Line Thickness")
         self.Label_Sthick_u = Label(self.master, textvariable=self.units, anchor=W)
@@ -581,24 +561,6 @@ class Gui(Frame):
         self.Entry_ArcAngle = Entry()
         self.Entry_Accuracy = Entry()
 
-        # Bitmap Setting Window Entry initialization
-        self.Entry_BMPturdsize = Entry()
-        self.Entry_BMPalphamax = Entry()
-        self.Entry_BMPoptTolerance = Entry()
-
-        # V-Carve Setting Window Entry initialization
-        self.Entry_Vbitangle = Entry()
-        self.Entry_Vbitdia = Entry()
-        self.Entry_VDepthLimit = Entry()
-        self.Entry_InsideAngle = Entry()
-        self.Entry_OutsideAngle = Entry()
-        self.Entry_StepSize = Entry()
-        self.Entry_Allowance = Entry()
-        self.Entry_W_CLEAN = Entry()
-        self.Entry_CLEAN_DIA = Entry()
-        self.Entry_STEP_OVER = Entry()
-        self.Entry_V_CLEAN = Entry()
-
         # Make Menu Bar
         self.menuBar = Menu(self.master, relief="raised", bd=2)
 
@@ -644,9 +606,9 @@ class Gui(Frame):
 
         top_Settings = Menu(self.menuBar, tearoff=0)
         top_Settings.add("command", label="General Settings", command=self.GEN_Settings_Window)
-        top_Settings.add("command", label="V-Carve Settings", command=self.VCARVE_Settings_Window)
+        top_Settings.add("command", label="V-Carve Settings", command=self.vcarve_settings_window)
         if POTRACE_AVAILABLE:
-            top_Settings.add("command", label="Bitmap Import Settings", command=self.PBM_Settings_Window)
+            top_Settings.add("command", label="Bitmap Import Settings", command=self.bitmap_settings_window)
 
         top_Settings.add_separator()
         top_Settings.add_radiobutton(label="Engrave Mode", variable=self.cut_type, value="engrave")
@@ -725,24 +687,6 @@ class Gui(Frame):
         self.gpre.set(self.settings.get('gcode_preamble'))
         self.gpost.set(self.settings.get('gcode_postamble'))
 
-        self.bit_shape.set(self.settings.get('bit_shape'))
-        self.v_bit_angle.set(self.settings.get('v_bit_angle'))
-        self.v_bit_dia.set(self.settings.get('v_bit_dia'))
-        self.v_depth_lim.set(self.settings.get('v_depth_lim'))
-        self.v_drv_corner.set(self.settings.get('v_drv_corner'))
-        self.v_step_corner.set(self.settings.get('v_step_corner'))
-        self.v_step_len.set(self.settings.get('v_step_len'))
-        self.allowance.set(self.settings.get('allowance'))
-        self.v_check_all.set(self.settings.get('v_check_all'))
-        self.v_rough_stk.set(self.settings.get('v_rough_stk'))
-        self.v_max_cut.set(self.settings.get('v_max_cut'))
-
-        self.bmp_turnpol.set(self.settings.get('bmp_turnpol'))
-        self.bmp_turdsize.set(self.settings.get('bmp_turdsize'))
-        self.bmp_alphamax.set(self.settings.get('bmp_alphamax'))
-        self.bmp_opttolerance.set(self.settings.get('bmp_opttolerance'))
-        self.bmp_longcurve.set(self.settings.get('bmp_longcurve'))
-
         self.xorigin.set(self.settings.get('xorigin'))
         self.yorigin.set(self.settings.get('yorigin'))
         self.segarc.set(self.settings.get('segarc'))
@@ -761,54 +705,54 @@ class Gui(Frame):
 
     def entry_set(self, val, check_flag=0, new=0, setting=None):
 
-        if check_flag == self.OK and new == 0:
+        if check_flag == OK and new == 0:
             try:
                 self.statusbar.configure(bg='yellow')
                 val.configure(bg='yellow')
                 self.statusMessage.set(" Recalculation required.")
             except:
                 pass
-        elif check_flag == self.NAN:
+        elif check_flag == NAN:
             try:
                 val.configure(bg='red')
                 self.statusbar.configure(bg='red')
                 self.statusMessage.set(" Value should be a number. ")
             except:
                 pass
-        elif check_flag == self.INV:
+        elif check_flag == INV:
             try:
                 self.statusbar.configure(bg='red')
                 val.configure(bg='red')
             except:
                 pass
-        elif (check_flag == self.OK or check_flag == self.NOR) and new == 1:
+        elif (check_flag == OK or check_flag == NOR) and new == 1:
             try:
                 self.statusbar.configure(bg='white')
                 self.statusMessage.set(self.bounding_box.get())
                 val.configure(bg='white')
             except:
                 pass
-        elif check_flag == self.NOR and new == 0:
+        elif check_flag == NOR and new == 0:
             try:
                 self.statusbar.configure(bg='white')
                 self.statusMessage.set(self.bounding_box.get())
                 val.configure(bg='white')
             except:
                 pass
-        elif (check_flag == self.OK or check_flag == self.NOR) and new == 2:
+        elif (check_flag == OK or check_flag == NOR) and new == 2:
                 return 0
 
-        if (not setting is None) and check_flag == self.OK and new == 0:
+        if (not setting is None) and check_flag == OK and new == 0:
             self.settings.set(setting, val.get())
 
         return 1
 
     def write_config_file(self, event):
 
-        self.gcode = []
+        gcode = []
 
-        self.gcode.extend(header_text())
-        self.gcode.extend( self.settings.to_gcode() )
+        gcode.extend(header_text())
+        gcode.extend( self.settings.to_gcode() )
 
         config_filename = self.settings.get('config_filename')
         configname_full = self.settings.get('HOME_DIR')+ "/" + config_filename
@@ -829,7 +773,7 @@ class Gui(Frame):
             self.statusbar.configure(bg='red')
             return
 
-        for line in self.gcode:
+        for line in gcode:
             try:
                 fout.write(line + '\n')
             except:
@@ -848,21 +792,21 @@ class Gui(Frame):
         self.clipboard_clear()
         if self.Check_All_Variables() > 0:
             return
-        self.gcode = gcode(self.engrave)
-        for line in self.gcode:
+        g_code = gcode(self.engrave)
+        for line in g_code:
             self.clipboard_append(str(line) + '\n')
 
     def CopyClipboard_SVG(self):
         self.clipboard_clear()
-        self.WriteSVG()
-        for line in self.svgcode:
+        svgcode = svg(self.engrave)
+        for line in svgcode:
             self.clipboard_append(line+'\n')
 
     def WriteToAxis(self):
         if self.Check_All_Variables() > 0:
             return
-        self.gcode = gcode(self.engrave)
-        for line in self.gcode:
+        g_code = gcode(self.engrave)
+        for line in g_code:
             try:
                 sys.stdout.write(str(line) + '\n')
             except:
@@ -949,16 +893,6 @@ class Gui(Frame):
         try:
             win_id.withdraw()
             win_id.deiconify()
-        except:
-            pass
-
-    def VCARVE_Recalculate_Click(self):
-        win_id = self.grab_current()
-        self.V_Carve_Calc_Click()
-        try:
-            win_id.withdraw()
-            win_id.deiconify()
-            win_id.grab_set()
         except:
             pass
 
@@ -1055,18 +989,19 @@ class Gui(Frame):
 
     def calc_depth_limit(self):
         try:
-            if self.bit_shape.get() == "VBIT":
+            bit_shape = self.settings.get('bit_shape')
+            if bit_shape == "VBIT":
                 half_angle = radians(float(self.v_bit_angle.get()) / 2.0)
                 bit_depth = -float(self.v_bit_dia.get()) / 2.0 / tan(half_angle)
-            elif self.bit_shape.get() == "BALL":
+            elif bit_shape == "BALL":
                 bit_depth = -float(self.v_bit_dia.get()) / 2.0
-            elif self.bit_shape.get() == "FLAT":
+            elif bit_shape == "FLAT":
                 bit_depth = -float(self.v_bit_dia.get()) / 2.0
             else:
                 pass
 
             depth_lim = float(self.v_depth_lim.get())
-            if self.bit_shape.get() != "FLAT":
+            if bit_shape != "FLAT":
                 if depth_lim < 0.0:
                     self.maxcut.set("%.3f" % (max(bit_depth, depth_lim)))
                 else:
@@ -1080,13 +1015,13 @@ class Gui(Frame):
             self.maxcut.set("error")
 
     def calc_r_inlay_top(self):
-        half_angle = radians(float(self.v_bit_angle.get()) / 2.0)
+        half_angle = radians(self.settings.get('v_bit_angle') / 2.0)
         inlay_depth = self.calc_r_inlay_depth()
         r_inlay_top = tan(half_angle) * inlay_depth
         return r_inlay_top
 
     def calc_r_inlay_depth(self):
-        inlay_depth = float(self.maxcut.get())
+        inlay_depth = self.settings.get('v_depth_lim') # TODO is this 'maxcut'?
         return inlay_depth
 
     ###############
@@ -1097,10 +1032,10 @@ class Gui(Frame):
             value = float(self.YSCALE.get())
             if value <= 0.0:
                 self.statusMessage.set(" Height should be greater than 0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Yscale_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale')
@@ -1110,10 +1045,10 @@ class Gui(Frame):
             value = float(self.XSCALE.get())
             if value <= 0.0:
                 self.statusMessage.set(" Width should be greater than 0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Xscale_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale')
@@ -1123,10 +1058,10 @@ class Gui(Frame):
             value = float(self.STHICK.get())
             if value < 0.0:
                 self.statusMessage.set(" Thickness should be greater than 0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Sthick_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness')
@@ -1136,10 +1071,10 @@ class Gui(Frame):
             value = float(self.LSPACE.get())
             if value < 0.0:
                 self.statusMessage.set(" Line space should be greater than or equal to 0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Lspace_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), setting='line_space')
@@ -1149,10 +1084,10 @@ class Gui(Frame):
             value = float(self.CSPACE.get())
             if value < 0.0:
                 self.statusMessage.set(" Character space should be greater than or equal to 0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Cspace_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), setting='char_space')
@@ -1162,10 +1097,10 @@ class Gui(Frame):
             value = float(self.WSPACE.get())
             if value < 0.0:
                 self.statusMessage.set(" Word space should be greater than or equal to 0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Wspace_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), setting='word_space')
@@ -1175,10 +1110,10 @@ class Gui(Frame):
             value = float(self.TANGLE.get())
             if value <= -360.0 or value >= 360.0:
                 self.statusMessage.set(" Angle should be between -360 and 360 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Tangle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), setting='text_angle')
@@ -1188,10 +1123,10 @@ class Gui(Frame):
             value = float(self.TRADIUS.get())
             if value < 0.0:
                 self.statusMessage.set(" Radius should be greater than or equal to 0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Tradius_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), setting='text_radius')
@@ -1204,10 +1139,10 @@ class Gui(Frame):
             value = float(self.FEED.get())
             if value <= 0.0:
                 self.statusMessage.set(" Feed should be greater than 0.0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.NOR
+            return NAN
+        return NOR
 
     def Entry_Feed_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Feed, self.Entry_Feed_Check(), setting='feedrate')
@@ -1217,10 +1152,10 @@ class Gui(Frame):
             value = float(self.PLUNGE.get())
             if value < 0.0:
                 self.statusMessage.set(" Plunge rate should be greater than or equal to 0.0 ")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.NOR
+            return NAN
+        return NOR
 
     def Entry_Plunge_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), setting='plunge_rate')
@@ -1229,8 +1164,8 @@ class Gui(Frame):
         try:
             value = float(self.ZSAFE.get())
         except:
-            return self.NAN
-        return self.NOR
+            return NAN
+        return NOR
 
     def Entry_Zsafe_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), setting='zsafe')
@@ -1239,8 +1174,8 @@ class Gui(Frame):
         try:
             value = float(self.ZCUT.get())
         except:
-            return self.NAN
-        return self.NOR
+            return NAN
+        return NOR
 
     def Entry_Zcut_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
@@ -1252,8 +1187,8 @@ class Gui(Frame):
         try:
             value = float(self.xorigin.get())
         except:
-            return self.NAN
-        return self.NOR
+            return NAN
+        return NOR
 
     def Entry_Xoffset_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xoffset')
@@ -1262,8 +1197,8 @@ class Gui(Frame):
         try:
             value = float(self.yorigin.get())
         except:
-            return self.NAN
-        return self.NOR
+            return NAN
+        return NOR
 
     def Entry_Yoffset_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yoffset')
@@ -1272,8 +1207,8 @@ class Gui(Frame):
         try:
             value = float(self.segarc.get())
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_ArcAngle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='arc_angle')
@@ -1282,8 +1217,8 @@ class Gui(Frame):
         try:
             value = float(self.accuracy.get())
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_Accuracy_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy')
@@ -1302,10 +1237,10 @@ class Gui(Frame):
             value = float(self.boxgap.get())
             if value <= 0.0:
                 self.statusMessage.set(" Gap should be greater than zero.")
-                return self.INV
+                return INV
         except:
-            return self.NAN
-        return self.OK
+            return NAN
+        return OK
 
     def Entry_BoxGap_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
@@ -1345,278 +1280,6 @@ class Gui(Frame):
         except:
             pass
 
-    ######################################
-    #    V-Carve Settings Call Backs     #
-    ######################################
-    def Entry_Vbitangle_Check(self):
-        try:
-            value = float(self.v_bit_angle.get())
-            if value < 0.0 or value > 180.0:
-                self.statusMessage.set(" Angle should be between 0 and 180 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.NOR
-
-    def Entry_Vbitangle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), setting='v_bit_angle')
-        self.calc_depth_limit()
-
-    def Entry_Vbitdia_Check(self):
-        try:
-            value = float(self.v_bit_dia.get())
-            if value <= 0.0:
-                self.statusMessage.set(" Diameter should be greater than 0 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_Vbitdia_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), setting='v_bit_dia')
-        self.calc_depth_limit()
-
-    def Entry_VDepthLimit_Check(self):
-        try:
-            value = float(self.v_depth_lim.get())
-            if value > 0.0:
-                self.statusMessage.set(" Depth should be less than 0 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_VDepthLimit_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), setting='v_depth_lim')
-        self.calc_depth_limit()
-
-    def Entry_InsideAngle_Check(self):
-        try:
-            value = float(self.v_drv_corner.get())
-            if value <= 0.0 or value >= 180.0:
-                self.statusMessage.set(" Angle should be between 0 and 180 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_InsideAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check() )
-        # TODO setting
-
-    def Entry_OutsideAngle_Check(self):
-        try:
-            value = float(self.v_step_corner.get())
-            if value <= 180.0 or value >= 360.0:
-                self.statusMessage.set(" Angle should be between 180 and 360 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_OutsideAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check() )
-        # TODO setting
-
-    def Entry_StepSize_Check(self):
-        try:
-            value = float(self.v_step_len.get())
-            if value <= 0.0:
-                self.statusMessage.set(" Step size should be greater than 0 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_StepSize_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), setting='step_len' )
-
-    def Entry_Allowance_Check(self):
-        try:
-            value = float(self.allowance.get())
-            if value > 0.0:
-                self.statusMessage.set(" Allowance should be less than or equal to 0 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_Allowance_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), setting='allowance' )
-
-    def Entry_Prismatic_Callback(self, varName, index, mode):
-        try:
-            if not bool(self.inlay.get()):
-                self.Label_Allowance.configure(state="disabled")
-                self.Entry_Allowance.configure(state="disabled")
-                self.Label_Allowance_u.configure(state="disabled")
-            else:
-                self.Label_Allowance.configure(state="normal")
-                self.Entry_Allowance.configure(state="normal")
-                self.Label_Allowance_u.configure(state="normal")
-        except:
-            pass
-        self.settings.set('inlay', self.inlay.get())
-        self.Recalc_RQD()
-
-    def Entry_v_max_cut_Check(self):
-        try:
-            value = float(self.v_max_cut.get())
-            if value >= 0.0:
-                self.statusMessage.set(" Max Depth per Pass should be less than 0.0 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.NOR
-
-    def Entry_v_max_cut_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut' )
-
-    def Entry_v_rough_stk_Check(self):
-        try:
-            value = float(self.v_rough_stk.get())
-            if value < 0.0:
-                self.statusMessage.set(" Finish Pass Stock should be positive or zero (Zero disables multi-pass)")
-                return self.INV
-        except:
-            return self.NAN
-        try:
-            if float(self.v_rough_stk.get()) == 0.0:
-                self.Label_v_max_cut.configure(state="disabled")
-                self.Label_v_max_cut_u.configure(state="disabled")
-                self.Entry_v_max_cut.configure(state="disabled")
-            else:
-                self.Label_v_max_cut.configure(state="normal")
-                self.Label_v_max_cut_u.configure(state="normal")
-                self.Entry_v_max_cut.configure(state="normal")
-        except:
-            pass
-        return self.NOR
-
-    def Entry_v_rough_stk_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), setting='v_rough_stk' )
-
-    def Entry_V_CLEAN_Check(self):
-        try:
-            value = float(self.clean_v.get())
-            if value < 0.0:
-                self.statusMessage.set(" Angle should be greater than 0.0 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_V_CLEAN_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), setting='clean_v' )
-
-    def Entry_CLEAN_DIA_Check(self):
-        try:
-            value = float(self.clean_dia.get())
-            if value <= 0.0:
-                self.statusMessage.set(" Angle should be greater than 0.0 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_CLEAN_DIA_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), setting='clean_dia' )
-        self.engrave.init_clean_coords()
-
-    def Entry_STEP_OVER_Check(self):
-        try:
-            value = float(self.clean_step.get())
-            if value <= 0.0:
-                self.statusMessage.set(" Step Over should be between 0% and 100% ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_STEP_OVER_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), setting='clean_step' )
-
-    def Checkbutton_clean_P_Callback(self, varName, index, mode):
-        self.settings.set('clean_P', self.clean_P.get())
-
-    def Checkbutton_clean_X_Callback(self, varName, index, mode):
-        self.settings.set('clean_X', self.clean_X.get())
-
-    def Checkbutton_clean_Y_Callback(self, varName, index, mode):
-        self.settings.set('clean_Y', self.clean_Y.get())
-
-    def Entry_Bit_Shape_Check(self):
-        self.calc_depth_limit()
-
-        try:
-            if   self.bit_shape.get() == "VBIT":
-                self.Label_Vbitangle.configure(state="normal")
-                self.Label_Vbitangle_u.configure(state="normal")
-                self.Entry_Vbitangle.configure(state="normal")
-                self.Label_photo.configure(state="normal")
-                self.Label_Vbitdia.configure(text="V-Bit Diameter")
-            elif self.bit_shape.get() == "BALL":
-                self.Label_Vbitangle.configure(state="disabled")
-                self.Label_Vbitangle_u.configure(state="disabled")
-                self.Entry_Vbitangle.configure(state="disabled")
-                self.Label_photo.configure(state="disabled")
-                self.Label_Vbitdia.configure(text="Ball Nose Bit Diameter")
-            elif self.bit_shape.get() == "FLAT":
-                self.Label_Vbitangle.configure(state="disabled")
-                self.Label_Vbitangle_u.configure(state="disabled")
-                self.Entry_Vbitangle.configure(state="disabled")
-                self.Label_photo.configure(state="disabled")
-                self.Label_Vbitdia.configure(text="Straight Bit Diameter")
-            else:
-                pass
-        except:
-            pass
-
-    def Entry_Bit_Shape_var_Callback(self, varName, index, mode):
-        self.Entry_Bit_Shape_Check()
-        self.settings.set('bit_shape', self.bit_shape.get())
-
-    ######################################
-    # Bitmap Settings Window Call Backs  #
-    ######################################
-    def Entry_BMPturdsize_Check(self):
-        try:
-            value = float(self.bmp_turdsize.get())
-            if value < 1.0:
-                self.statusMessage.set(" Step size should be greater or equal to 1.0 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_BMPturdsize_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), setting='bmp_turdsize' )
-
-    def Entry_BMPalphamax_Check(self):
-        try:
-            value = float(self.bmp_alphamax.get())
-            if value < 0.0 or value > 4.0/3.0:
-                self.statusMessage.set(" Alpha Max should be between 0.0 and 1.333 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_BMPalphamax_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), setting='bmp_alphamax' )
-
-    def Entry_BMPoptTolerance_Check(self):
-        try:
-            value = float(self.bmp_opttolerance.get())
-            if value < 0.0:
-                self.statusMessage.set(" Alpha Max should be between 0.0 and 1.333 ")
-                return self.INV
-        except:
-            return self.NAN
-        return self.OK
-
-    def Entry_BMPoptTolerance_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), setting='bmp_opttolerance' )
 
     def Check_All_Variables(self):
         """
@@ -1653,29 +1316,35 @@ class Gui(Frame):
         self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) +\
         self.entry_set(self.Entry_BoxGap,   self.Entry_BoxGap_Check()  , 2)
 
-        VCARVE_error_cnt= \
-        self.entry_set(self.Entry_Vbitangle,    self.Entry_Vbitangle_Check()   , 2) +\
-        self.entry_set(self.Entry_Vbitdia,      self.Entry_Vbitdia_Check()     , 2) +\
-        self.entry_set(self.Entry_InsideAngle,  self.Entry_InsideAngle_Check() , 2) +\
-        self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check(), 2) +\
-        self.entry_set(self.Entry_StepSize,     self.Entry_StepSize_Check()    , 2) +\
-        self.entry_set(self.Entry_CLEAN_DIA,    self.Entry_CLEAN_DIA_Check()   , 2) +\
-        self.entry_set(self.Entry_STEP_OVER,    self.Entry_STEP_OVER_Check()   , 2) +\
-        self.entry_set(self.Entry_Allowance,    self.Entry_Allowance_Check()   , 2) +\
-        self.entry_set(self.Entry_VDepthLimit,  self.Entry_VDepthLimit_Check() , 2)
+        # TODO remove vcarve and bitmap check?
+        VCARVE_error_cnt= 0
 
-        PBM_error_cnt= \
-        self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2) +\
-        self.entry_set(self.Entry_BMPturdsize,     self.Entry_BMPturdsize_Check()    , 2) +\
-        self.entry_set(self.Entry_BMPalphamax,     self.Entry_BMPalphamax_Check()    , 2)
+        # VCARVE_error_cnt= \
+        # self.entry_set(self.Entry_Vbitangle,    self.Entry_Vbitangle_Check()   , 2) +\
+        # self.entry_set(self.Entry_Vbitdia,      self.Entry_Vbitdia_Check()     , 2) +\
+        # self.entry_set(self.Entry_InsideAngle,  self.Entry_InsideAngle_Check() , 2) +\
+        # self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check(), 2) +\
+        # self.entry_set(self.Entry_StepSize,     self.Entry_StepSize_Check()    , 2) +\
+        # self.entry_set(self.Entry_CLEAN_DIA,    self.Entry_CLEAN_DIA_Check()   , 2) +\
+        # self.entry_set(self.Entry_STEP_OVER,    self.Entry_STEP_OVER_Check()   , 2) +\
+        # self.entry_set(self.Entry_Allowance,    self.Entry_Allowance_Check()   , 2) +\
+        # self.entry_set(self.Entry_VDepthLimit,  self.Entry_VDepthLimit_Check() , 2)
 
-        ERROR_cnt = MAIN_error_cnt + GEN_error_cnt + VCARVE_error_cnt +PBM_error_cnt
+        # TODO move to Bitmap settings window?
+        BMP_error_cnt= 0
+
+        # BMP_error_cnt= \
+        # self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2) +\
+        # self.entry_set(self.Entry_BMPturdsize,     self.Entry_BMPturdsize_Check()    , 2) +\
+        # self.entry_set(self.Entry_BMPalphamax,     self.Entry_BMPalphamax_Check()    , 2)
+
+        ERROR_cnt = MAIN_error_cnt + GEN_error_cnt + VCARVE_error_cnt +BMP_error_cnt
 
         if ERROR_cnt > 0:
             self.statusbar.configure( bg='red' )
-        if PBM_error_cnt > 0:
+        if BMP_error_cnt > 0:
             self.statusMessage.set(
-                " Entry Error Detected: Check Entry Values in PBM Settings Window ")
+                " Entry Error Detected: Check Entry Values in BMP Settings Window ")
         if VCARVE_error_cnt > 0:
             self.statusMessage.set(
                 " Entry Error Detected: Check Entry Values in V-Carve Settings Window ")
@@ -1792,6 +1461,7 @@ class Gui(Frame):
     def Entry_recalc_var_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
         self.settings.set('outer', self.outer.get())
+        self.settings.set('v_flop', self.v_flop.get())
         self.Recalc_RQD()
 
     def Entry_units_var_Callback(self):
@@ -1806,27 +1476,55 @@ class Gui(Frame):
 
     def Scale_Linear_Inputs(self, factor=1.0):
         try:
-            self.YSCALE.set(     '%.3g' %(float(self.YSCALE.get()     )*factor) )
-            self.TRADIUS.set(    '%.3g' %(float(self.TRADIUS.get()    )*factor) )
-            self.ZSAFE.set(      '%.3g' %(float(self.ZSAFE.get()      )*factor) )
-            self.ZCUT.set(       '%.3g' %(float(self.ZCUT.get()       )*factor) )
-            self.STHICK.set(     '%.3g' %(float(self.STHICK.get()     )*factor) )
-            self.FEED.set(       '%.3g' %(float(self.FEED.get()       )*factor) )
-            self.PLUNGE.set(     '%.3g' %(float(self.PLUNGE.get()     )*factor) )
-            self.boxgap.set(     '%.3g' %(float(self.boxgap.get()     )*factor) )
-            self.v_bit_dia.set(  '%.3g' %(float(self.v_bit_dia.get()  )*factor) )
-            self.v_depth_lim.set('%.3g' %(float(self.v_depth_lim.get())*factor) )
-            self.v_step_len.set( '%.3g' %(float(self.v_step_len.get() )*factor) )
-            self.allowance.set(  '%.3g' %(float(self.allowance.get()  )*factor) )
-            self.v_max_cut.set(  '%.3g' %(float(self.v_max_cut.get()  )*factor) )
-            self.v_rough_stk.set('%.3g' %(float(self.v_rough_stk.get())*factor) )
-            self.xorigin.set(    '%.3g' %(float(self.xorigin.get()    )*factor) )
-            self.yorigin.set(    '%.3g' %(float(self.yorigin.get()    )*factor) )
-            self.accuracy.set(   '%.3g' %(float(self.accuracy.get()   )*factor) )
-            self.clean_v.set(    '%.3g' %(float(self.clean_v.get()    )*factor) )
-            self.clean_dia.set(  '%.3g' %(float(self.clean_dia.get()  )*factor) )
+            self.YSCALE.set(     '%.3g' %(self.settings.get('YSCALE')     *factor) )
+            self.TRADIUS.set(    '%.3g' %(self.settings.get('TRADIUS')    *factor) )
+            self.ZSAFE.set(      '%.3g' %(self.settings.get('ZSAFE')      *factor) )
+            self.ZCUT.set(       '%.3g' %(self.settings.get('ZCUT')       *factor) )
+            self.STHICK.set(     '%.3g' %(self.settings.get('STHICK')     *factor) )
+            self.FEED.set(       '%.3g' %(self.settings.get('feedrate')   *factor) )
+            self.PLUNGE.set(     '%.3g' %(self.settings.get('plunge_rate')*factor) )
+            self.boxgap.set(     '%.3g' %(self.settings.get('boxgap')     *factor) )
+
+            # TODO use settings instead of GUI vars
+
+            # self.v_bit_dia.set(  '%.3g' %(self.settings.get('v_bit_dia')  *factor) )
+            # self.v_depth_lim.set('%.3g' %(self.settings.get('v_depth_lim')*factor) )
+            # self.v_step_len.set( '%.3g' %(self.settings.get('v_step_len') *factor) )
+            # self.allowance.set(  '%.3g' %(self.settings.get('allowance')  *factor) )
+            # self.v_max_cut.set(  '%.3g' %(self.settings.get('v_max_cut')  *factor) )
+            # self.v_rough_stk.set('%.3g' %(self.settings.get('v_rough_stk')*factor) )
+            # self.xorigin.set(    '%.3g' %(self.settings.get('xorigin')    *factor) )
+
+            self.yorigin.set(    '%.3g' %(self.settings.get('yorigin')    *factor) )
+            self.accuracy.set(   '%.3g' %(self.settings.get('accuracy')   *factor) )
+            self.clean_v.set(    '%.3g' %(self.settings.get('clean_v')    *factor) )
+            self.clean_dia.set(  '%.3g' %(self.settings.get('clean_dia')  *factor) )
         except:
             pass
+
+    # def Scale_Linear_Inputs(self, factor=1.0):
+    #     try:
+    #         self.YSCALE.set(     '%.3g' %(float(self.YSCALE.get()     )*factor) )
+    #         self.TRADIUS.set(    '%.3g' %(float(self.TRADIUS.get()    )*factor) )
+    #         self.ZSAFE.set(      '%.3g' %(float(self.ZSAFE.get()      )*factor) )
+    #         self.ZCUT.set(       '%.3g' %(float(self.ZCUT.get()       )*factor) )
+    #         self.STHICK.set(     '%.3g' %(float(self.STHICK.get()     )*factor) )
+    #         self.FEED.set(       '%.3g' %(float(self.FEED.get()       )*factor) )
+    #         self.PLUNGE.set(     '%.3g' %(float(self.PLUNGE.get()     )*factor) )
+    #         self.boxgap.set(     '%.3g' %(float(self.boxgap.get()     )*factor) )
+    #         self.v_bit_dia.set(  '%.3g' %(float(self.v_bit_dia.get()  )*factor) )
+    #         self.v_depth_lim.set('%.3g' %(float(self.v_depth_lim.get())*factor) )
+    #         self.v_step_len.set( '%.3g' %(float(self.v_step_len.get() )*factor) )
+    #         self.allowance.set(  '%.3g' %(float(self.allowance.get()  )*factor) )
+    #         self.v_max_cut.set(  '%.3g' %(float(self.v_max_cut.get()  )*factor) )
+    #         self.v_rough_stk.set('%.3g' %(float(self.v_rough_stk.get())*factor) )
+    #         self.xorigin.set(    '%.3g' %(float(self.xorigin.get()    )*factor) )
+    #         self.yorigin.set(    '%.3g' %(float(self.yorigin.get()    )*factor) )
+    #         self.accuracy.set(   '%.3g' %(float(self.accuracy.get()   )*factor) )
+    #         self.clean_v.set(    '%.3g' %(float(self.clean_v.get()    )*factor) )
+    #         self.clean_dia.set(  '%.3g' %(float(self.clean_dia.get()  )*factor) )
+    #     except:
+    #         pass
 
     def useIMGsize_var_Callback(self):
         if self.input_type.get() != "text":
@@ -1899,7 +1597,7 @@ class Gui(Frame):
 
     def Entry_fontdir_Callback(self, varName, index, mode):
         self.Listbox_1.delete(0, END)
-        self.Listbox_1.configure(bg=self.NormalColor)
+        self.Listbox_1.configure(bg=NORmalColor)
         try:
             font_files = os.listdir(self.fontdir.get())
             font_files.sort()
@@ -1966,8 +1664,8 @@ class Gui(Frame):
 
             # TODO future read_image_file will return a MyImage instead of a Font instance
             self.font = readers.read_image_file(self.settings)
-            # self.image.coords = self.font[ord("F")].stroke_list
-            self.image.set_coords_from_strokes( self.font[ord("F")].stroke_list )
+            stroke_list = self.font[ord("F")].stroke_list
+            self.image.set_coords_from_strokes(stroke_list)
 
             self.input_type.set(self.settings.get('input_type')) # input_type may have been changed by read_image_file
             self.do_it()
@@ -2089,7 +1787,7 @@ class Gui(Frame):
             if not message_ask_ok_cancel("Continue", mess):
                 return
 
-        self.gcode = gcode(self.engrave)
+        g_code = gcode(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -2114,7 +1812,7 @@ class Gui(Frame):
                 self.statusMessage.set("Unable to open file for writing: %s" % filename)
                 self.statusbar.configure(bg='red')
                 return
-            for line in self.gcode:
+            for line in g_code:
                 try:
                     fout.write(line + '\n')
                 except:
@@ -2129,7 +1827,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        self.gcode = write_clean_up(self.engrave, bit_type)
+        g_code = write_clean_up(self.engrave, bit_type)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -2160,7 +1858,7 @@ class Gui(Frame):
                 self.statusMessage.set("Unable to open file for writing: %s" % (filename))
                 self.statusbar.configure(bg='red')
                 return
-            for line in self.gcode:
+            for line in g_code:
                 try:
                     fout.write(line + '\n')
                 except:
@@ -2172,7 +1870,7 @@ class Gui(Frame):
 
     def menu_File_Save_SVG_File(self):
 
-        self.svgcode = svg(self.engrave)
+        svg_code = svg(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -2196,7 +1894,7 @@ class Gui(Frame):
                 self.statusMessage.set("Unable to open file for writing: %s" % (filename))
                 self.statusbar.configure(bg='red')
                 return
-            for line in self.svgcode:
+            for line in svg_code:
                 try:
                     fout.write(line + '\n')
                 except:
@@ -2304,10 +2002,10 @@ class Gui(Frame):
         self.GEN_Settings_Window()
 
     def KEY_F3(self, event):
-        self.VCARVE_Settings_Window()
+        self.vcarve_settings_window()
 
     def KEY_F4(self, event):
-        self.PBM_Settings_Window()
+        self.bitmap_settings_window()
 
     def KEY_F5(self, event):
         self.menu_View_Refresh()
@@ -2693,15 +2391,6 @@ class Gui(Frame):
 
             self.plot_toolpath()
 
-
-    def coord_scale(self, x, y, xscale, yscale):
-        """
-        Takes an x and a y, scales are applied and returns new x,y tuple
-        """
-        newx = x * xscale
-        newy = y * yscale
-        return newx, newy
-
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):
         XX1, YY1 = old
         XX2, YY2 = new
@@ -2883,7 +2572,7 @@ class Gui(Frame):
                 color = "black"
 
                 rbit = self.engrave.calc_vbit_radius()
-                if self.bit_shape.get() == "FLAT":
+                if self.settings.get('bit_shape') == "FLAT":
                     if r >= rbit:
                         self.plot_circle( (x1, y1), midx, midy, cszw, cszh, color, r, 1)
                 else:
@@ -2901,7 +2590,7 @@ class Gui(Frame):
                 color = "white"
                 # check and see if we need to move to a new discontinuous start point
                 plot_flat = False
-                if self.bit_shape.get() == "FLAT":
+                if self.settings.get('bit_shape') == "FLAT":
                     if r == rold and r >= rbit:
                         plot_flat = True
                 else:
@@ -2986,18 +2675,14 @@ class Gui(Frame):
             self.PreviewCanvas.delete(ALL)
 
         self.segID = []
-        self.gcode = []
-        self.svgcode = []
 
         if self.input_type.get() == "text":
-            self.do_it_text()
-            # self.engrave = Engrave(self.settings, self.text)
             self.engrave.set_image(self.text)
+            self.do_it_text()
 
         elif self.input_type.get() == "image":
-            self.do_it_image()
-            # self.engrave = Engrave(self.settings, self.image)
             self.engrave.set_image(self.image)
+            self.do_it_image()
 
         else:
             pass # TODO cannot occur
@@ -3014,16 +2699,17 @@ class Gui(Frame):
 
         # TODO Check completeness necessary? All vars should have a valid entry?
         try:
-            SegArc = float(self.segarc.get())
+            SegArc    = float(self.segarc.get())
+            XScale_in = float(self.XSCALE.get())
             YScale_in = float(self.YSCALE.get())
-            CSpaceP = float(self.CSPACE.get())
-            WSpaceP = float(self.WSPACE.get())
-            LSpace = float(self.LSPACE.get())
-            Angle = float(self.TANGLE.get())
-            Thick = float(self.STHICK.get())
-            XOrigin = float(self.xorigin.get())
-            YOrigin = float(self.yorigin.get())
-            v_flop = bool(self.v_flop.get())
+            CSpaceP   = float(self.CSPACE.get())
+            WSpaceP   = float(self.WSPACE.get())
+            LSpace    = float(self.LSPACE.get())
+            Angle     = float(self.TANGLE.get())
+            Thick     = float(self.STHICK.get())
+            XOrigin   = float(self.xorigin.get())
+            YOrigin   = float(self.yorigin.get())
+            v_flop    = bool(self.v_flop.get())
         except:
             self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
             self.statusbar.configure( bg='red' )
@@ -3071,12 +2757,14 @@ class Gui(Frame):
 
             return
 
+        # YScale = YScale_in / 100
         try:
             YScale = (YScale_in - Thick) / (font_line_height - font_line_depth)
         except:
             YScale = .1
         if YScale <= Zero:
             YScale = .1
+        XScale = XScale_in * YScale / 100
 
         # text outside or inside circle
         Radius_in = float(self.TRADIUS.get())
@@ -3105,6 +2793,7 @@ class Gui(Frame):
             Thick     = float(self.STHICK.get() )
             XOrigin   = float(self.xorigin.get())
             YOrigin   = float(self.yorigin.get())
+            Thick_Border = float(self.STHICK.get())
         except:
             self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
             self.statusbar.configure( bg='red' )
@@ -3118,37 +2807,24 @@ class Gui(Frame):
         flip = self.flip.get()
         upper = self.upper.get()
 
-        self.text.align(alignment)
-        self.text.transform_on_radius(alignment, Radius, upper)
-        self.text.transform_angle(Angle, mirror, flip)
+        # print 'XScale:', XScale, ', YScale:', YScale # TEST
 
-        #############################
-        #   Engrave Box or circle   #
-        #############################
-        # Thick_Border = float(self.STHICK.get())
-        Delta = Thick / 2 + float(self.boxgap.get())
+        self.text.transform_scale(XScale, YScale)
+
+        self.text.align(alignment)
+
+        self.text.transform_on_radius(alignment, Radius, upper)
+
+        maxr2 = self.text.transform_angle(Angle)
+        if mirror:
+            self.text.transform_mirror()
+        if flip:
+            self.text.transform_flip()
 
         if self.plotbox.get():
-
+            delta = Thick / 2 + float(self.boxgap.get())
             if Radius_in == 0 or self.cut_type.get() == "v-carve":
-                if bool(self.mirror.get()) ^ bool(self.flip.get()):
-                    self.coords.append([minx - Delta, miny - Delta, minx - Delta, maxy + Delta, 0, 0])
-                    self.coords.append([minx - Delta, maxy + Delta, maxx + Delta, maxy + Delta, 0, 0])
-                    self.coords.append([maxx + Delta, maxy + Delta, maxx + Delta, miny - Delta, 0, 0])
-                    self.coords.append([maxx + Delta, miny - Delta, minx - Delta, miny - Delta, 0, 0])
-                else:
-                    self.coords.append([minx - Delta, miny - Delta, maxx + Delta, miny - Delta, 0, 0])
-                    self.coords.append([maxx + Delta, miny - Delta, maxx + Delta, maxy + Delta, 0, 0])
-                    self.coords.append([maxx + Delta, maxy + Delta, minx - Delta, maxy + Delta, 0, 0])
-                    self.coords.append([minx - Delta, maxy + Delta, minx - Delta, miny - Delta, 0, 0])
-
-                if self.cut_type.get() != "v-carve":
-                    Delta = Delta + Thick / 2
-                minx = minx - Delta
-                maxx = maxx + Delta
-                miny = miny - Delta
-                maxy = maxy + Delta
-
+                self.text.add_box(delta, mirror, flip)
             else:
                 Radius_plot = sqrt(maxr2) + Thick + float(self.boxgap.get())
                 minx = -Radius_plot - Thick / 2
@@ -3160,6 +2836,15 @@ class Gui(Frame):
                 self.RADIUS_PLOT = Radius_plot
                 # Don't create the circle coords here, a G-code circle command
                 # is generated later when not v-carving
+                #self.text.add_circle()
+
+            # TODO adjust bounding box?
+            # if self.cut_type.get() != "v-carve":
+            #     delta = delta + Thick / 2
+            # minx = minx - delta
+            # maxx = maxx + delta
+            # miny = miny - delta
+            # maxy = maxy + delta
 
         ##########################################
         #         ORIGIN LOCATING STUFF          #
@@ -3193,14 +2878,6 @@ class Gui(Frame):
             self.text.coords[i][1] = XY[1] - y_zero + YOrigin
             self.text.coords[i][2] = XY[2] - x_zero + XOrigin
             self.text.coords[i][3] = XY[3] - y_zero + YOrigin
-
-        # self.MINX = minx - x_zero + XOrigin
-        # self.MAXX = maxx - x_zero + XOrigin
-        # self.MINY = miny - y_zero + YOrigin
-        # self.MAXY = maxy - y_zero + YOrigin
-        #
-        # self.xzero = x_zero
-        # self.yzero = y_zero
 
         minx, maxx, miny, maxy = self.text.get_bbox()
         if not self.batch.get():
@@ -3248,7 +2925,9 @@ class Gui(Frame):
             return
 
         try:
-            YScale = YScale_in = float(self.YSCALE.get() )
+            XScale_in = float(self.XSCALE.get())
+            YScale_in = float(self.YSCALE.get() )
+            Angle     = float(self.TANGLE.get() )
         except:
             self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
             self.statusbar.configure( bg='red' )
@@ -3273,9 +2952,26 @@ class Gui(Frame):
                 else:
                     fmessage( "("+error_text+")" )
 
-        # TODO move to image calculkations
-        if self.useIMGsize.get():
-            YScale = YScale_in / 100.0
+        # TODO image calculation
+        # if self.useIMGsize.get():
+        YScale = YScale_in / 100
+        XScale = XScale_in * YScale / 100
+
+        # reset the image coords (to avoid corruption, e.g. from previous transformations)
+        self.image.set_coords_from_strokes()
+
+        #############################
+        #      Transformations      #
+        #############################
+        self.image.transform_scale(XScale, YScale)
+
+        maxr2 = self.image.transform_angle(Angle)
+
+        if self.mirror.get():
+            self.image.transform_mirror()
+
+        if self.flip.get():
+            self.image.transform_flip()
 
         minx, maxx, miny, maxy = self.image.bbox.tuple()
         if not self.batch.get():
@@ -3306,17 +3002,20 @@ class Gui(Frame):
 
             self.statusMessage.set(self.bounding_box.get())
 
-    def v_carve_it(self, clean=False, DXF_FLAG=False):
+    def v_carve_it(self, clean=False):
 
         self.master.unbind("<Configure>")
         self.STOP_CALC = False
 
+        v_step_len = self.settings.get('v_step_len')
         if self.units.get() == "mm":
-            if float( self.v_step_len.get() ) < .01:
-                self.v_step_len.set("0.01")
+            if v_step_len < .01:
+                v_step_len = 0.01
+                self.settings.set('v_step_len', v_step_len)
         else:
-            if float( self.v_step_len.get() ) < .0005:
-                self.v_step_len.set("0.0005")
+            if fv_step_len < .0005:
+                v_step_len = 0.0005
+                self.settings.set('v_step_len', v_step_len)
 
         if self.Check_All_Variables() > 0:
             return
@@ -3347,24 +3046,23 @@ class Gui(Frame):
             if self.input_type.get() == "image" and not clean:
                 self.engrave.sort_for_v_carve()
 
-            if DXF_FLAG:
-                return
-
-            done = self.engrave.v_carve(clean, DXF_FLAG)
+            done = self.engrave.v_carve(clean)
 
             # Reset Entry Fields in V-Carve Settings
-            if not self.batch.get():
-                self.entry_set(self.Entry_Vbitangle,   self.Entry_Vbitangle_Check()   ,1)
-                self.entry_set(self.Entry_Vbitdia,     self.Entry_Vbitdia_Check()     ,1)
-                self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check() ,1)
-                self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check() ,1)
-                self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check(),1)
-                self.entry_set(self.Entry_StepSize,    self.Entry_StepSize_Check()    ,1)
-                self.entry_set(self.Entry_Allowance,   self.Entry_Allowance_Check()   ,1)
-                self.entry_set(self.Entry_Accuracy,    self.Entry_Accuracy_Check()    ,1)
-                self.entry_set(self.Entry_CLEAN_DIA,   self.Entry_CLEAN_DIA_Check()   ,1)
-                self.entry_set(self.Entry_STEP_OVER,   self.Entry_STEP_OVER_Check()   ,1)
-                self.entry_set(self.Entry_V_CLEAN,     self.Entry_V_CLEAN_Check()     ,1)
+
+            # TODO refresh from settings?
+            # if not self.batch.get():
+            #     self.entry_set(self.Entry_Vbitangle,   self.Entry_Vbitangle_Check()   ,1)
+            #     self.entry_set(self.Entry_Vbitdia,     self.Entry_Vbitdia_Check()     ,1)
+            #     self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check() ,1)
+            #     self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check() ,1)
+            #     self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check(),1)
+            #     self.entry_set(self.Entry_StepSize,    self.Entry_StepSize_Check()    ,1)
+            #     self.entry_set(self.Entry_Allowance,   self.Entry_Allowance_Check()   ,1)
+            #     self.entry_set(self.Entry_Accuracy,    self.Entry_Accuracy_Check()    ,1)
+            #     self.entry_set(self.Entry_CLEAN_DIA,   self.Entry_CLEAN_DIA_Check()   ,1)
+            #     self.entry_set(self.Entry_STEP_OVER,   self.Entry_STEP_OVER_Check()   ,1)
+            #     self.entry_set(self.Entry_V_CLEAN,     self.Entry_V_CLEAN_Check()     ,1)
 
             if done and (not self.batch.get()):
                 self.statusMessage.set('Done -- ' + self.bounding_box.get())
@@ -3372,110 +3070,6 @@ class Gui(Frame):
 
         self.master.bind("<Configure>", self.Master_Configure)
 
-    ################################################################################
-    #                         Bitmap Settings Window                               #
-    ################################################################################
-    def PBM_Settings_Window(self):
-        """
-        Algorithm options:
-        -z, --turnpolicy policy    - how to resolve ambiguities in path decomposition
-        -t, --turdsize n           - suppress speckles of up to this size (default 2)
-        -a, --alphama n           - corner threshold parameter (default 1)
-        -n, --longcurve            - turn off curve optimization
-        -O, --opttolerance n       - curve optimization tolerance (default 0.2)
-        """
-        pbm_settings = Toplevel(width=525, height=250)
-        pbm_settings.grab_set() # Use grab_set to prevent user input in the main window during calculations
-        pbm_settings.resizable(0,0)
-        pbm_settings.title('Bitmap Settings')
-        pbm_settings.iconname("Bitmap Settings")
-
-        D_Yloc = 12
-        D_dY = 24
-        xd_label_L = 12
-
-        w_label = 100
-        w_entry = 60
-        w_units = 35
-        xd_entry_L = xd_label_L+w_label+10
-        # xd_units_L = xd_entry_L+w_entry+5
-
-        D_Yloc = D_Yloc+D_dY
-        self.Label_BMPturnpol = Label(pbm_settings, text="Turn Policy")
-        self.Label_BMPturnpol.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.BMPturnpol_OptionMenu = OptionMenu(pbm_settings, self.bmp_turnpol,
-                                                "black",
-                                                "white",
-                                                "right",
-                                                "left",
-                                                "minority",
-                                                "majority",
-                                                "random")
-        self.BMPturnpol_OptionMenu.place(x=xd_entry_L, y=D_Yloc, width=w_entry+40, height=23)
-
-        D_Yloc = D_Yloc+D_dY
-        self.Label_BMPturdsize = Label(pbm_settings, text="Turd Size")
-        self.Label_BMPturdsize.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_BMPturdsize = Entry(pbm_settings, width="15")
-        self.Entry_BMPturdsize.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_BMPturdsize.configure(textvariable=self.bmp_turdsize)
-        self.bmp_turdsize.trace_variable("w", self.Entry_BMPturdsize_Callback)
-        self.Label_BMPturdsize2 = Label(pbm_settings, text="Suppress speckles of up to this pixel size")
-        self.Label_BMPturdsize2.place(x=xd_entry_L+w_entry*1.5, y=D_Yloc, width=300, height=21)
-        self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2)
-
-        D_Yloc = D_Yloc+D_dY+5
-        self.Label_BMPalphamax = Label(pbm_settings, text="Alpha Max")
-        self.Label_BMPalphamax.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_BMPalphamax = Entry(pbm_settings, width="15")
-        self.Entry_BMPalphamax.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_BMPalphamax.configure(textvariable=self.bmp_alphamax)
-        self.bmp_alphamax.trace_variable("w", self.Entry_BMPalphamax_Callback)
-        self.Label_BMPalphamax2 = Label(pbm_settings, text="0.0 = sharp corners, 1.33 = smoothed corners")
-        self.Label_BMPalphamax2.place(x=xd_entry_L+w_entry*1.5, y=D_Yloc, width=300, height=21)
-        self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
-
-        D_Yloc = D_Yloc+D_dY
-        self.Label_BMP_longcurve = Label(pbm_settings, text="Long Curve")
-        self.Label_BMP_longcurve.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Checkbutton_BMP_longcurve = Checkbutton(pbm_settings, text="", anchor=W)
-        self.Checkbutton_BMP_longcurve.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_BMP_longcurve.configure(variable=self.bmp_longcurve)
-        self.Label_BMP_longcurve2 = Label(pbm_settings, text="Enable Curve Optimization")
-        self.Label_BMP_longcurve2.place(x=xd_entry_L+w_entry*1.5, y=D_Yloc, width=300, height=21)
-
-        D_Yloc = D_Yloc+D_dY
-        self.Label_BMPoptTolerance = Label(pbm_settings, text="Opt Tolerance")
-        self.Label_BMPoptTolerance.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_BMPoptTolerance = Entry(pbm_settings, width="15")
-        self.Entry_BMPoptTolerance.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_BMPoptTolerance.configure(textvariable=self.bmp_opttolerance)
-        self.bmp_opttolerance.trace_variable("w", self.Entry_BMPoptTolerance_Callback)
-        self.Label_BMPoptTolerance2 = Label(pbm_settings, text="Curve Optimization Tolerance")
-        self.Label_BMPoptTolerance2.place(x=xd_entry_L+w_entry*1.5, y=D_Yloc, width=300, height=21)
-        self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2)
-
-        pbm_settings.update_idletasks()
-        Ybut=int(pbm_settings.winfo_height())-30
-        Xbut=int(pbm_settings.winfo_width()/2)
-
-        self.PBM_Reload = Button(pbm_settings, text="Re-Load Image")
-        self.PBM_Reload.place(x=Xbut, y=Ybut, width=130, height=30, anchor="e")
-        self.PBM_Reload.bind("<ButtonRelease-1>", self.Settings_ReLoad_Click)
-
-        self.PBM_Close = Button(pbm_settings, text="Close",command=self.Close_Current_Window_Click)
-        self.PBM_Close.place(x=Xbut, y=Ybut, width=130, height=30, anchor="w")
-
-        try:
-            pbm_settings.iconbitmap(bitmap="@emblem64")
-        except:
-            try: #Attempt to create temporary icon bitmap file
-                temp_icon("f_engrave_icon")
-                pbm_settings.iconbitmap("@f_engrave_icon")
-                os.remove("f_engrave_icon")
-            except:
-                pass
 
     ################################################################################
     #                         General Settings Window                              #
@@ -3707,364 +3301,3 @@ class Gui(Frame):
 
         self.GEN_Close = Button(gen_settings, text="Close", command=self.Close_Current_Window_Click)
         self.GEN_Close.place(x=Xbut + 65, y=Ybut, width=130, height=30, anchor="w")
-
-    ################################################################################
-    #                         V-Carve Settings window                              #
-    ################################################################################
-    def VCARVE_Settings_Window(self):
-        vcarve_settings = Toplevel(width=580, height=690)
-        vcarve_settings.grab_set()  # Use grab_set to prevent user input in the main window during calculations
-        vcarve_settings.resizable(0, 0)
-        vcarve_settings.title('V-Carve Settings')
-        vcarve_settings.iconname("V-Carve Settings")
-
-        try:
-            vcarve_settings.iconbitmap(bitmap="@emblem64")
-        except:
-            try:  # Attempt to create temporary icon bitmap file
-                temp_icon("f_engrave_icon")
-                vcarve_settings.iconbitmap("@f_engrave_icon")
-                os.remove("f_engrave_icon")
-            except:
-                pass
-
-        D_Yloc = 12
-        D_dY = 24
-        xd_label_L = 12
-
-        w_label = 250
-        w_entry = 60
-        w_units = 35
-        xd_entry_L = xd_label_L + w_label + 10
-        xd_units_L = xd_entry_L + w_entry + 5
-
-        # ----------------------
-        self.Label_cutter_type = Label(vcarve_settings, text="Cutter Type")
-        self.Label_cutter_type.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.Radio_Type_VBIT = Radiobutton(vcarve_settings, text="V-Bit", value="VBIT", width="100", anchor=W)
-        self.Radio_Type_VBIT.place(x=xd_entry_L, y=D_Yloc, width=w_label, height=21)
-        self.Radio_Type_VBIT.configure(variable=self.bit_shape)
-
-        D_Yloc = D_Yloc + 24
-        self.Radio_Type_BALL = Radiobutton(vcarve_settings, text="Ball Nose", value="BALL", width="100", anchor=W)
-        self.Radio_Type_BALL.place(x=xd_entry_L, y=D_Yloc, width=w_label, height=21)
-        self.Radio_Type_BALL.configure(variable=self.bit_shape)
-
-        D_Yloc = D_Yloc + 24
-        self.Radio_Type_STRAIGHT = Radiobutton(vcarve_settings, text="Straight", value="FLAT", width="100", anchor=W)
-        self.Radio_Type_STRAIGHT.place(x=xd_entry_L, y=D_Yloc, width=w_label, height=21)
-        self.Radio_Type_STRAIGHT.configure(variable=self.bit_shape)
-
-        self.bit_shape.trace_variable("w", self.Entry_Bit_Shape_var_Callback)
-        # ----------------------
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Vbitangle = Label(vcarve_settings, text="V-Bit Angle")
-        self.Label_Vbitangle.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_Vbitangle_u = Label(vcarve_settings, text="deg", anchor=W)
-        self.Label_Vbitangle_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_Vbitangle = Entry(vcarve_settings, width="15")
-        self.Entry_Vbitangle.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_Vbitangle.configure(textvariable=self.v_bit_angle)
-        self.v_bit_angle.trace_variable("w", self.Entry_Vbitangle_Callback)
-        self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Vbitdia = Label(vcarve_settings, text="V-Bit Diameter")
-        self.Label_Vbitdia.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_Vbitdia_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_Vbitdia_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_Vbitdia = Entry(vcarve_settings, width="15")
-        self.Entry_Vbitdia.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_Vbitdia.configure(textvariable=self.v_bit_dia)
-        self.v_bit_dia.trace_variable("w", self.Entry_Vbitdia_Callback)
-        self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), 2, 'v_bit_dia')
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_VDepthLimit = Label(vcarve_settings, text="Cut Depth Limit")
-        self.Label_VDepthLimit.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_VDepthLimit_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_VDepthLimit_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_VDepthLimit = Entry(vcarve_settings, width="15")
-        self.Entry_VDepthLimit.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_VDepthLimit.configure(textvariable=self.v_depth_lim)
-        self.v_depth_lim.trace_variable("w", self.Entry_VDepthLimit_Callback)
-        self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_maxcut = Label(vcarve_settings, text="Max Cut Depth")
-        self.Label_maxcut.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_maxcut_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_maxcut_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Label_maxcut_i = Label(vcarve_settings, textvariable=self.maxcut, anchor=W)
-        self.Label_maxcut_i.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=21)
-
-        D_Yloc = D_Yloc + D_dY + 5
-        self.Label_StepSize = Label(vcarve_settings, text="Sub-Step Length")
-        self.Label_StepSize.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_StepSize_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_StepSize_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_StepSize = Entry(vcarve_settings, width="15")
-        self.Entry_StepSize.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_StepSize.configure(textvariable=self.v_step_len)
-        self.v_step_len.trace_variable("w", self.Entry_StepSize_Callback)
-        self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY + 12
-        self.vcarve_separator00 = Frame(vcarve_settings, height=2, bd=1, relief=SUNKEN)
-        self.vcarve_separator00.place(x=0, y=D_Yloc, width=580, height=2)
-
-        D_Yloc = D_Yloc + D_dY - 12
-        self.Label_v_flop = Label(vcarve_settings, text="Flip Normals (Cut Outside)")
-        self.Label_v_flop.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Checkbutton_v_flop = Checkbutton(vcarve_settings, text="", anchor=W)
-        self.Checkbutton_v_flop.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_v_flop.configure(variable=self.v_flop)
-        self.v_flop.trace_variable("w", self.Entry_recalc_var_Callback)
-
-        x_radio_offset = 62 - 40
-        D_Yloc = D_Yloc + 24
-        self.Label_vBox = Label(vcarve_settings, text="Add Box (Flip Normals)")
-        self.Label_vBox.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.Checkbutton_plotbox = Checkbutton(vcarve_settings, text="", anchor=W)
-        self.Checkbutton_plotbox.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_plotbox.configure(variable=self.plotbox)
-        self.plotbox.trace_variable("w", self.Entry_Box_Callback)
-
-        self.Label_BoxGap = Label(vcarve_settings, text="Box Gap:", anchor=E)
-        self.Label_BoxGap.place(x=w_label + x_radio_offset + 25, y=D_Yloc, width=75, height=21)
-        self.Entry_BoxGap = Entry(vcarve_settings)
-        self.Entry_BoxGap.place(x=w_label + x_radio_offset + 110, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_BoxGap.configure(textvariable=self.boxgap)
-        self.boxgap.trace_variable("w", self.Entry_BoxGap_Callback)
-        self.Label_BoxGap_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_BoxGap_u.place(x=w_label + x_radio_offset + 305, y=D_Yloc, width=100, height=21)
-        self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
-
-        self.Label_BoxGap_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_BoxGap_u.place(x=w_label + x_radio_offset + 175, y=D_Yloc, width=100, height=21)
-
-        self.GEN_Reload = Button(vcarve_settings, text="Recalculate")
-        self.GEN_Reload.place(x=580 - 10, y=D_Yloc, width=90, height=25, anchor="ne")
-        self.GEN_Reload.bind("<ButtonRelease-1>", self.Recalculate_Click)
-
-        D_Yloc = D_Yloc + D_dY + 12
-        self.vcarve_separator0 = Frame(vcarve_settings, height=2, bd=1, relief=SUNKEN)
-        self.vcarve_separator0.place(x=0, y=D_Yloc, width=580, height=2)
-
-        D_Yloc = D_Yloc + D_dY - 12
-        self.Label_inlay = Label(vcarve_settings, text="Prismatic (For inlay also select Add Box)")
-        self.Label_inlay.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Checkbutton_inlay = Checkbutton(vcarve_settings, text="", anchor=W)
-        self.Checkbutton_inlay.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_inlay.configure(variable=self.inlay)
-        self.inlay.trace_variable("w", self.Entry_Prismatic_Callback)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Allowance = Label(vcarve_settings, text="Prismatic Overcut")
-        self.Label_Allowance.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_Allowance_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_Allowance_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_Allowance = Entry(vcarve_settings, width="15")
-        self.Entry_Allowance.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_Allowance.configure(textvariable=self.allowance)
-        self.allowance.trace_variable("w", self.Entry_Allowance_Callback)
-        self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), 2)
-
-        # Update Idle tasks before requesting anything from winfo
-        vcarve_settings.update_idletasks()
-        center_loc = int(float(vcarve_settings.winfo_width()) / 2)
-
-        ## Multipass Settings ##
-        D_Yloc = D_Yloc + D_dY + 12
-        self.vcarve_separator1 = Frame(vcarve_settings, height=2, bd=1, relief=SUNKEN)
-        self.vcarve_separator1.place(x=0, y=D_Yloc, width=580, height=2)
-
-        D_Yloc = D_Yloc + D_dY - 12
-        self.Label_multipass = Label(vcarve_settings, text="Multipass Cutting")
-        self.Label_multipass.place(x=center_loc, y=D_Yloc, width=w_label, height=21, anchor=CENTER)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_v_rough_stk = Label(vcarve_settings, text="V-Carve Finish Pass Stock")
-        self.Label_v_rough_stk.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_v_rough_stk_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_v_rough_stk_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-
-        self.Label_right_v_rough_stk = Label(vcarve_settings, text="(Zero disables multipass cutting)", anchor=W)
-        self.Label_right_v_rough_stk.place(x=xd_units_L + 20, y=D_Yloc, width=w_label, height=21)
-
-        self.Entry_v_rough_stk = Entry(vcarve_settings, width="15")
-        self.Entry_v_rough_stk.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_v_rough_stk.configure(textvariable=self.v_rough_stk)
-        self.v_rough_stk.trace_variable("w", self.Entry_v_rough_stk_Callback)
-        self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_v_max_cut = Label(vcarve_settings, text="V-Carve Max Depth per Pass")
-        self.Label_v_max_cut.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_v_max_cut_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_v_max_cut_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_v_max_cut = Entry(vcarve_settings, width="15")
-        self.Entry_v_max_cut.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_v_max_cut.configure(textvariable=self.v_max_cut)
-        self.v_max_cut.trace_variable("w", self.Entry_v_max_cut_Callback)
-        self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), 2)
-
-        if float(self.v_rough_stk.get()) == 0.0:
-            self.Label_v_max_cut.configure(state="disabled")
-            self.Label_v_max_cut_u.configure(state="disabled")
-            self.Entry_v_max_cut.configure(state="disabled")
-        else:
-            self.Label_v_max_cut.configure(state="normal")
-            self.Label_v_max_cut_u.configure(state="normal")
-            self.Entry_v_max_cut.configure(state="normal")
-
-        if not bool(self.inlay.get()):
-            self.Label_Allowance.configure(state="disabled")
-            self.Entry_Allowance.configure(state="disabled")
-            self.Label_Allowance_u.configure(state="disabled")
-        else:
-            self.Label_Allowance.configure(state="normal")
-            self.Entry_Allowance.configure(state="normal")
-            self.Label_Allowance_u.configure(state="normal")
-
-        if not bool(self.plotbox.get()):
-            self.Label_BoxGap.configure(state="disabled")
-            self.Entry_BoxGap.configure(state="disabled")
-            self.Label_BoxGap_u.configure(state="disabled")
-        else:
-            self.Label_BoxGap.configure(state="normal")
-            self.Entry_BoxGap.configure(state="normal")
-            self.Label_BoxGap_u.configure(state="normal")
-
-        ## Cleanup Settings ##
-        D_Yloc = D_Yloc + D_dY + 12
-        self.vcarve_separator1 = Frame(vcarve_settings, height=2, bd=1, relief=SUNKEN)
-        self.vcarve_separator1.place(x=0, y=D_Yloc, width=580, height=2)
-
-        right_but_loc = int(vcarve_settings.winfo_width()) - 10
-        width_cb = 100
-        height_cb = 35
-
-        D_Yloc = D_Yloc + D_dY - 12
-        self.Label_clean = Label(vcarve_settings, text="Cleanup Operations")
-        self.Label_clean.place(x=center_loc, y=D_Yloc, width=w_label, height=21, anchor=CENTER)
-
-        self.CLEAN_Recalculate = Button(vcarve_settings, text="Calculate\nCleanup", command=self.Calculate_CLEAN_Click)
-        self.CLEAN_Recalculate.place(x=right_but_loc, y=D_Yloc, width=width_cb, height=height_cb * 1.5, anchor="ne")
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_CLEAN_DIA = Label(vcarve_settings, text="Cleanup Cut Diameter")
-        self.Label_CLEAN_DIA.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_CLEAN_DIA_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_CLEAN_DIA_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_CLEAN_DIA = Entry(vcarve_settings, width="15")
-        self.Entry_CLEAN_DIA.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_CLEAN_DIA.configure(textvariable=self.clean_dia)
-        self.clean_dia.trace_variable("w", self.Entry_CLEAN_DIA_Callback)
-        self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_STEP_OVER = Label(vcarve_settings, text="Cleanup Cut Step Over")
-        self.Label_STEP_OVER.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_STEP_OVER_u = Label(vcarve_settings, text="%", anchor=W)
-        self.Label_STEP_OVER_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_STEP_OVER = Entry(vcarve_settings, width="15")
-        self.Entry_STEP_OVER.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_STEP_OVER.configure(textvariable=self.clean_step)
-        self.clean_step.trace_variable("w", self.Entry_STEP_OVER_Callback)
-        self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), 2)
-
-        D_Yloc = D_Yloc + 24
-        check_delta = 40
-        self.Label_clean_P = Label(vcarve_settings, text="Cleanup Cut Directions")
-        self.Label_clean_P.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.Write_Clean = Button(vcarve_settings, text="Save Cleanup\nG-Code", command=self.Write_Clean_Click)
-        self.Write_Clean.place(x=right_but_loc, y=D_Yloc, width=width_cb, height=height_cb, anchor="e")
-
-        self.Checkbutton_clean_P = Checkbutton(vcarve_settings, text="P", anchor=W)
-        self.Checkbutton_clean_P.configure(variable=self.clean_P)
-        self.Checkbutton_clean_P.place(x=xd_entry_L, y=D_Yloc, width=w_entry + 40, height=23)
-        self.Checkbutton_clean_P_ToolTip = ToolTip(self.Checkbutton_clean_P, text= \
-            'Cut the perimeter of the uncut area.')
-        self.clean_P.trace_variable("w", self.Checkbutton_clean_P_Callback)
-
-        self.Checkbutton_clean_X = Checkbutton(vcarve_settings, text="X", anchor=W)
-        self.Checkbutton_clean_X.configure(variable=self.clean_X)
-        self.Checkbutton_clean_X.place(x=xd_entry_L + check_delta, y=D_Yloc, width=w_entry + 40, height=23)
-        self.clean_X.trace_variable("w", self.Checkbutton_clean_X_Callback)
-
-        self.Checkbutton_clean_Y = Checkbutton(vcarve_settings, text="Y", anchor=W)
-        self.Checkbutton_clean_Y.configure(variable=self.clean_Y)
-        self.Checkbutton_clean_Y.place(x=xd_entry_L + check_delta * 2, y=D_Yloc, width=w_entry + 40, height=23)
-        self.clean_Y.trace_variable("w", self.Checkbutton_clean_Y_Callback)
-
-        D_Yloc = D_Yloc + 12
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_V_CLEAN = Label(vcarve_settings, text="V-Bit Cleanup Step")
-        self.Label_V_CLEAN.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_V_CLEAN_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
-        self.Label_V_CLEAN_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_V_CLEAN = Entry(vcarve_settings, width="15")
-        self.Entry_V_CLEAN.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_V_CLEAN.configure(textvariable=self.clean_v)
-        self.clean_v.trace_variable("w", self.Entry_V_CLEAN_Callback)
-        self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), 2)
-
-        D_Yloc = D_Yloc + 24
-        self.Label_v_clean_P = Label(vcarve_settings, text="V-Bit Cut Directions")
-        self.Label_v_clean_P.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.Write_V_Clean = Button(vcarve_settings, text="Save V Cleanup\nG-Code", command=self.Write_V_Clean_Click)
-        self.Write_V_Clean.place(x=right_but_loc, y=D_Yloc, width=width_cb, height=height_cb, anchor="e")
-
-        self.Checkbutton_v_clean_P = Checkbutton(vcarve_settings, text="P", anchor=W)
-        self.Checkbutton_v_clean_P.configure(variable=self.v_clean_P)
-        self.Checkbutton_v_clean_P.place(x=xd_entry_L, y=D_Yloc, width=w_entry + 40, height=23)
-        self.Checkbutton_v_clean_X = Checkbutton(vcarve_settings, text="X", anchor=W)
-        self.Checkbutton_v_clean_X.configure(variable=self.v_clean_X)
-        self.Checkbutton_v_clean_X.place(x=xd_entry_L + check_delta, y=D_Yloc, width=w_entry + 40, height=23)
-        self.Checkbutton_v_clean_Y = Checkbutton(vcarve_settings, text="Y", anchor=W)
-        self.Checkbutton_v_clean_Y.configure(variable=self.v_clean_Y)
-        self.Checkbutton_v_clean_Y.place(x=xd_entry_L + check_delta * 2, y=D_Yloc, width=w_entry + 40, height=23)
-
-        ## V-Bit Picture ##
-        self.PHOTO = PhotoImage(format='gif', data=
-        'R0lGODlhoABQAIABAAAAAP///yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEK'
-        + 'AAEALAAAAACgAFAAAAL+jI+pBu2/opy02ouzvg+G7m3iSJam1XHpybbuezhk'
-        + 'CFNyjZ9AS+ff6gtqdq5eMUQUKlG4GwsYW0ptPiMGmkhOtwhtzioBd7nkqBTk'
-        + 'BV3LZe8Z7Vyzue75zL6t4zf6fa3vxxGoBDhIZViFKFKoeNeYwfjIJylHyWPJ'
-        + 'hPmkechZEmkJ6hk2GiFaqnD6qIpq1ur6WhnL+kqLaIuKO6g7yuvnywmMJ4xJ'
-        + 'PGdMidxmkpaFxDClTMar1ZA1hr0kTcecDUu0Exe0nacDy/D8ER17vgidugK+'
-        + 'zq7OHB5jXf1Onkpf311HXz1+1+gBs7ZAzcB57Aj+IPUFoUNC6CbCgKMGYa3+'
-        + 'cBjhBOtisUkzf2FCXjT5C+UTlSl7sQykMRQxhf8+RSxmrFrOKi9VXCwI7gbH'
-        + 'h/iCGgX56SAae3+AEg36FN0+qQt10BIHj1XMIk6xJZH3D+zXd1Yhab2ybaRR'
-        + 'sFXjVZR4JJOjCVtf6IQ2NuzUrt7KlrwUkB/NoXD35hM7tOZKvjy21v0D6NRI'
-        + 'xZBBKovzmCTPojeJao6WeFzmz6InjiYtmtBp1Jtb9/y8eoZA1nmkxaYt5LbZ'
-        + 'frhrx+29R7eNPq9JCzcVGTgdXLGLG7/qXHlCVcel+/Y5vGBRjWyR7n6OAtTs'
-        + 'b9otfwdPV9R4sgux3sN7NzHWjX8htQPSfW/UgYRL888KPAllP3jgX14GRpFP'
-        + 'O/85405YCZpRIIEQIsjRfAtStYgeAuUX34TwCajZYUkhJ6FizRgIgYggNlTd'
-        + 'EMR1Ux5q0Q2BoXUbTVQAADs=')
-
-        self.Label_photo = Label(vcarve_settings, image=self.PHOTO)
-        self.Label_photo.place(x=w_label + 150, y=40)
-        self.Entry_Bit_Shape_Check()
-
-        ## Buttons ##
-        Ybut = int(vcarve_settings.winfo_height()) - 30
-        Xbut = int(vcarve_settings.winfo_width() / 2)
-
-        self.VCARVE_Recalculate = Button(vcarve_settings, text="Calculate V-Carve", command=self.VCARVE_Recalculate_Click)
-        self.VCARVE_Recalculate.place(x=Xbut, y=Ybut, width=130, height=30, anchor="e")
-
-        if self.cut_type.get() == "v-carve":
-            self.VCARVE_Recalculate.configure(state="normal", command=None)
-        else:
-            self.VCARVE_Recalculate.configure(state="disabled", command=None)
-
-        self.VCARVE_Close = Button(vcarve_settings, text="Close", command=vcarve_settings.destroy)
-        self.VCARVE_Close.place(x=Xbut, y=Ybut, width=130, height=30, anchor="w")
