@@ -74,6 +74,7 @@ class MyText(MyImage):
         # TODO handle unicode string
         self.text = u''
         self.nrlines = 0
+        self.line_max_vals = []
 
         # Keys of characters, if any, that were not found in the font set
         self.no_font_record = []
@@ -129,7 +130,7 @@ class MyText(MyImage):
         font_char_space = font_char_width * (self.char_space /100.0)
 
         no_font_record = []
-        max_vals = []
+        line_max_vals = []
         xposition = 0
         yposition = 0
         line_cnt = 0
@@ -155,7 +156,7 @@ class MyText(MyImage):
                 yposition += font_line_space
                 line_cnt += 1
 
-                max_vals.append([xmin_tmp, xmax_tmp, ymin_tmp, ymax_tmp])
+                line_max_vals.append([xmin_tmp, xmax_tmp, ymin_tmp, ymax_tmp])
                 xmin_tmp = ymin_tmp = 1e10
                 xmax_tmp = ymax_tmp = -1e10
 
@@ -189,21 +190,93 @@ class MyText(MyImage):
 
         self.no_font_record = no_font_record
         self.nrlines = line_cnt
-        self._set_bbox(max_vals)
 
-    def _set_bbox(self, max_vals):
+        self.line_max_vals = line_max_vals
+        self._set_bbox()
 
-        xmin = ymin = 1e10
-        xmax = ymax = -1e10
+    def align(self, alignment):
 
-        for i, vals in enumerate(max_vals):
-            xmin = min(xmin, vals[0])
-            xmax = max(xmax, vals[1])
-            ymin = min(ymin, vals[2])
-            ymax = max(ymax, vals[3])
+        line_minx = []
+        line_maxx = []
+        line_miny = []
+        line_maxy = []
+        for max_vals in self.line_max_vals:
+            line_minx.append( max_vals[0] )
+            line_maxx.append( max_vals[1] )
+            line_miny.append( max_vals[2] )
+            line_maxy.append( max_vals[3] )
 
-        self.bbox = BoundingBox(xmin, xmax, ymin, ymax)
+        minx, maxx, miny, maxy = self.get_bbox()
 
+        if alignment == "Left":
+            pass
+
+        elif alignment == "Center":
+            for i, XY in enumerate(self.coords):
+                line_num = int(XY[4])
+                try:
+                    self.coords[i][0] = XY[0] + (maxx - line_maxx[line_num]) / 2
+                    self.coords[i][2] = XY[2] + (maxx - line_maxx[line_num]) / 2
+                except:
+                    pass
+
+        elif alignment == "Right":
+            for XY in iter(self.coords):
+                line_num = int(XY[4])
+                try:
+                    XY[0] = XY[0] + (maxx - line_maxx[line_num])
+                    XY[2] = XY[2] + (maxx - line_maxx[line_num])
+                except:
+                    pass
+
+        self._set_bbox()
+
+    def transform_on_radius(self, alignment, radius, upper):
+
+        mina = 1e10
+        maxa = -1e10
+
+        if radius != 0.0:
+            for XY in self.coords:
+                XY[0], XY[1], A1 = rotation(XY[0], XY[1], 0, radius)
+                XY[2], XY[3], A2 = rotation(XY[2], XY[3], 0, radius)
+                maxa = max(maxa, A1, A2)
+                mina = min(mina, A1, A2)
+            mida = (mina + maxa) / 2
+
+            if alignment == "Left":
+                pass
+
+            elif alignment == "Center":
+                for XY in self.coords:
+                    XY[0], XY[1] = transform(XY[0], XY[1], mida)
+                    XY[2], XY[3] = transform(XY[2], XY[3], mida)
+
+            elif alignment == "Right":
+                for XY in self.coords:
+                    if upper:
+                        XY[0], XY[1] = transform(XY[0], XY[1], maxa)
+                        XY[2], XY[3] = transform(XY[2], XY[3], maxa)
+                    else:
+                        XY[0], XY[1] = transform(XY[0], XY[1], mina)
+                        XY[2], XY[3] = transform(XY[2], XY[3], mina)
+
+            self._set_bbox()
+
+    def transform_angle(self, angle, mirror, flip):
+
+        for XY in self.coords:
+            if angle != 0.0:
+                XY[0], XY[1], A1 = rotation(XY[0], XY[1], angle, 0)
+                XY[2], XY[3], A2 = rotation(XY[2], XY[3], angle, 0)
+            if mirror:
+                XY[0] = -XY[0]
+                XY[2] = -XY[2]
+            if flip:
+                XY[1] = -XY[1]
+                XY[3] = -XY[3]
+
+        self._set_bbox()
 
 class Tool(object):
 
@@ -262,15 +335,6 @@ class Engrave(object):
         self.set_x_length(0)
         self.set_y_length(0)
 
-        if image is None:
-            minx, maxx, miny, maxy = (0, 0, 0, 0)
-        else:
-            minx, maxx, miny, maxy = self.image.get_bbox()
-        self.set_minX(minx)
-        self.set_maxX(maxx)
-        self.set_minY(miny)
-        self.set_maxY(maxy)
-
     def init_coords(self):
         # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt]) ?
         if self.image is None:
@@ -293,11 +357,6 @@ class Engrave(object):
     def set_image(self, image):
         self.image = image
         self.init_coords()
-        minx, maxx, miny, maxy = self.image.get_bbox()
-        self.set_minX(minx)
-        self.set_maxX(maxx)
-        self.set_minY(miny)
-        self.set_maxY(maxy)
 
     def set_coords(self, coords):
         self.coords = coords
@@ -319,18 +378,6 @@ class Engrave(object):
 
     def set_y_length(self, yl):
         self.y_length = yl
-
-    def set_maxX(self, x):
-        self.maxX = x
-
-    def set_minX(self, x):
-        self.minX = x
-
-    def set_maxY(self, y):
-        self.maxY = y
-
-    def set_minY(self, y):
-        self.minY = y
 
     def number_of_clean_segments(self):
         return len(self.clean_segment)
@@ -671,10 +718,11 @@ class Engrave(object):
             coded_index = []
 
             # find the local coordinates of the line segment ends
-            x1_G = XY_R[0] - self.minX
-            y1_G = XY_R[1] - self.minY
-            x2_G = XY_R[2] - self.minX
-            y2_G = XY_R[3] - self.minY
+            minx, maxx, miny, maxy = self.image.get_bbox()
+            x1_G = XY_R[0] - minx
+            y1_G = XY_R[1] - miny
+            x2_G = XY_R[2] - minx
+            y2_G = XY_R[3] - miny
 
             # find the grid box index for each line segment end
             X1i = int(x1_G / xPartitionLength)
@@ -755,8 +803,9 @@ class Engrave(object):
         """
         Setup Grid Partitions for the cleaning toolpath
         """
-        xLength = self.maxX - self.minX
-        yLength = self.maxY - self.minY
+        minx, maxx, miny, maxy = self.image.get_bbox()
+        xLength = maxx - minx
+        yLength = maxy - miny
 
         xN_minus_1 = max(int(xLength / ((2 * rmax + dline) * 1.1)), 1)
         yN_minus_1 = max(int(yLength / ((2 * rmax + dline) * 1.1)), 1)
@@ -843,8 +892,10 @@ class Engrave(object):
         """
         rtmp = rmin
 
-        xIndex = int((xpt - self.minX) / self.xPartitionLength)
-        yIndex = int((ypt - self.minY) / self.yPartitionLength)
+        # TODO make x/yPartitionLength function parameters
+        minx, maxx, miny, maxy = self.image.get_bbox()
+        xIndex = int((xpt - minx) / self.xPartitionLength)
+        yIndex = int((ypt - miny) / self.yPartitionLength)
 
         self.coords_check = []
 

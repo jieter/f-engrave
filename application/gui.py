@@ -2840,6 +2840,7 @@ class Gui(Frame):
         if self.input_type.get() == "text":
             if len(self.text) > 0:
                 for XY in self.text.get_coords():
+                # for XY in self.text.coords:
                     x1 = cszw / 2 + (XY[0] - midx) / plot_scale
                     y1 = cszh / 2 - (XY[1] - midy) / plot_scale
                     x2 = cszw / 2 + (XY[2] - midx) / plot_scale
@@ -3099,6 +3100,108 @@ class Gui(Frame):
         else:
             msg = ", CHECK OUTPUT! Some characters not found in font file."
 
+        try:
+            Angle     = float(self.TANGLE.get() )
+            Thick     = float(self.STHICK.get() )
+            XOrigin   = float(self.xorigin.get())
+            YOrigin   = float(self.yorigin.get())
+        except:
+            self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
+            self.statusbar.configure( bg='red' )
+            return
+
+        #############################
+        #   Text Transformations    #
+        #############################
+        alignment = self.justify.get()
+        mirror = self.mirror.get()
+        flip = self.flip.get()
+        upper = self.upper.get()
+
+        self.text.align(alignment)
+        self.text.transform_on_radius(alignment, Radius, upper)
+        self.text.transform_angle(Angle, mirror, flip)
+
+        #############################
+        #   Engrave Box or circle   #
+        #############################
+        # Thick_Border = float(self.STHICK.get())
+        Delta = Thick / 2 + float(self.boxgap.get())
+
+        if self.plotbox.get():
+
+            if Radius_in == 0 or self.cut_type.get() == "v-carve":
+                if bool(self.mirror.get()) ^ bool(self.flip.get()):
+                    self.coords.append([minx - Delta, miny - Delta, minx - Delta, maxy + Delta, 0, 0])
+                    self.coords.append([minx - Delta, maxy + Delta, maxx + Delta, maxy + Delta, 0, 0])
+                    self.coords.append([maxx + Delta, maxy + Delta, maxx + Delta, miny - Delta, 0, 0])
+                    self.coords.append([maxx + Delta, miny - Delta, minx - Delta, miny - Delta, 0, 0])
+                else:
+                    self.coords.append([minx - Delta, miny - Delta, maxx + Delta, miny - Delta, 0, 0])
+                    self.coords.append([maxx + Delta, miny - Delta, maxx + Delta, maxy + Delta, 0, 0])
+                    self.coords.append([maxx + Delta, maxy + Delta, minx - Delta, maxy + Delta, 0, 0])
+                    self.coords.append([minx - Delta, maxy + Delta, minx - Delta, miny - Delta, 0, 0])
+
+                if self.cut_type.get() != "v-carve":
+                    Delta = Delta + Thick / 2
+                minx = minx - Delta
+                maxx = maxx + Delta
+                miny = miny - Delta
+                maxy = maxy + Delta
+
+            else:
+                Radius_plot = sqrt(maxr2) + Thick + float(self.boxgap.get())
+                minx = -Radius_plot - Thick / 2
+                maxx = -minx
+                miny = minx
+                maxy = maxx
+                midx = 0
+                midy = 0
+                self.RADIUS_PLOT = Radius_plot
+                # Don't create the circle coords here, a G-code circle command
+                # is generated later when not v-carving
+
+        ##########################################
+        #         ORIGIN LOCATING STUFF          #
+        ##########################################
+        # TODO single out method (maxx, maxy, ... object properties, e.g. the Boundingbox or similar class)
+        origin = self.origin.get()
+        if origin == 'Default':
+            origin = 'Arc-Center'
+
+        x_zero = y_zero = 0
+        vertical, horizontal = origin.split('-')
+        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
+            if vertical is 'Top':
+                y_zero = maxy
+            elif vertical is 'Mid':
+                y_zero = midy
+            elif vertical is 'Bot':
+                y_zero = miny
+
+            if horizontal is 'Center':
+                x_zero = midx
+            elif horizontal is 'Right':
+                x_zero = maxx
+            elif horizontal is 'Left':
+                x_zero = minx
+        else:  # "Default"
+            pass
+
+        for i, XY in enumerate(self.text.coords):
+            self.text.coords[i][0] = XY[0] - x_zero + XOrigin
+            self.text.coords[i][1] = XY[1] - y_zero + YOrigin
+            self.text.coords[i][2] = XY[2] - x_zero + XOrigin
+            self.text.coords[i][3] = XY[3] - y_zero + YOrigin
+
+        # self.MINX = minx - x_zero + XOrigin
+        # self.MAXX = maxx - x_zero + XOrigin
+        # self.MINY = miny - y_zero + YOrigin
+        # self.MAXY = maxy - y_zero + YOrigin
+        #
+        # self.xzero = x_zero
+        # self.yzero = y_zero
+
         minx, maxx, miny, maxy = self.text.get_bbox()
         if not self.batch.get():
             # Reset Status Bar and Entry Fields
@@ -3202,227 +3305,6 @@ class Gui(Frame):
                                   )
 
             self.statusMessage.set(self.bounding_box.get())
-
-    def calc_xmax_ymax(self, line_maxx, line_minx, line_maxy, line_miny, Radius, Radius_in, font_line_height, YScale):
-
-        try:
-            Angle     = float(self.TANGLE.get() )
-            Thick     = float(self.STHICK.get() )
-            XOrigin   = float(self.xorigin.get())
-            YOrigin   = float(self.yorigin.get())
-        except:
-            self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
-            self.statusbar.configure( bg='red' )
-            return
-
-        maxx = maxy = -99999.0
-        miny = minx = 99999.0
-        for i, maxx_val in enumerate(line_maxx):
-            minx = min(minx, line_minx[i])
-            maxx = max(maxx, line_maxx[i])
-            miny = min(miny, line_miny[i])
-            maxy = max(maxy, line_maxy[i])
-
-        ##########################################
-        #        TEXT JUSTIFICATION              #
-        ##########################################
-        if self.justify.get() == "Left":
-            pass
-
-        elif self.justify.get() == "Center":
-            for i, XY in enumerate(self.engrave.coords):
-                line_num = int(XY[4])
-                try:
-                    self.engrave.coords[i][0] = XY[0] + (maxx - line_maxx[line_num]) / 2
-                    self.engrave.coords[i][2] = XY[2] + (maxx - line_maxx[line_num]) / 2
-                except:
-                    pass
-
-        elif self.justify.get() == "Right":
-            for XY in iter(self.engrave.coords):
-                line_num = int(XY[4])
-                try:
-                    XY[0] = XY[0] + (maxx - line_maxx[line_num])
-                    XY[2] = XY[2] + (maxx - line_maxx[line_num])
-                except:
-                    pass
-
-        ##########################################
-        #         TEXT ON RADIUS STUFF           #
-        ##########################################
-        mina = 99996.0
-        maxa = -99993.0
-        if Radius != 0.0:
-            for XY in self.engrave.coords:
-                XY[0], XY[1], A1 = rotation(XY[0], XY[1], 0, Radius)
-                XY[2], XY[3], A2 = rotation(XY[2], XY[3], 0, Radius)
-                maxa = max(maxa, A1, A2)
-                mina = min(mina, A1, A2)
-            mida = (mina + maxa) / 2
-
-            ##########################################
-            #          TEXT JUSTIFICATION            #
-            ##########################################
-            if self.justify.get() == "Left":
-                pass
-
-            elif self.justify.get() == "Center":
-                for XY in self.engrave.coords:
-                    XY[0], XY[1] = transform(XY[0], XY[1], mida)
-                    XY[2], XY[3] = transform(XY[2], XY[3], mida)
-
-            elif self.justify.get() == "Right":
-                for XY in self.engrave.coords:
-                    if self.upper.get() == True:
-                        XY[0], XY[1] = transform(XY[0], XY[1], maxa)
-                        XY[2], XY[3] = transform(XY[2], XY[3], maxa)
-                    else:
-                        XY[0], XY[1] = transform(XY[0], XY[1], mina)
-                        XY[2], XY[3] = transform(XY[2], XY[3], mina)
-
-        ##########################################
-        #    TEXT FLIP / MIRROR STUFF / ANGLE    #
-        ##########################################
-        mirror_flag = self.mirror.get()
-        flip_flag = self.flip.get()
-
-        maxx = -99991.0
-        maxy = -99992.0
-        miny = 99994.0
-        minx = 99995.0
-
-        if Angle == 0.0:
-            if flip_flag:
-                miny = -font_line_height * YScale
-            else:
-                maxy = font_line_height * YScale
-
-        elif Angle == 90.0 or Angle == -270.0:
-            if not mirror_flag:
-                minx = -font_line_height * YScale
-            else:
-                maxx = font_line_height * YScale
-
-        elif Angle == 270.0 or Angle == -90.0:
-            if not mirror_flag:
-                maxx = font_line_height * YScale
-            else:
-                minx = -font_line_height * YScale
-
-        elif Angle == 180.0 or Angle == -180.0:
-            if flip_flag:
-                maxy = font_line_height * YScale
-            else:
-                miny = -font_line_height * YScale
-
-        maxr2 = 0.0
-
-        for XY in self.engrave.coords:
-            if Angle != 0.0:
-                XY[0], XY[1], A1 = rotation(XY[0], XY[1], Angle, 0)
-                XY[2], XY[3], A2 = rotation(XY[2], XY[3], Angle, 0)
-            if mirror_flag == True:
-                XY[0] = -XY[0]
-                XY[2] = -XY[2]
-                v_flop = not (v_flop)
-            if flip_flag == True:
-                XY[1] = -XY[1]
-                XY[3] = -XY[3]
-                v_flop = not (v_flop)
-
-            minx = min(minx, XY[0], XY[2])
-            maxx = max(maxx, XY[0], XY[2])
-            miny = min(miny, XY[1], XY[3])
-            maxy = max(maxy, XY[1], XY[3])
-            maxr2 = max(maxr2, float(XY[0] * XY[0] + XY[1] * XY[1]), float(XY[2] * XY[2] + XY[3] * XY[3]))
-
-        minx = minx - Thick / 2
-        maxx = maxx + Thick / 2
-        miny = miny - Thick / 2
-        maxy = maxy + Thick / 2
-        midx = (minx + maxx) / 2
-        midy = (miny + maxy) / 2
-
-        #############################
-        #   Engrave Box or circle   #
-        #############################
-        # Thick_Border = float(self.STHICK.get())
-        Delta = Thick / 2 + float(self.boxgap.get())
-
-        if self.plotbox.get():
-
-            if Radius_in == 0 or self.cut_type.get() == "v-carve":
-                if bool(self.mirror.get()) ^ bool(self.flip.get()):
-                    self.engrave.coords.append([minx - Delta, miny - Delta, minx - Delta, maxy + Delta, 0, 0])
-                    self.engrave.coords.append([minx - Delta, maxy + Delta, maxx + Delta, maxy + Delta, 0, 0])
-                    self.engrave.coords.append([maxx + Delta, maxy + Delta, maxx + Delta, miny - Delta, 0, 0])
-                    self.engrave.coords.append([maxx + Delta, miny - Delta, minx - Delta, miny - Delta, 0, 0])
-                else:
-                    self.engrave.coords.append([minx - Delta, miny - Delta, maxx + Delta, miny - Delta, 0, 0])
-                    self.engrave.coords.append([maxx + Delta, miny - Delta, maxx + Delta, maxy + Delta, 0, 0])
-                    self.engrave.coords.append([maxx + Delta, maxy + Delta, minx - Delta, maxy + Delta, 0, 0])
-                    self.engrave.coords.append([minx - Delta, maxy + Delta, minx - Delta, miny - Delta, 0, 0])
-
-                if self.cut_type.get() != "v-carve":
-                    Delta = Delta + Thick / 2
-                minx = minx - Delta
-                maxx = maxx + Delta
-                miny = miny - Delta
-                maxy = maxy + Delta
-
-            else:
-                Radius_plot = sqrt(maxr2) + Thick + float(self.boxgap.get())
-                minx = -Radius_plot - Thick / 2
-                maxx = -minx
-                miny = minx
-                maxy = maxx
-                midx = 0
-                midy = 0
-                self.RADIUS_PLOT = Radius_plot
-                # Don't create the circle coords here, a G-code circle command
-                # is generated later when not v-carving
-
-        ##########################################
-        #         ORIGIN LOCATING STUFF          #
-        ##########################################
-        # TODO single out method (maxx, maxy, ... object properties, e.g. the Boundingbox or similar class)
-        origin = self.origin.get()
-        if origin == 'Default':
-            origin = 'Arc-Center'
-        vertical, horizontal = origin.split('-')
-        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
-            if vertical is 'Top':
-                y_zero = maxy
-            elif vertical is 'Mid':
-                y_zero = midy
-            elif vertical is 'Bot':
-                y_zero = miny
-
-            if horizontal is 'Center':
-                x_zero = midx
-            elif horizontal is 'Right':
-                x_zero = maxx
-            elif horizontal is 'Left':
-                x_zero = minx
-        else:  # "Default"
-            x_zero = 0
-            y_zero = 0
-
-        for i, XY in enumerate(self.engrave.coords):
-            self.engrave.coords[i][0] = XY[0] - x_zero + XOrigin
-            self.engrave.coords[i][1] = XY[1] - y_zero + YOrigin
-            self.engrave.coords[i][2] = XY[2] - x_zero + XOrigin
-            self.engrave.coords[i][3] = XY[3] - y_zero + YOrigin
-
-        self.MINX = minx - x_zero + XOrigin
-        self.MAXX = maxx - x_zero + XOrigin
-        self.MINY = miny - y_zero + YOrigin
-        self.MAXY = maxy - y_zero + YOrigin
-
-        self.xzero = x_zero
-        self.yzero = y_zero
-
-        return (minx, maxx, miny, maxy)
 
     def v_carve_it(self, clean=False, DXF_FLAG=False):
 
