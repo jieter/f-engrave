@@ -59,12 +59,14 @@ class Gui(Frame):
         self.master.update()
         # self.PreviewCanvas.update()
 
-    # def plot_progress(self, position, radius):
     def plot_progress(self, normv, color, radius, fill=False):
         cszw = int(self.PreviewCanvas.cget("width"))
         cszh = int(self.PreviewCanvas.cget("height"))
-        midx = (self.MAXX + self.MINX) / 2
-        midy = (self.MAXY + self.MINY) / 2
+
+        minx, maxx, miny, maxy = self.engrave.image.get_bbox()
+        midx = (maxx + minx) / 2
+        midy = (maxy + miny) / 2
+
         self.plot_circle(normv, midx, midy, cszw, cszh, color, radius, fill)
 
     def f_engrave_init(self):
@@ -2046,8 +2048,6 @@ class Gui(Frame):
             init_dir = self.HOME_DIR
 
         fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        init_file = os.path.basename(fileName)
-
         if self.input_type.get() == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
@@ -2095,7 +2095,6 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        # fileName, fileExtension = os.path.splitext(self.NGC_FILE)
         if self.input_type.get() == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
@@ -2136,8 +2135,7 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        # fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        if self.input_type.get() != "text":
+        if self.input_type.get() == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
             fileName_tmp, fileExtension = os.path.splitext(init_file)
@@ -2173,15 +2171,14 @@ class Gui(Frame):
 
 
     def menu_File_Save_SVG_File(self):
-        self.WriteSVG()
+
+        self.svgcode = svg(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        init_file = os.path.basename(fileName)
-        if self.input_type.get() != "text":
+        if self.input_type.get() == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
         else:
