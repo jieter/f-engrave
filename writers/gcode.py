@@ -5,7 +5,7 @@ from geometry import *
 from geometry.pathsorter import sort_paths
 from geometry.linearcfitter import line_arc_fit
 
-from util import header_text, fmessage, icon
+from util import MAXINT, header_text, fmessage, icon
 
 
 def gcode(job):
@@ -868,7 +868,8 @@ def douglas(st, tolerance=.001, plane=None, _first=True):
     pe = st[-1]
 
     for i, p in enumerate(st):
-        if p is L1 or p is L2: continue
+        if p is L1 or p is L2:
+            continue
         dist = dist_lseg(L1, L2, p)
         distz = dist_lseg(L1, L2, p, z_only=True)  # added to fix out of plane inacuracy problem
         if dist > worst_dist:
@@ -897,7 +898,8 @@ def douglas(st, tolerance=.001, plane=None, _first=True):
                 else:
                     dist = MAXINT
 
-                if dist > worst_arc_dist: worst_arc_dist = dist
+                if dist > worst_arc_dist:
+                    worst_arc_dist = dist
 
                 mx = (x + Lx) / 2
                 my = (y + Ly) / 2
@@ -921,21 +923,33 @@ def douglas(st, tolerance=.001, plane=None, _first=True):
         if plane == 18:
             ccw = not ccw
         yield "G1", ps, None
+
         if ccw:
             yield "G3", st[-1], arc_fmt(plane, c1, c2, ps)
         else:
             yield "G2", st[-1], arc_fmt(plane, c1, c2, ps)
+
     elif worst_dist > tolerance:
-        if _first: yield "G1", st[0], None
+
+        if _first:
+            yield ("G1", st[0], None)
+
         for i in douglas(st[:worst + 1], tolerance, plane, False):
             yield i
+
         yield "G1", st[worst], None
+
         for i in douglas(st[worst:], tolerance, plane, False):
             yield i
-        if _first: yield "G1", st[-1], None
+        if _first:
+            yield "G1", st[-1], None
+
     else:
-        if _first: yield "G1", st[0], None
-        if _first: yield "G1", st[-1], None
+        if _first:
+            yield "G1", st[0], None
+
+        if _first:
+            yield "G1", st[-1], None
 
     if last_point != None:  # added to fix closed loop problem
         yield "G1", st[0], None  # added to fix closed loop problem

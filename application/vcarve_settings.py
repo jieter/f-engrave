@@ -4,11 +4,9 @@ from tooltip import ToolTip
 if VERSION == 3:
     from tkinter import *
     from tkinter.filedialog import *
-    import tkinter.messagebox
 else:
     from Tkinter import *
     from tkFileDialog import *
-    import tkMessageBox
 
 
 class VCarveSettings(object):
@@ -18,20 +16,20 @@ class VCarveSettings(object):
         self.settings = settings
 
         # GUI callbacks
-        self.entry_set                 = master.entry_set
-        self.statusMessage             = master.statusMessage
+        self.entry_set = master.entry_set
+        self.statusMessage = master.statusMessage
         self.Entry_recalc_var_Callback = master.Entry_recalc_var_Callback
-        self.calc_depth_limit          = master.calc_depth_limit
-        self.Calculate_CLEAN_Click     = master.Calculate_CLEAN_Click
-        self.Write_Clean_Click         = master.Write_Clean_Click
-        self.Write_V_Clean_Click       = master.Write_V_Clean_Click
-        self.Recalc_RQD                = master.Recalc_RQD
-        self.recalculate_click         = master.Recalculate_Click
-        self.V_Carve_Calc_Click        = master.V_Carve_Calc_Click
+        self.calc_depth_limit = master.calc_depth_limit
+        self.Calculate_CLEAN_Click = master.Calculate_CLEAN_Click
+        self.Write_Clean_Click = master.Write_Clean_Click
+        self.Write_V_Clean_Click = master.Write_V_Clean_Click
+        self.Recalc_RQD = master.Recalc_RQD
+        self.recalculate_click = master.Recalculate_Click
+        self.V_Carve_Calc_Click = master.V_Carve_Calc_Click
 
         # GUI Engraver callback
-        self.init_clean_coords         = master.engrave.init_clean_coords
-        self.refresh_v_pplot           = master.engrave.refresh_v_pplot
+        self.init_clean_coords = master.engrave.init_clean_coords
+        self.refresh_v_pplot = master.engrave.refresh_v_pplot
 
         # V-Carve settings window
         self.vcarve_settings = Toplevel(width=580, height=690)
@@ -394,8 +392,8 @@ class VCarveSettings(object):
         self.Checkbutton_clean_P = Checkbutton(vcarve_settings, text="P", anchor=W)
         self.Checkbutton_clean_P.configure(variable=self.clean_P)
         self.Checkbutton_clean_P.place(x=xd_entry_L, y=D_Yloc, width=w_entry + 40, height=23)
-        self.Checkbutton_clean_P_ToolTip = ToolTip(self.Checkbutton_clean_P, text= \
-            'Cut the perimeter of the uncut area.')
+        self.Checkbutton_clean_P_ToolTip = ToolTip(self.Checkbutton_clean_P,
+                                                   text='Cut the perimeter of the uncut area.')
         self.clean_P.trace_variable("w", self.Checkbutton_clean_P_Callback)
 
         self.Checkbutton_clean_X = Checkbutton(vcarve_settings, text="X", anchor=W)
@@ -447,7 +445,8 @@ class VCarveSettings(object):
         Ybut = int(vcarve_settings.winfo_height()) - 30
         Xbut = int(vcarve_settings.winfo_width() / 2)
 
-        self.VCARVE_Recalculate = Button(vcarve_settings, text="Calculate V-Carve", command=self.vcarve_recalculate_click)
+        self.VCARVE_Recalculate = Button(vcarve_settings, text="Calculate V-Carve",
+                                         command=self.vcarve_recalculate_click)
         self.VCARVE_Recalculate.place(x=Xbut, y=Ybut, width=130, height=30, anchor="e")
 
         if self.cut_type.get() == "v-carve":
@@ -513,7 +512,7 @@ class VCarveSettings(object):
         return OK
 
     def Entry_InsideAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check() )
+        self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check())
         # TODO setting
 
     def Entry_OutsideAngle_Check(self):
@@ -527,7 +526,7 @@ class VCarveSettings(object):
         return OK
 
     def Entry_OutsideAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check() )
+        self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check())
         # TODO setting
 
     def Entry_StepSize_Check(self):
@@ -541,7 +540,7 @@ class VCarveSettings(object):
         return OK
 
     def Entry_StepSize_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), setting='step_len' )
+        self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), setting='step_len')
 
     def Entry_Allowance_Check(self):
         try:
@@ -554,7 +553,7 @@ class VCarveSettings(object):
         return OK
 
     def Entry_Allowance_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), setting='allowance' )
+        self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), setting='allowance')
 
     def Entry_Prismatic_Callback(self, varName, index, mode):
         try:
@@ -582,7 +581,7 @@ class VCarveSettings(object):
         return NOR
 
     def Entry_v_max_cut_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut' )
+        self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut')
 
     def Entry_v_rough_stk_Check(self):
         try:
@@ -606,7 +605,7 @@ class VCarveSettings(object):
         return NOR
 
     def Entry_v_rough_stk_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), setting='v_rough_stk' )
+        self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), setting='v_rough_stk')
 
     def Entry_V_CLEAN_Check(self):
         try:
@@ -619,7 +618,7 @@ class VCarveSettings(object):
         return OK
 
     def Entry_V_CLEAN_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), setting='clean_v' )
+        self.entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), setting='clean_v')
 
     def Entry_CLEAN_DIA_Check(self):
         try:
@@ -632,7 +631,7 @@ class VCarveSettings(object):
         return OK
 
     def Entry_CLEAN_DIA_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), setting='clean_dia' )
+        self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), setting='clean_dia')
         self.init_clean_coords()
 
     def Entry_STEP_OVER_Check(self):
@@ -646,7 +645,7 @@ class VCarveSettings(object):
         return OK
 
     def Entry_STEP_OVER_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), setting='clean_step' )
+        self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), setting='clean_step')
 
     def Checkbutton_clean_P_Callback(self, varName, index, mode):
         self.settings.set('clean_P', self.clean_P.get())
@@ -661,7 +660,7 @@ class VCarveSettings(object):
         self.calc_depth_limit()
 
         try:
-            if   self.bit_shape.get() == "VBIT":
+            if self.bit_shape.get() == "VBIT":
                 self.Label_Vbitangle.configure(state="normal")
                 self.Label_Vbitangle_u.configure(state="normal")
                 self.Entry_Vbitangle.configure(state="normal")
@@ -687,7 +686,7 @@ class VCarveSettings(object):
     # TODO same validation is part of General settings
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
-        self.refresh_v_pplot() # TODO only needed when plotting
+        self.refresh_v_pplot()  # TODO only needed when plotting
 
     # TODO same validation is part of General settings
     def Entry_BoxGap_Check(self):
@@ -740,22 +739,22 @@ class VCarveSettings(object):
         self.settings.set('bit_shape', self.bit_shape.get())
 
     def vbit_picture(self):
-        self.PHOTO = PhotoImage(format='gif', data=
-        'R0lGODlhoABQAIABAAAAAP///yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEK'
-        + 'AAEALAAAAACgAFAAAAL+jI+pBu2/opy02ouzvg+G7m3iSJam1XHpybbuezhk'
-        + 'CFNyjZ9AS+ff6gtqdq5eMUQUKlG4GwsYW0ptPiMGmkhOtwhtzioBd7nkqBTk'
-        + 'BV3LZe8Z7Vyzue75zL6t4zf6fa3vxxGoBDhIZViFKFKoeNeYwfjIJylHyWPJ'
-        + 'hPmkechZEmkJ6hk2GiFaqnD6qIpq1ur6WhnL+kqLaIuKO6g7yuvnywmMJ4xJ'
-        + 'PGdMidxmkpaFxDClTMar1ZA1hr0kTcecDUu0Exe0nacDy/D8ER17vgidugK+'
-        + 'zq7OHB5jXf1Onkpf311HXz1+1+gBs7ZAzcB57Aj+IPUFoUNC6CbCgKMGYa3+'
-        + 'cBjhBOtisUkzf2FCXjT5C+UTlSl7sQykMRQxhf8+RSxmrFrOKi9VXCwI7gbH'
-        + 'h/iCGgX56SAae3+AEg36FN0+qQt10BIHj1XMIk6xJZH3D+zXd1Yhab2ybaRR'
-        + 'sFXjVZR4JJOjCVtf6IQ2NuzUrt7KlrwUkB/NoXD35hM7tOZKvjy21v0D6NRI'
-        + 'xZBBKovzmCTPojeJao6WeFzmz6InjiYtmtBp1Jtb9/y8eoZA1nmkxaYt5LbZ'
-        + 'frhrx+29R7eNPq9JCzcVGTgdXLGLG7/qXHlCVcel+/Y5vGBRjWyR7n6OAtTs'
-        + 'b9otfwdPV9R4sgux3sN7NzHWjX8htQPSfW/UgYRL888KPAllP3jgX14GRpFP'
-        + 'O/85405YCZpRIIEQIsjRfAtStYgeAuUX34TwCajZYUkhJ6FizRgIgYggNlTd'
-        + 'EMR1Ux5q0Q2BoXUbTVQAADs=')
+        self.PHOTO = PhotoImage(format='gif',
+                                data='R0lGODlhoABQAIABAAAAAP///yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEK' +
+                                     'AAEALAAAAACgAFAAAAL+jI+pBu2/opy02ouzvg+G7m3iSJam1XHpybbuezhk' +
+                                     'CFNyjZ9AS+ff6gtqdq5eMUQUKlG4GwsYW0ptPiMGmkhOtwhtzioBd7nkqBTk' +
+                                     'BV3LZe8Z7Vyzue75zL6t4zf6fa3vxxGoBDhIZViFKFKoeNeYwfjIJylHyWPJ' +
+                                     'hPmkechZEmkJ6hk2GiFaqnD6qIpq1ur6WhnL+kqLaIuKO6g7yuvnywmMJ4xJ' +
+                                     'PGdMidxmkpaFxDClTMar1ZA1hr0kTcecDUu0Exe0nacDy/D8ER17vgidugK+' +
+                                     'zq7OHB5jXf1Onkpf311HXz1+1+gBs7ZAzcB57Aj+IPUFoUNC6CbCgKMGYa3+' +
+                                     'cBjhBOtisUkzf2FCXjT5C+UTlSl7sQykMRQxhf8+RSxmrFrOKi9VXCwI7gbH' +
+                                     'h/iCGgX56SAae3+AEg36FN0+qQt10BIHj1XMIk6xJZH3D+zXd1Yhab2ybaRR' +
+                                     'sFXjVZR4JJOjCVtf6IQ2NuzUrt7KlrwUkB/NoXD35hM7tOZKvjy21v0D6NRI' +
+                                     'xZBBKovzmCTPojeJao6WeFzmz6InjiYtmtBp1Jtb9/y8eoZA1nmkxaYt5LbZ' +
+                                     'frhrx+29R7eNPq9JCzcVGTgdXLGLG7/qXHlCVcel+/Y5vGBRjWyR7n6OAtTs' +
+                                     'b9otfwdPV9R4sgux3sN7NzHWjX8htQPSfW/UgYRL888KPAllP3jgX14GRpFP' +
+                                     'O/85405YCZpRIIEQIsjRfAtStYgeAuUX34TwCajZYUkhJ6FizRgIgYggNlTd' +
+                                     'EMR1Ux5q0Q2BoXUbTVQAADs=')
 
     def create_icon(self):
         try:

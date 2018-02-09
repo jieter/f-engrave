@@ -29,7 +29,7 @@ class MyImage(object):
 
         if strokes == []:
             if self.strokes == []:
-                raise ValueError, 'Image stroke list is missing'
+                raise ValueError, 'Image stroke list is missing'  # TODO deprecated
             else:
                 # use the most recent strokes
                 strokes = self.strokes
@@ -57,7 +57,15 @@ class MyImage(object):
             XY[1] = XY[1] * yscale
             XY[2] = XY[2] * xscale
             XY[3] = XY[3] * yscale
+
         self._set_bbox()
+
+        # TODO a more elegant way of adjusting the line max vals?
+        for vals in self.line_max_vals:
+            vals[0] = vals[0] * xscale
+            vals[1] = vals[1] * xscale
+            vals[2] = vals[2] * yscale
+            vals[3] = vals[3] * yscale
 
     def transform_flip(self):
         for XY in self.coords:
@@ -81,7 +89,7 @@ class MyImage(object):
                 XY[0], XY[1], A1 = rotation(XY[0], XY[1], angle, 0)
                 XY[2], XY[3], A2 = rotation(XY[2], XY[3], angle, 0)
 
-            maxr = max(maxr, float(XY[0]*XY[0]+XY[1]*XY[1]), float(XY[2]*XY[2]+XY[3]*XY[3]))
+            maxr = max(maxr, float(XY[0] * XY[0] + XY[1] * XY[1]), float(XY[2] * XY[2] + XY[3] * XY[3]))
 
         self._set_bbox()
 
@@ -113,22 +121,20 @@ class MyText(MyImage):
 
         # TODO handle unicode string
         self.text = u''
-        self.nrlines = 0
-        self.line_max_vals = []
 
         # Keys of characters, if any, that were not found in the font set
         self.no_font_record = []
 
-        self.line_space = 1.1  # TODO set LSPACE
-        self.char_space = 25   # TODO set CSPACE
-        self.word_space = 1.0  # TODO set WSPACE
+        self.line_space = 1.1  # TODO use settings?
+        self.char_space = 25   # TODO settings?
+        self.word_space = 1.0  # TODO settings?
 
         self.radius = 0.0
         self.angle = 0.0
         self.thickness = 0.25
 
     def __str__(self):
-        ascii_text = self.text.encode('ascii','replace')
+        ascii_text = self.text.encode('ascii', 'replace')
         return ascii_text
 
     def set_font(self, font):
@@ -160,13 +166,14 @@ class MyText(MyImage):
         Create a coordinates list from character strokelists
         """
         self.init_coords()
+
         font_line_height = self.font.line_height()
         font_line_depth = self.font.line_depth()
         font_char_width = self.font.get_character_width()
 
-        font_line_space = (font_line_height - font_line_depth + self.thickness ) * self.line_space
+        font_line_space = (font_line_height - font_line_depth + self.thickness) * self.line_space
         font_word_space = font_char_width * (self.word_space / 100.0)
-        font_char_space = font_char_width * (self.char_space /100.0)
+        font_char_space = font_char_width * (self.char_space / 100.0)
 
         no_font_record = []
         line_max_vals = []
@@ -202,7 +209,7 @@ class MyText(MyImage):
                 continue
 
             try:
-                null = self.font[ord(char)].get_ymax()
+                self.font[ord(char)].get_ymax()
             except:
                 no_font = False
                 for norec in no_font_record:
@@ -228,8 +235,6 @@ class MyText(MyImage):
             xposition += font_char_space + char_width
 
         self.no_font_record = no_font_record
-        self.nrlines = line_cnt
-
         self.line_max_vals = line_max_vals
         self._set_bbox()
 
@@ -240,10 +245,10 @@ class MyText(MyImage):
         line_miny = []
         line_maxy = []
         for max_vals in self.line_max_vals:
-            line_minx.append( max_vals[0] )
-            line_maxx.append( max_vals[1] )
-            line_miny.append( max_vals[2] )
-            line_maxy.append( max_vals[3] )
+            line_minx.append(max_vals[0])
+            line_maxx.append(max_vals[1])
+            line_miny.append(max_vals[2])
+            line_maxy.append(max_vals[3])
 
         minx, maxx, miny, maxy = self.get_bbox()
 

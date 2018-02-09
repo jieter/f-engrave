@@ -1,14 +1,11 @@
-from util import VERSION, OK, NOR, INV, NAN
-from tooltip import ToolTip
+# from util import VERSION, OK, NOR, INV, NAN
+from util import VERSION, OK, INV, NAN
+# from tooltip import ToolTip
 
 if VERSION == 3:
     from tkinter import *
-    from tkinter.filedialog import *
-    import tkinter.messagebox
 else:
     from Tkinter import *
-    from tkFileDialog import *
-    import tkMessageBox
 
 
 class BitmapSettings(object):
@@ -25,8 +22,8 @@ class BitmapSettings(object):
         self.settings = settings
 
         # GUI callbacks
-        self.entry_set             = master.entry_set
-        self.statusMessage         = master.statusMessage
+        self.entry_set = master.entry_set
+        self.statusMessage = master.statusMessage
         self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
 
         # Bitmap settings window
@@ -73,7 +70,7 @@ class BitmapSettings(object):
         xd_label_L = 12
         w_label = 100
         w_entry = 60
-        w_units = 35
+        # w_units = 35
         xd_entry_L = xd_label_L + w_label + 10
         # xd_units_L = xd_entry_L+w_entry+5
 
@@ -82,13 +79,8 @@ class BitmapSettings(object):
         self.Label_BMPturnpol.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
 
         self.BMPturnpol_OptionMenu = OptionMenu(bmp_settings, self.bmp_turnpol,
-                                                "black",
-                                                "white",
-                                                "right",
-                                                "left",
-                                                "minority",
-                                                "majority",
-                                                "random")
+                                                "black", "white", "right", "left",
+                                                "minority", "majority", "random")
         self.BMPturnpol_OptionMenu.place(x=xd_entry_L, y=D_Yloc, width=w_entry + 40, height=23)
         self.bmp_turnpol.trace_variable("w", self.Entry_BMPTurnpol_Callback)
 
@@ -159,12 +151,12 @@ class BitmapSettings(object):
         return OK
 
     def Entry_BMPturdsize_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), setting='bmp_turdsize' )
+        self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), setting='bmp_turdsize')
 
     def Entry_BMPalphamax_Check(self):
         try:
             value = float(self.bmp_alphamax.get())
-            if value < 0.0 or value > 4.0/3.0:
+            if value < 0.0 or value > 4.0 / 3.0:
                 self.statusMessage.set(" Alpha Max should be between 0.0 and 1.333 ")
                 return INV
         except:
@@ -172,7 +164,7 @@ class BitmapSettings(object):
         return OK
 
     def Entry_BMPalphamax_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), setting='bmp_alphamax' )
+        self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), setting='bmp_alphamax')
 
     def Entry_BMPTurnpol_Callback(self, varName, index, mode):
         self.settings.set('bmp_turnpol', self.bmp_turnpol.get())
@@ -191,7 +183,7 @@ class BitmapSettings(object):
         return OK
 
     def Entry_BMPoptTolerance_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), setting='bmp_opttolerance' )
+        self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), setting='bmp_opttolerance')
 
     def create_icon(self):
         try:

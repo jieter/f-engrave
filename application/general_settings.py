@@ -3,12 +3,8 @@ from tooltip import ToolTip
 
 if VERSION == 3:
     from tkinter import *
-    from tkinter.filedialog import *
-    import tkinter.messagebox
 else:
     from Tkinter import *
-    from tkFileDialog import *
-    import tkMessageBox
 
 
 class GeneralSettings(object):
@@ -18,18 +14,18 @@ class GeneralSettings(object):
         self.settings = settings
 
         # GUI callbacks
-        self.entry_set                = master.entry_set
-        self.statusMessage            = master.statusMessage
-        self.Fontdir_Click            = master.Fontdir_Click
-        self.Settings_ReLoad_Click    = master.Settings_ReLoad_Click
-        self.Recalculate_Click        = master.Recalculate_Click
-        self.Settings_ReLoad_Click    = master.Settings_ReLoad_Click
-        self.write_config_file        = master.write_config_file
-        self.Recalc_RQD               = master.Recalc_RQD
-        self.Scale_Linear_Inputs      = master.Scale_Linear_Inputs
+        self.entry_set = master.entry_set
+        self.statusMessage = master.statusMessage
+        self.Fontdir_Click = master.Fontdir_Click
+        self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
+        self.Recalculate_Click = master.Recalculate_Click
+        self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
+        self.write_config_file = master.write_config_file
+        self.Recalc_RQD = master.Recalc_RQD
+        self.Scale_Linear_Inputs = master.Scale_Linear_Inputs
 
         # GUI Engraver callbacks
-        self.refresh_v_pplot          = master.engrave.refresh_v_pplot
+        self.refresh_v_pplot = master.engrave.refresh_v_pplot
 
         # General settings window
         self.general_settings = Toplevel(width=600, height=500)
@@ -48,10 +44,10 @@ class GeneralSettings(object):
 
         # General Settings variables
         self.units = StringVar()
-        self.funits = StringVar()  # feed units
-        self.xorigin = StringVar() # Xoffset
-        self.yorigin = StringVar() # Yoffset
-        self.segarc = StringVar()  # ArcAngle
+        self.funits = StringVar()   # feed units
+        self.xorigin = StringVar()  # Xoffset
+        self.yorigin = StringVar()  # Yoffset
+        self.segarc = StringVar()   # ArcAngle
         self.accuracy = StringVar()
 
         self.ext_char = BooleanVar()
@@ -63,7 +59,7 @@ class GeneralSettings(object):
 
         self.var_dis = BooleanVar()
         self.fontdir = StringVar()
-        self.H_CALC = StringVar() # height calculation
+        self.H_CALC = StringVar()  # height calculation
 
         self.useIMGsize = BooleanVar()
         self.plotbox = BooleanVar()
@@ -252,8 +248,8 @@ class GeneralSettings(object):
         D_Yloc = D_Yloc + D_dY
         self.Label_var_dis = Label(general_settings, text="Disable Variables")
         self.Label_var_dis.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_var_dis_ToolTip = ToolTip(self.Label_var_dis, text=
-            'Disable the use of variables in the generated G-Code.')
+        self.Label_var_dis_ToolTip = ToolTip(self.Label_var_dis,
+                                             text='Disable the use of variables in the generated G-Code.')
         self.Checkbutton_var_dis = Checkbutton(general_settings, text="", anchor=W)
         self.Checkbutton_var_dis.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
         self.Checkbutton_var_dis.configure(variable=self.var_dis)
@@ -346,7 +342,6 @@ class GeneralSettings(object):
 
     # Callbacks
 
-
     def Entry_units_var_Callback(self):
         if self.units.get() == 'in' and self.funits.get() == 'mm/min':
             self.Scale_Linear_Inputs(1 / 25.4)
@@ -362,7 +357,7 @@ class GeneralSettings(object):
 
     def Entry_Xoffset_Check(self):
         try:
-            value = float(self.xorigin.get())
+            float(self.xorigin.get())
         except:
             return NAN
         return NOR
@@ -372,7 +367,7 @@ class GeneralSettings(object):
 
     def Entry_Yoffset_Check(self):
         try:
-            value = float(self.yorigin.get())
+            float(self.yorigin.get())
         except:
             return NAN
         return NOR
@@ -382,7 +377,7 @@ class GeneralSettings(object):
 
     def Entry_ArcAngle_Check(self):
         try:
-            value = float(self.segarc.get())
+            float(self.segarc.get())
         except:
             return NAN
         return OK
@@ -392,7 +387,7 @@ class GeneralSettings(object):
 
     def Entry_Accuracy_Check(self):
         try:
-            value = float(self.accuracy.get())
+            float(self.accuracy.get())
         except:
             return NAN
         return OK
@@ -438,7 +433,7 @@ class GeneralSettings(object):
     # TODO same validation is part of V-Carve settings
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
-        self.refresh_v_pplot() # TODO only needed when plotting
+        self.refresh_v_pplot()  # TODO only needed when plotting
 
     def Entry_Box_Callback(self, varName, index, mode):
         try:

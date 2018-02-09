@@ -142,6 +142,7 @@ class Settings(object):
         'zcut': -0.1,
 
         'line_thickness': 0.25,
+        'border_thickness': 0.5,
 
         # options:  'Default',
         # 'Top-Left', 'Top-Center', 'Top-Right',
@@ -241,7 +242,8 @@ class Settings(object):
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
 
-        'default_text': 'F-Engrave'
+        # 'default_text': 'F-Engrave'
+        'default_text': 'F-Engrave\nEn dergelijke\ndus'  # TEST
     }
 
     def __init__(self, filename=None, autoload=False):
