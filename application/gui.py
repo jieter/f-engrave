@@ -8,8 +8,10 @@ from util import *
 from tooltip import ToolTip
 from bitmap_settings import BitmapSettings
 from vcarve_settings import VCarveSettings
+from general_settings import GeneralSettings
 
-from geometry.engrave import Engrave, MyImage, MyText, Tool, VCarve, Straight
+from geometry.coords import MyImage, MyText
+from geometry.engrave import Engrave, Toolbit, VCarve, Straight
 
 import readers
 from writers import *
@@ -41,7 +43,7 @@ class Gui(Frame):
 
         self.text = MyText()
         self.image = MyImage()
-        self.tool = Tool()
+        self.tool = Toolbit()
 
         self.bind_keys()
         self.create_widgets()
@@ -49,6 +51,9 @@ class Gui(Frame):
         self.engrave.set_progress_callback(self.plot_toolpath)
         self.engrave.set_plot_progress_callback(self.plot_progress)
         self.engrave.set_status_callback(self.status_update)
+
+    def general_settings_window(self):
+        self.general_settings_window = GeneralSettings(self, self.settings)
 
     def bitmap_settings_window(self):
         self.bitmap_settings_window = BitmapSettings(self, self.settings)
@@ -63,6 +68,7 @@ class Gui(Frame):
         # self.PreviewCanvas.update()
 
     def plot_progress(self, normv, color, radius, fill=False):
+        """Engraver progress callback"""
         cszw = int(self.PreviewCanvas.cget("width"))
         cszh = int(self.PreviewCanvas.cget("height"))
 
@@ -112,13 +118,6 @@ class Gui(Frame):
         self.useIMGsize = BooleanVar()
         self.plotbox = BooleanVar()
 
-        self.clean_P = BooleanVar()
-        self.clean_X = BooleanVar()
-        self.clean_Y = BooleanVar()
-        self.v_clean_P = BooleanVar()
-        self.v_clean_X = BooleanVar()
-        self.v_clean_Y = BooleanVar()
-
         self.arc_fit = StringVar()
         self.YSCALE = StringVar()
         self.XSCALE = StringVar()
@@ -149,15 +148,6 @@ class Gui(Frame):
         self.cut_type = StringVar()
         self.input_type = StringVar()
 
-        self.clean_dia = StringVar()
-        self.clean_step = StringVar()
-        self.clean_v = StringVar()
-        self.clean_name = StringVar()
-
-        self.gpre = StringVar()
-        self.gpost = StringVar()
-
-        self.maxcut = StringVar()
         self.current_input_file = StringVar()
         self.bounding_box = StringVar()
 
@@ -188,11 +178,6 @@ class Gui(Frame):
         # Derived variables
         self.calc_depth_limit()
 
-        if self.units.get() == 'in':
-            self.funits.set('in/min')
-        else:
-            self.funits.set('mm/min')
-
         config_file = "config.ngc"
         home_config1 = self.HOME_DIR + "/" + config_file
         config_file2 = ".fengraverc"
@@ -213,6 +198,7 @@ class Gui(Frame):
         except:
             fmessage('Unable interpret command line options')
             sys.exit()
+
         for option, value in opts:
             if option in ('-h','--help'):
                 fmessage(' ')
@@ -224,22 +210,24 @@ class Gui(Frame):
                 fmessage('-b    : batch mode (also --batch)')
                 fmessage('-h    : print this help (also --help)\n')
                 sys.exit()
+
             if option in ('-g','--gcode_file'):
                 self.Open_G_Code_File(value)
                 self.NGC_FILE = value
+
             if option in ('-f','--fontdir'):
                 if os.path.isdir(value):
-                    self.fontdir.set(value)
+                    self.settings.set('fontdir', value)
                 elif os.path.isfile(value):
                     dirname = os.path.dirname(value)
                     fileName, fileExtension = os.path.splitext(value)
                     TYPE=fileExtension.upper()
                     if TYPE=='.CXF' or TYPE=='.TTF':
                         self.input_type.set("text")
-                        self.fontdir.set(dirname)
-                        self.fontfile.set(os.path.basename(fileName)+fileExtension)
+                        self.settings.set('fontdir', dirname)
+                        self.settings.set('fontfile.', os.path.basename(fileName)+fileExtension)
                     else:
-                        self.input_type.set("image")
+                        self.settings.set('input_type', 'image')
                         self.IMAGE_FILE = value
                 else:
                     fmessage("File/Directory Not Found:\t%s" %(value) )
@@ -247,9 +235,10 @@ class Gui(Frame):
             if option in ('-d','--defdir'):
                 self.HOME_DIR = value
                 if str.find(self.NGC_FILE,'/None') != -1:
-                    self.NGC_FILE = (self.HOME_DIR+"/None")
+                    self.settings.set('NGC_FILE', self.HOME_DIR + '/None')
                 if str.find(self.IMAGE_FILE,'/None') != -1:
-                    self.IMAGE_FILE = (self.HOME_DIR+"/None")
+                    self.settings.set('IMAGE_FILE', self.HOME_DIR+'/None')
+
             if option in ('-t','--text'):
                 value = value.replace('|', '\n')
 
@@ -261,14 +250,14 @@ class Gui(Frame):
         if self.batch.get():
             fmessage('(F-Engrave Batch Mode)')
 
-            if self.input_type.get() == "text":
+            if self.settings.get('input_type') == "text":
                 self.font = readers.readFontFile(self.settings)
             else:
                 readers.read_image_file(self.settings)
 
             self.do_it()
 
-            if self.cut_type.get() == "v-carve":
+            if self.settings.get('cut_type') == "v-carve":
                 self.v_carve_it()
 
             g_code = gcode(self.engrave)
@@ -554,12 +543,32 @@ class Gui(Frame):
         self.Input.pack(side=LEFT, fill=BOTH, expand=1)
         self.Input.bind("<Key>", self.recalculate_RQD_Nocalc)
 
-        # GENERAL Settings Window Entry initialization
-        self.Entry_Xoffset = Entry()
-        self.Entry_Yoffset = Entry()
+        # TODO Cleanup
+
+        # GEN Setting Window Entry initialization
+        self.Entry_Xoffset=Entry()
+        self.Entry_Yoffset=Entry()
         self.Entry_BoxGap = Entry()
         self.Entry_ArcAngle = Entry()
         self.Entry_Accuracy = Entry()
+
+        # Bitmap Setting Window Entry initialization
+        self.Entry_BMPturdsize = Entry()
+        self.Entry_BMPalphamax = Entry()
+        self.Entry_BMPoptTolerance = Entry()
+
+        # V-Carve Setting Window Entry initialization
+        self.Entry_Vbitangle = Entry()
+        self.Entry_Vbitdia = Entry()
+        self.Entry_VDepthLimit = Entry()
+        self.Entry_InsideAngle = Entry()
+        self.Entry_OutsideAngle = Entry()
+        self.Entry_StepSize = Entry()
+        self.Entry_Allowance = Entry()
+        self.Entry_W_CLEAN = Entry()
+        # self.Entry_CLEAN_DIA = Entry()
+        # self.Entry_STEP_OVER = Entry()
+        # self.Entry_V_CLEAN = Entry()
 
         # Make Menu Bar
         self.menuBar = Menu(self.master, relief="raised", bd=2)
@@ -605,7 +614,7 @@ class Gui(Frame):
         self.menuBar.add("cascade", label="View", menu=top_View)
 
         top_Settings = Menu(self.menuBar, tearoff=0)
-        top_Settings.add("command", label="General Settings", command=self.GEN_Settings_Window)
+        top_Settings.add("command", label="General Settings", command=self.general_settings_window)
         top_Settings.add("command", label="V-Carve Settings", command=self.vcarve_settings_window)
         if POTRACE_AVAILABLE:
             top_Settings.add("command", label="Bitmap Import Settings", command=self.bitmap_settings_window)
@@ -653,13 +662,6 @@ class Gui(Frame):
         self.ext_char.set(self.settings.get('ext_char'))
         self.var_dis.set(self.settings.get('var_dis'))
 
-        self.clean_P.set(self.settings.get('clean_P'))
-        self.clean_X.set(self.settings.get('clean_X'))
-        self.clean_Y.set(self.settings.get('clean_Y'))
-        self.v_clean_P.set(self.settings.get('v_clean_P'))
-        self.v_clean_Y.set(self.settings.get('v_clean_Y'))
-        self.v_clean_X.set(self.settings.get('v_clean_X'))
-
         self.arc_fit.set(self.settings.get('arc_fit'))
         self.YSCALE.set(self.settings.get('yscale'))
         self.XSCALE.set(self.settings.get('xscale'))
@@ -675,6 +677,7 @@ class Gui(Frame):
 
         self.justify.set(self.settings.get('justify'))
         self.units.set(self.settings.get('units'))
+        self.funits.set(self.settings.get('feed_units'))
         self.FEED.set(self.settings.get('feedrate'))
         self.PLUNGE.set(self.settings.get('plunge_rate'))
         self.fontfile.set(self.settings.get('fontfile'))
@@ -684,18 +687,10 @@ class Gui(Frame):
         self.cut_type.set(self.settings.get('cut_type'))
         self.input_type.set(self.settings.get('input_type'))
 
-        self.gpre.set(self.settings.get('gcode_preamble'))
-        self.gpost.set(self.settings.get('gcode_postamble'))
-
         self.xorigin.set(self.settings.get('xorigin'))
         self.yorigin.set(self.settings.get('yorigin'))
         self.segarc.set(self.settings.get('segarc'))
         self.accuracy.set(self.settings.get('accuracy'))
-
-        self.clean_v.set(self.settings.get('clean_v'))
-        self.clean_dia.set(self.settings.get('clean_dia'))
-        self.clean_step.set(self.settings.get('clean_step'))
-        self.clean_name.set(self.settings.get('clean_name'))
 
         self.default_text = self.settings.get('default_text')
 
@@ -884,12 +879,16 @@ class Gui(Frame):
         self.do_it()
 
     def Settings_ReLoad_Click(self, event, arg1="", arg2=""):
+
         win_id = self.grab_current()
-        if self.input_type.get() == "text":
+
+        if self.settings.get('input_type') == "text":
             self.font = readers.readFontFile(self.settings)
         else:
             self.font = readers.read_image_file(self.settings)
+
         self.do_it()
+
         try:
             win_id.withdraw()
             win_id.deiconify()
@@ -920,13 +919,15 @@ class Gui(Frame):
         # print "time for cleanup calculations: ",time()-TSTART # TEST
 
     def Write_Clean_Click(self):
+        
         win_id = self.grab_current()
-        if (self.clean_P.get() +
-            self.clean_X.get() +
-            self.clean_Y.get() +
-            self.v_clean_P.get() +
-            self.v_clean_Y.get() +
-            self.v_clean_X.get()) != 0:
+        
+        if (self.settings('clean_P') +
+            self.settings('clean_X') +
+            self.settings('clean_Y') +
+            self.settings('v_clean_P') +
+            self.settings('v_clean_Y') +
+            self.settings('v_clean_X')) != 0:
             if self.engrave.number_of_clean_coords_sort == 0:
                 mess = "Calculate Cleanup must be executed\n"
                 mess = mess + "prior to saving G-Code\n"
@@ -948,13 +949,15 @@ class Gui(Frame):
             pass
 
     def Write_V_Clean_Click(self):
+
         win_id = self.grab_current()
-        if (self.clean_P.get() +
-            self.clean_X.get() +
-            self.clean_Y.get() +
-            self.v_clean_P.get() +
-            self.v_clean_Y.get() +
-            self.v_clean_X.get()) != 0:
+
+        if (self.settings('clean_P') +
+            self.settings('clean_X') +
+            self.settings('clean_Y') +
+            self.settings('v_clean_P') +
+            self.settings('v_clean_Y') +
+            self.settings('v_clean_X')) != 0:
             if self.engrave.number_of_v_clean_coords_sort == 0:
                 mess = "Calculate Cleanup must be executed\n"
                 mess = mess + "prior to saving V Cleanup G-Code\n"
@@ -989,40 +992,41 @@ class Gui(Frame):
 
     def calc_depth_limit(self):
         try:
-            bit_shape = self.settings.get('bit_shape')
+            bit_shape   = self.settings.get('bit_shape')
+            v_bit_dia   = self.settings.get('v_bit_dia')
+            v_bit_angle = self.settings.get('v_bit_angle')
+
             if bit_shape == "VBIT":
-                half_angle = radians(float(self.v_bit_angle.get()) / 2.0)
-                bit_depth = -float(self.v_bit_dia.get()) / 2.0 / tan(half_angle)
+                half_angle = radians(v_bit_angle) / 2.0
+                bit_depth = -v_bit_dia / 2.0 / tan(half_angle)
             elif bit_shape == "BALL":
-                bit_depth = -float(self.v_bit_dia.get()) / 2.0
+                bit_depth = -v_bit_dia / 2.0
             elif bit_shape == "FLAT":
-                bit_depth = -float(self.v_bit_dia.get()) / 2.0
+                bit_depth = -v_bit_dia.get / 2.0
             else:
                 pass
 
-            depth_lim = float(self.v_depth_lim.get())
+            depth_lim = self.settings.get('v_depth_lim')
             if bit_shape != "FLAT":
                 if depth_lim < 0.0:
-                    self.maxcut.set("%.3f" % (max(bit_depth, depth_lim)))
+                    self.settings.set('maxcut', max(bit_depth, depth_lim))
                 else:
-                    self.maxcut.set("%.3f" % (bit_depth))
+                    self.settings.set('maxcut', bit_depth)
             else:
                 if depth_lim < 0.0:
-                    self.maxcut.set("%.3f" % (depth_lim))
+                    self.settings.set('maxcut', depth_lim)
                 else:
-                    self.maxcut.set("%.3f" % (bit_depth))
+                    self.settings.set('maxcut', bit_depth)
+            # self.maxcut.set("%.3f", self.settings.get('maxcut'))
         except:
-            self.maxcut.set("error")
+            # self.maxcut.set("error")
+            pass
 
     def calc_r_inlay_top(self):
         half_angle = radians(self.settings.get('v_bit_angle') / 2.0)
-        inlay_depth = self.calc_r_inlay_depth()
+        inlay_depth = self.settings.get('v_depth_lim')
         r_inlay_top = tan(half_angle) * inlay_depth
         return r_inlay_top
-
-    def calc_r_inlay_depth(self):
-        inlay_depth = self.settings.get('v_depth_lim') # TODO is this 'maxcut'?
-        return inlay_depth
 
     ###############
     # Left Column #
@@ -1180,94 +1184,6 @@ class Gui(Frame):
     def Entry_Zcut_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
 
-    ######################################
-    #    Settings Window Call Backs      #
-    ######################################
-    def Entry_Xoffset_Check(self):
-        try:
-            value = float(self.xorigin.get())
-        except:
-            return NAN
-        return NOR
-
-    def Entry_Xoffset_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xoffset')
-
-    def Entry_Yoffset_Check(self):
-        try:
-            value = float(self.yorigin.get())
-        except:
-            return NAN
-        return NOR
-
-    def Entry_Yoffset_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yoffset')
-
-    def Entry_ArcAngle_Check(self):
-        try:
-            value = float(self.segarc.get())
-        except:
-            return NAN
-        return OK
-
-    def Entry_ArcAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='arc_angle')
-
-    def Entry_Accuracy_Check(self):
-        try:
-            value = float(self.accuracy.get())
-        except:
-            return NAN
-        return OK
-
-    def Entry_Accuracy_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy')
-
-    def Entry_Gpre_Callback(self, varName, index, mode):
-        self.settings.set('gcode_preamble', self.gpre.get(), setting='gcode_preamble')
-
-    def Entry_Gpost_Callback(self, varName, index, mode):
-        self.settings.set('gcode_postamble', self.gpost.get(), setting='gcode_postamble')
-
-    def Checkbutton_var_dis_Callback(self, varName, index, mode):
-        self.settings.set('var_dis', self.var_dis.get(), setting='var_dis')
-
-    def Entry_BoxGap_Check(self):
-        try:
-            value = float(self.boxgap.get())
-            if value <= 0.0:
-                self.statusMessage.set(" Gap should be greater than zero.")
-                return INV
-        except:
-            return NAN
-        return OK
-
-    def Entry_BoxGap_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
-        try:
-            if not bool(self.plotbox.get()):
-                self.Label_BoxGap.configure(state="disabled")
-                self.Entry_BoxGap.configure(state="disabled")
-                self.Label_BoxGap_u.configure(state="disabled")
-            else:
-                self.Label_BoxGap.configure(state="normal")
-                self.Entry_BoxGap.configure(state="normal")
-                self.Label_BoxGap_u.configure(state="normal")
-        except:
-            pass
-
-    def Entry_v_pplot_Callback(self, varName, index, mode):
-        self.settings.set('v_pplot', self.v_pplot.get())
-        self.engrave.refresh_v_pplot() # TODO only needed when plotting
-
-    def Entry_Box_Callback(self, varName, index, mode):
-        try:
-            self.Entry_BoxGap_Callback(varName, index, mode)
-        except:
-            pass
-        self.settings.set('plotbox', self.plotbox.get())
-        self.Recalc_RQD()
-
     def Fontdir_Click(self, event):
         win_id = self.grab_current()
         newfontdir = askdirectory(mustexist=1, initialdir=self.fontdir.get())
@@ -1280,12 +1196,10 @@ class Gui(Frame):
         except:
             pass
 
-
     def Check_All_Variables(self):
         """
         Check all variables set.
-        :return: the number of vars in error.
-        :return: 0 if all variables are Ok.
+        :return: the number of vars in error, 0 if all variables are Ok.
         """
         if self.batch.get():
             return 0 # nothing to be done in batchmode
@@ -1304,19 +1218,22 @@ class Gui(Frame):
         self.entry_set(self.Entry_Zsafe,   self.Entry_Zsafe_Check()   , 2) +\
         self.entry_set(self.Entry_Zcut,    self.Entry_Zcut_Check()    , 2)
 
-        GEN_error_cnt= \
-        self.entry_set(self.Entry_Xoffset,  self.Entry_Xoffset_Check() , 2) +\
-        self.entry_set(self.Entry_Yoffset,  self.Entry_Yoffset_Check() , 2) +\
-        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) +\
-        self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) +\
-        self.entry_set(self.Entry_BoxGap,   self.Entry_BoxGap_Check()  , 2) +\
-        self.entry_set(self.Entry_Xoffset,  self.Entry_Xoffset_Check() , 2) +\
-        self.entry_set(self.Entry_Yoffset,  self.Entry_Yoffset_Check() , 2) +\
-        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) +\
-        self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) +\
-        self.entry_set(self.Entry_BoxGap,   self.Entry_BoxGap_Check()  , 2)
+        # TODO
+        GEN_error_cnt= 0
 
-        # TODO remove vcarve and bitmap check?
+        # GEN_error_cnt= \
+        # self.entry_set(self.Entry_Xoffset,  self.Entry_Xoffset_Check() , 2) +\
+        # self.entry_set(self.Entry_Yoffset,  self.Entry_Yoffset_Check() , 2) +\
+        # self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) +\
+        # self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) +\
+        # self.entry_set(self.Entry_BoxGap,   self.Entry_BoxGap_Check()  , 2) +\
+        # self.entry_set(self.Entry_Xoffset,  self.Entry_Xoffset_Check() , 2) +\
+        # self.entry_set(self.Entry_Yoffset,  self.Entry_Yoffset_Check() , 2) +\
+        # self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) +\
+        # self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) +\
+        # self.entry_set(self.Entry_BoxGap,   self.Entry_BoxGap_Check()  , 2)
+
+        # TODO
         VCARVE_error_cnt= 0
 
         # VCARVE_error_cnt= \
@@ -1330,7 +1247,7 @@ class Gui(Frame):
         # self.entry_set(self.Entry_Allowance,    self.Entry_Allowance_Check()   , 2) +\
         # self.entry_set(self.Entry_VDepthLimit,  self.Entry_VDepthLimit_Check() , 2)
 
-        # TODO move to Bitmap settings window?
+        # TODO
         BMP_error_cnt= 0
 
         # BMP_error_cnt= \
@@ -1455,23 +1372,11 @@ class Gui(Frame):
         else:
             return False
 
-    ######################################
-    #    General Settings Call Backs     #
-    ######################################
     def Entry_recalc_var_Callback(self, varName, index, mode):
-        self.settings.set('cut_type', self.cut_type.get())
-        self.settings.set('outer', self.outer.get())
-        self.settings.set('v_flop', self.v_flop.get())
-        self.Recalc_RQD()
-
-    def Entry_units_var_Callback(self):
-        if self.units.get() == 'in' and self.funits.get() == 'mm/min':
-            self.Scale_Linear_Inputs(1 / 25.4)
-            self.funits.set('in/min')
-        elif self.units.get() == 'mm' and self.funits.get() == 'in/min':
-            self.Scale_Linear_Inputs(25.4)
-            self.funits.set('mm/min')
-        self.settings.set('units', self.units.get())
+        # TODO check whether these vars indeed have been set already
+        # self.settings.set('cut_type', self.cut_type.get())
+        # self.settings.set('outer', self.outer.get())
+        # self.settings.set('v_flop', self.v_flop.get())
         self.Recalc_RQD()
 
     def Scale_Linear_Inputs(self, factor=1.0):
@@ -1497,34 +1402,34 @@ class Gui(Frame):
 
             self.yorigin.set(    '%.3g' %(self.settings.get('yorigin')    *factor) )
             self.accuracy.set(   '%.3g' %(self.settings.get('accuracy')   *factor) )
-            self.clean_v.set(    '%.3g' %(self.settings.get('clean_v')    *factor) )
-            self.clean_dia.set(  '%.3g' %(self.settings.get('clean_dia')  *factor) )
+            # self.clean_v.set(    '%.3g' %(self.settings.get('clean_v')    *factor) )
+            # self.clean_dia.set(  '%.3g' %(self.settings.get('clean_dia')  *factor) )
         except:
             pass
 
-    # def Scale_Linear_Inputs(self, factor=1.0):
-    #     try:
-    #         self.YSCALE.set(     '%.3g' %(float(self.YSCALE.get()     )*factor) )
-    #         self.TRADIUS.set(    '%.3g' %(float(self.TRADIUS.get()    )*factor) )
-    #         self.ZSAFE.set(      '%.3g' %(float(self.ZSAFE.get()      )*factor) )
-    #         self.ZCUT.set(       '%.3g' %(float(self.ZCUT.get()       )*factor) )
-    #         self.STHICK.set(     '%.3g' %(float(self.STHICK.get()     )*factor) )
-    #         self.FEED.set(       '%.3g' %(float(self.FEED.get()       )*factor) )
-    #         self.PLUNGE.set(     '%.3g' %(float(self.PLUNGE.get()     )*factor) )
-    #         self.boxgap.set(     '%.3g' %(float(self.boxgap.get()     )*factor) )
-    #         self.v_bit_dia.set(  '%.3g' %(float(self.v_bit_dia.get()  )*factor) )
-    #         self.v_depth_lim.set('%.3g' %(float(self.v_depth_lim.get())*factor) )
-    #         self.v_step_len.set( '%.3g' %(float(self.v_step_len.get() )*factor) )
-    #         self.allowance.set(  '%.3g' %(float(self.allowance.get()  )*factor) )
-    #         self.v_max_cut.set(  '%.3g' %(float(self.v_max_cut.get()  )*factor) )
-    #         self.v_rough_stk.set('%.3g' %(float(self.v_rough_stk.get())*factor) )
-    #         self.xorigin.set(    '%.3g' %(float(self.xorigin.get()    )*factor) )
-    #         self.yorigin.set(    '%.3g' %(float(self.yorigin.get()    )*factor) )
-    #         self.accuracy.set(   '%.3g' %(float(self.accuracy.get()   )*factor) )
-    #         self.clean_v.set(    '%.3g' %(float(self.clean_v.get()    )*factor) )
-    #         self.clean_dia.set(  '%.3g' %(float(self.clean_dia.get()  )*factor) )
-    #     except:
-    #         pass
+    def Entry_fontdir_Callback(self, varName, index, mode):
+        self.Listbox_1.delete(0, END)
+        self.Listbox_1.configure(bg=NORmalColor)
+        try:
+            font_files = os.listdir(self.fontdir.get())
+            font_files.sort()
+        except:
+            font_files = " "
+
+        for name in font_files:
+            if  str.find(name.upper(), '.CXF') != -1 \
+            or (str.find(name.upper(), '.TTF') != -1 and TTF_AVAILABLE):
+                self.Listbox_1.insert(END, name)
+        if len(self.fontfile.get()) < 4:
+            try:
+                self.fontfile.set(self.Listbox_1.get(0))
+            except:
+                self.fontfile.set(" ")
+
+        self.settings.set('fontfile', self.fontfile.get())
+
+        self.font = readers.readFontFile(self.settings)
+        self.Recalc_RQD()
 
     def useIMGsize_var_Callback(self):
         if self.input_type.get() != "text":
@@ -1595,32 +1500,6 @@ class Gui(Frame):
         self.font = readers.readFontFile(self.settings)
         self.do_it()
 
-    def Entry_fontdir_Callback(self, varName, index, mode):
-        self.Listbox_1.delete(0, END)
-        self.Listbox_1.configure(bg=NORmalColor)
-        try:
-            font_files = os.listdir(self.fontdir.get())
-            font_files.sort()
-        except:
-            font_files = " "
-
-        for name in font_files:
-            if  str.find(name.upper(), '.CXF') != -1 \
-            or (str.find(name.upper(), '.TTF') != -1 and TTF_AVAILABLE):
-                self.Listbox_1.insert(END, name)
-        if len(self.fontfile.get()) < 4:
-            try:
-                self.fontfile.set(self.Listbox_1.get(0))
-            except:
-                self.fontfile.set(" ")
-
-        self.settings.set('fontfile', self.fontfile.get())
-
-        self.font = readers.readFontFile(self.settings)
-        self.Recalc_RQD()
-
-    # End General Settings Callbacks
-
     def menu_File_Open_G_Code_File(self):
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -1670,7 +1549,6 @@ class Gui(Frame):
             self.input_type.set(self.settings.get('input_type')) # input_type may have been changed by read_image_file
             self.do_it()
 
-
     def Open_G_Code_File(self, filename):
 
         self.delay_calc = True
@@ -1695,17 +1573,18 @@ class Gui(Frame):
                 self.input_type.set("image")
 
         if boxsize != "0":
-            self.boxgap.set(float(boxsize) * float(self.STHICK.get()))
+            self.boxgap.set(float(boxsize) * self.settings.get('line_thickness'))
 
-        if self.arc_fit.get() == "0":
-            self.arc_fit.set("none")
-        elif self.arc_fit.get() == "1":
-            self.arc_fit.set("center")
+        # TODO is this for backward compatibility?
+        # if self.arc_fit.get() == "0":
+        #     self.arc_fit.set("none")
+        # elif self.arc_fit.get() == "1":
+        #     self.arc_fit.set("center")
 
-        if self.arc_fit.get() != "none" \
-            and self.arc_fit.get() != "center" \
-            and self.arc_fit.get() != "radius":
-            self.arc_fit.set("center")
+        # TODO update settings instead of tkinter var
+        if not self.settings.get('arc_fit') in ['none', 'center', 'radius']:
+            self.settings.set('arc_fit', 'center')
+            # self.arc_fit.set("center")
 
         if text_codes != []:
             try:
@@ -1723,19 +1602,12 @@ class Gui(Frame):
                     except:
                         self.default_text = self.default_text + "%c" % (chr(int(Ch)))
 
-        if self.units.get() == 'in':
-            self.funits.set('in/min')
-        else:
-            self.units.set('mm')
-            self.funits.set('mm/min')
-
         self.calc_depth_limit()
 
         self.delay_calc = False
         if self.initComplete:
             self.NGC_FILE = filename
             self.menu_mode_change()
-
 
     def menu_File_Save_Settings_File(self):
 
@@ -1772,7 +1644,6 @@ class Gui(Frame):
             fout.close()
             self.statusMessage.set("File Saved: %s" % (filename))
             self.statusbar.configure(bg='white')
-
 
     def menu_File_Save_G_Code_File(self):
 
@@ -1821,7 +1692,6 @@ class Gui(Frame):
             self.statusMessage.set("File Saved: %s" % filename)
             self.statusbar.configure(bg='white')
 
-
     def menu_File_Save_clean_G_Code_File(self, bit_type="straight"):
 
         if self.Check_All_Variables() > 0:
@@ -1867,7 +1737,6 @@ class Gui(Frame):
             self.statusMessage.set("File Saved: %s" % (filename))
             self.statusbar.configure(bg='white')
 
-
     def menu_File_Save_SVG_File(self):
 
         svg_code = svg(self.engrave)
@@ -1907,7 +1776,6 @@ class Gui(Frame):
 
     def menu_File_Save_DXF_File_close_loops(self):
         self.menu_File_Save_DXF_File(close_loops=True)
-
 
     def menu_File_Save_DXF_File(self, close_loops=False):
 
@@ -1950,10 +1818,8 @@ class Gui(Frame):
         if message_ask_ok_cancel("Exit", "Exiting F-Engrave...."):
             self.Quit_Click(None)
 
-
     def menu_View_Refresh_Callback(self, varName, index, mode):
         self.menu_View_Refresh()
-
 
     def menu_View_Refresh(self):
         if self.initComplete and (not self.batch.get()) and (not self.delay_calc):
@@ -1961,10 +1827,8 @@ class Gui(Frame):
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, 1)
 
-
     def menu_mode_change_Callback(self, varName, index, mode):
         self.menu_View_Refresh()
-
 
     def menu_mode_change(self):
         self.delay_calc = True
@@ -2023,7 +1887,10 @@ class Gui(Frame):
         self.menu_File_Save_G_Code_File()
 
     def Master_Configure(self, event, update=0):
-
+        """
+        The widget changed size (or location, on some platforms).
+        The new size is provided in the width and height attributes of the event object passed to the callback.
+        """
         if event.widget != self.master:
             return
 
@@ -2037,359 +1904,365 @@ class Gui(Frame):
 
         if (self.x, self.y) == (-1, -1):
             self.x, self.y = x, y
+
         if abs(self.w - w) > 10 or abs(self.h - h) > 10 or update == 1:
-            ###################################################
-            #  Form changed Size (resized) adjust as required #
-            ###################################################
+
             self.w = w
             self.h = h
-            # canvas
+
             if self.cut_type.get() == "v-carve":
                 self.V_Carve_Calc.configure(state="normal", command=None)
             else:
                 self.V_Carve_Calc.configure(state="disabled", command=None)
 
             if self.input_type.get() == "text":
-                self.Label_font_prop.configure(text="Text Font Properties:")
-                self.Label_Yscale.configure(text="Text Height")
-                self.Label_Xscale.configure(text="Text Width")
-                self.Label_pos_orient.configure(text="Text Position and Orientation:")
-                self.Label_Tangle.configure(text="Text Angle")
-                self.Label_flip.configure(text="Flip Text")
-                self.Label_mirror.configure(text="Mirror Text")
-
-                self.Label_useIMGsize.place_forget()
-                self.Checkbutton_useIMGsize.place_forget()
-
-                # Left Column
-                w_label = 90
-                w_entry = 60
-                w_units = 35
-
-                x_label_L = 10
-                x_entry_L = x_label_L + w_label + 10
-                x_units_L = x_entry_L + w_entry + 5
-
-                Yloc = 6
-                self.Label_font_prop.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
-                Yloc = Yloc + 24
-                self.Label_Yscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Yscale_pct.place_forget()
-                self.Label_Yscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Yscale.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_Sthick.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                if self.cut_type.get() == "engrave":
-                    self.Entry_Sthick.configure(state="normal")
-                    self.Label_Sthick.configure(state="normal")
-                    self.Label_Sthick_u.configure(state="normal")
-                else:
-                    self.Entry_Sthick.configure(state="disabled")
-                    self.Label_Sthick.configure(state="disabled")
-                    self.Label_Sthick_u.configure(state="disabled")
-
-                Yloc = Yloc + 24
-                self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Xscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Xscale.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_Cspace.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Cspace_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Cspace.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_Wspace.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Wspace_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Wspace.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_Lspace.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Entry_Lspace.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                Yloc = Yloc + 24 + 12
-                self.separator1.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
-                Yloc = Yloc + 6
-                self.Label_pos_orient.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
-
-                Yloc = Yloc + 24
-                self.Label_Tangle.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Tangle_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Tangle.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_Justify.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Justify_OptionMenu.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_Origin.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Origin_OptionMenu.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_flip.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Checkbutton_flip.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_mirror.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Checkbutton_mirror.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24 + 12
-                self.separator2.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
-                Yloc = Yloc + 6
-                self.Label_text_on_arc.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
-
-                Yloc = Yloc + 24
-                self.Label_Tradius.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Tradius_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Tradius.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_outer.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Checkbutton_outer.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_upper.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Checkbutton_upper.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24 + 12
-                self.separator3.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
-
-                # Start Right Column
-                w_label = 90
-                w_entry = 60
-                w_units = 35
-
-                x_label_R = self.w - 220
-                x_entry_R = x_label_R + w_label + 10
-                x_units_R = x_entry_R + w_entry + 5
-
-                Yloc = 6
-                self.Label_gcode_opt.place(x=x_label_R, y=Yloc, width=w_label * 2, height=21)
-
-                Yloc = Yloc + 24
-                self.Entry_Feed.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
-                self.Label_Feed.place(x=x_label_R, y=Yloc, width=w_label, height=21)
-                self.Label_Feed_u.place(x=x_units_R, y=Yloc, width=w_units + 15, height=21)
-
-                Yloc = Yloc + 24
-                self.Entry_Plunge.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
-                self.Label_Plunge.place(x=x_label_R, y=Yloc, width=w_label, height=21)
-                self.Label_Plunge_u.place(x=x_units_R, y=Yloc, width=w_units + 15, height=21)
-
-                Yloc = Yloc + 24
-                self.Entry_Zsafe.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
-                self.Label_Zsafe.place(x=x_label_R, y=Yloc, width=w_label, height=21)
-                self.Label_Zsafe_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
-
-                Yloc = Yloc + 24
-                self.Label_Zcut.place(x=x_label_R, y=Yloc, width=w_label, height=21)
-                self.Label_Zcut_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
-                self.Entry_Zcut.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
-
-                if self.cut_type.get() == "engrave":
-                    self.Entry_Zcut.configure(state="normal")
-                    self.Label_Zcut.configure(state="normal")
-                    self.Label_Zcut_u.configure(state="normal")
-                else:
-                    self.Entry_Zcut.configure(state="disabled")
-                    self.Label_Zcut.configure(state="disabled")
-                    self.Label_Zcut_u.configure(state="disabled")
-
-                Yloc = Yloc + 24 + 6
-                self.Label_List_Box.place(x=x_label_R + 0, y=Yloc, width=113, height=22)
-
-                Yloc = Yloc + 24
-                self.Listbox_1_frame.place(x=x_label_R + 0, y=Yloc, width=160 + 25, height=self.h - 324)
-                self.Label_fontfile.place(x=x_label_R, y=self.h - 165, width=w_label + 75, height=21)
-                self.Checkbutton_fontdex.place(x=x_label_R, y=self.h - 145, width=185, height=23)
-
-                # Buttons etc.
-                Ybut = self.h - 60
-                self.Recalculate.place(x=12, y=Ybut, width=95, height=30)
-
-                Ybut = self.h - 60
-                self.V_Carve_Calc.place(x=x_label_R, y=Ybut, width=100, height=30)
-
-                Ybut = self.h - 105
-                self.Radio_Cut_E.place(x=x_label_R, y=Ybut, width=185, height=23)
-                Ybut = self.h - 85
-                self.Radio_Cut_V.place(x=x_label_R, y=Ybut, width=185, height=23)
-
-                self.PreviewCanvas.configure(width=self.w - 455, height=self.h - 160)
-                self.PreviewCanvas_frame.place(x=220, y=10)
-                self.Input_Label.place(x=222, y=self.h - 130, width=112, height=21, anchor=W)
-                self.Input_frame.place(x=222, y=self.h - 110, width=self.w - 455, height=75)
-
+                self.master_configure_text()
             else:
-                self.Label_font_prop.configure(text="Image Properties:")
-                self.Label_Yscale.configure(text="Image Height")
-                self.Label_Xscale.configure(text="Image Width")
-                self.Label_pos_orient.configure(text="Image Position and Orientation:")
-                self.Label_Tangle.configure(text="Image Angle")
-                self.Label_flip.configure(text="Flip Image")
-                self.Label_mirror.configure(text="Mirror Image")
-
-                # Left Column
-                w_label = 90
-                w_entry = 60
-                w_units = 35
-
-                x_label_L = 10
-                x_entry_L = x_label_L + w_label + 10
-                x_units_L = x_entry_L + w_entry + 5
-
-                Yloc = 6
-                self.Label_font_prop.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
-                Yloc = Yloc + 24
-                self.Label_Yscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                if self.useIMGsize.get():
-                    self.Label_Yscale_u.place_forget()
-                    self.Label_Yscale_pct.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                else:
-                    self.Label_Yscale_pct.place_forget()
-                    self.Label_Yscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-
-                self.Entry_Yscale.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_useIMGsize.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Checkbutton_useIMGsize.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_Sthick.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-                if self.cut_type.get() == "engrave":
-                    self.Entry_Sthick.configure(state="normal")
-                    self.Label_Sthick.configure(state="normal")
-                    self.Label_Sthick_u.configure(state="normal")
-                else:
-                    self.Entry_Sthick.configure(state="disabled")
-                    self.Label_Sthick.configure(state="disabled")
-                    self.Label_Sthick_u.configure(state="disabled")
-
-                Yloc = Yloc + 24
-                self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Xscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Xscale.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                self.Label_Cspace.place_forget()
-                self.Label_Cspace_u.place_forget()
-                self.Entry_Cspace.place_forget()
-
-                self.Label_Wspace.place_forget()
-                self.Label_Wspace_u.place_forget()
-                self.Entry_Wspace.place_forget()
-
-                self.Label_Lspace.place_forget()
-                self.Entry_Lspace.place_forget()
-
-                Yloc = Yloc + 24 + 12
-                self.separator1.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
-                Yloc = Yloc + 6
-                self.Label_pos_orient.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
-
-                Yloc = Yloc + 24
-                self.Label_Tangle.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Label_Tangle_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
-                self.Entry_Tangle.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-                self.Label_Justify.place_forget()
-                self.Justify_OptionMenu.place_forget()
-
-                Yloc = Yloc + 24
-                self.Label_Origin.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Origin_OptionMenu.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_flip.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Checkbutton_flip.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                Yloc = Yloc + 24
-                self.Label_mirror.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-                self.Checkbutton_mirror.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
-
-                self.Label_text_on_arc.place_forget()
-                self.Label_Tradius.place_forget()
-                self.Label_Tradius_u.place_forget()
-                self.Entry_Tradius.place_forget()
-                self.Label_outer.place_forget()
-                self.Checkbutton_outer.place_forget()
-                self.Label_upper.place_forget()
-                self.Checkbutton_upper.place_forget()
-
-                # Right Column
-                x_label_R = x_label_L
-                x_entry_R = x_entry_L
-                x_units_R = x_units_L
-
-                Yloc = Yloc + 24 + 12
-                self.separator2.place(x=x_label_R, y=Yloc, width=w_label + 75 + 40, height=2)
-
-                Yloc = Yloc + 6
-                self.Label_gcode_opt.place(x=x_label_R, y=Yloc, width=w_label * 2, height=21)
-
-                Yloc = Yloc + 24
-                self.Entry_Feed.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
-                self.Label_Feed.place(x=x_label_R, y=Yloc, width=w_label, height=21)
-                self.Label_Feed_u.place(x=x_units_R, y=Yloc, width=w_units + 15, height=21)
-
-                Yloc = Yloc + 24
-                self.Entry_Plunge.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
-                self.Label_Plunge.place(x=x_label_R, y=Yloc, width=w_label, height=21)
-                self.Label_Plunge_u.place(x=x_units_R, y=Yloc, width=w_units + 15, height=21)
-
-                Yloc = Yloc + 24
-                self.Entry_Zsafe.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
-                self.Label_Zsafe.place(x=x_label_R, y=Yloc, width=w_label, height=21)
-                self.Label_Zsafe_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
-
-                Yloc = Yloc + 24
-                self.Label_Zcut.place(x=x_label_R, y=Yloc, width=w_label, height=21)
-                self.Label_Zcut_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
-                self.Entry_Zcut.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
-
-                if self.cut_type.get() == "engrave":
-                    self.Entry_Zcut.configure(state="normal")
-                    self.Label_Zcut.configure(state="normal")
-                    self.Label_Zcut_u.configure(state="normal")
-                else:
-                    self.Entry_Zcut.configure(state="disabled")
-                    self.Label_Zcut.configure(state="disabled")
-                    self.Label_Zcut_u.configure(state="disabled")
-
-                self.Label_List_Box.place_forget()
-                self.Listbox_1_frame.place_forget()
-                self.Checkbutton_fontdex.place_forget()
-
-                Yloc = Yloc + 24 + 12
-                self.separator3.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
-                Yloc = Yloc + 6
-                self.Label_fontfile.place(x=x_label_R, y=Yloc, width=w_label + 75, height=21)
-
-                # Buttons etc.
-                offset_R = 100
-                Ybut = self.h - 60
-                self.Recalculate.place(x=12, y=Ybut, width=95, height=30)
-
-                Ybut = self.h - 60
-                self.V_Carve_Calc.place(x=x_label_R + offset_R, y=Ybut, width=100, height=30)
-
-                Ybut = self.h - 105
-                self.Radio_Cut_E.place(x=x_label_R + offset_R, y=Ybut, width=w_label, height=23)
-                Ybut = self.h - 85
-                self.Radio_Cut_V.place(x=x_label_R + offset_R, y=Ybut, width=w_label, height=23)
-
-                self.PreviewCanvas.configure(width=self.w - 240, height=self.h - 45)
-                self.PreviewCanvas_frame.place(x=230, y=10)
-                self.Input_Label.place_forget()
-                self.Input_frame.place_forget()
+                self.master_configure_image()
 
             self.plot_toolpath()
+
+    def master_configure_text(self):
+
+        self.Label_font_prop.configure(text="Text Font Properties:")
+        self.Label_Yscale.configure(text="Text Height")
+        self.Label_Xscale.configure(text="Text Width")
+        self.Label_pos_orient.configure(text="Text Position and Orientation:")
+        self.Label_Tangle.configure(text="Text Angle")
+        self.Label_flip.configure(text="Flip Text")
+        self.Label_mirror.configure(text="Mirror Text")
+
+        self.Label_useIMGsize.place_forget()
+        self.Checkbutton_useIMGsize.place_forget()
+
+        # Begin Left Column
+        w_label = 90
+        w_entry = 60
+        w_units = 35
+
+        x_label_L = 10
+        x_entry_L = x_label_L + w_label + 10
+        x_units_L = x_entry_L + w_entry + 5
+
+        Yloc = 6
+        self.Label_font_prop.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
+        Yloc = Yloc + 24
+        self.Label_Yscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Yscale_pct.place_forget()
+        self.Label_Yscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Yscale.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_Sthick.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        if self.cut_type.get() == "engrave":
+            self.Entry_Sthick.configure(state="normal")
+            self.Label_Sthick.configure(state="normal")
+            self.Label_Sthick_u.configure(state="normal")
+        else:
+            self.Entry_Sthick.configure(state="disabled")
+            self.Label_Sthick.configure(state="disabled")
+            self.Label_Sthick_u.configure(state="disabled")
+
+        Yloc = Yloc + 24
+        self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Xscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Xscale.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_Cspace.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Cspace_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Cspace.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_Wspace.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Wspace_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Wspace.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_Lspace.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Entry_Lspace.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        Yloc = Yloc + 24 + 12
+        self.separator1.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
+        Yloc = Yloc + 6
+        self.Label_pos_orient.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
+
+        Yloc = Yloc + 24
+        self.Label_Tangle.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Tangle_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Tangle.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_Justify.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Justify_OptionMenu.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_Origin.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Origin_OptionMenu.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_flip.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Checkbutton_flip.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_mirror.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Checkbutton_mirror.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24 + 12
+        self.separator2.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
+        Yloc = Yloc + 6
+        self.Label_text_on_arc.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
+
+        Yloc = Yloc + 24
+        self.Label_Tradius.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Tradius_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Tradius.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_outer.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Checkbutton_outer.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_upper.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Checkbutton_upper.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24 + 12
+        self.separator3.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
+
+        # Begin Right Column
+        w_label = 90
+        w_entry = 60
+        w_units = 35
+
+        x_label_R = self.w - 220
+        x_entry_R = x_label_R + w_label + 10
+        x_units_R = x_entry_R + w_entry + 5
+
+        Yloc = 6
+        self.Label_gcode_opt.place(x=x_label_R, y=Yloc, width=w_label * 2, height=21)
+
+        Yloc = Yloc + 24
+        self.Entry_Feed.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
+        self.Label_Feed.place(x=x_label_R, y=Yloc, width=w_label, height=21)
+        self.Label_Feed_u.place(x=x_units_R, y=Yloc, width=w_units + 15, height=21)
+
+        Yloc = Yloc + 24
+        self.Entry_Plunge.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
+        self.Label_Plunge.place(x=x_label_R, y=Yloc, width=w_label, height=21)
+        self.Label_Plunge_u.place(x=x_units_R, y=Yloc, width=w_units + 15, height=21)
+
+        Yloc = Yloc + 24
+        self.Entry_Zsafe.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
+        self.Label_Zsafe.place(x=x_label_R, y=Yloc, width=w_label, height=21)
+        self.Label_Zsafe_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
+
+        Yloc = Yloc + 24
+        self.Label_Zcut.place(x=x_label_R, y=Yloc, width=w_label, height=21)
+        self.Label_Zcut_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
+        self.Entry_Zcut.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
+
+        if self.cut_type.get() == "engrave":
+            self.Entry_Zcut.configure(state="normal")
+            self.Label_Zcut.configure(state="normal")
+            self.Label_Zcut_u.configure(state="normal")
+        else:
+            self.Entry_Zcut.configure(state="disabled")
+            self.Label_Zcut.configure(state="disabled")
+            self.Label_Zcut_u.configure(state="disabled")
+
+        Yloc = Yloc + 24 + 6
+        self.Label_List_Box.place(x=x_label_R + 0, y=Yloc, width=113, height=22)
+
+        Yloc = Yloc + 24
+        self.Listbox_1_frame.place(x=x_label_R + 0, y=Yloc, width=160 + 25, height=self.h - 324)
+        self.Label_fontfile.place(x=x_label_R, y=self.h - 165, width=w_label + 75, height=21)
+        self.Checkbutton_fontdex.place(x=x_label_R, y=self.h - 145, width=185, height=23)
+
+        # Buttons etc.
+        Ybut = self.h - 60
+        self.Recalculate.place(x=12, y=Ybut, width=95, height=30)
+
+        Ybut = self.h - 60
+        self.V_Carve_Calc.place(x=x_label_R, y=Ybut, width=100, height=30)
+
+        Ybut = self.h - 105
+        self.Radio_Cut_E.place(x=x_label_R, y=Ybut, width=185, height=23)
+        Ybut = self.h - 85
+        self.Radio_Cut_V.place(x=x_label_R, y=Ybut, width=185, height=23)
+
+        self.PreviewCanvas.configure(width=self.w - 455, height=self.h - 160)
+        self.PreviewCanvas_frame.place(x=220, y=10)
+        self.Input_Label.place(x=222, y=self.h - 130, width=112, height=21, anchor=W)
+        self.Input_frame.place(x=222, y=self.h - 110, width=self.w - 455, height=75)
+
+    def master_configure_image(self):
+
+        self.Label_font_prop.configure(text="Image Properties:")
+        self.Label_Yscale.configure(text="Image Height")
+        self.Label_Xscale.configure(text="Image Width")
+        self.Label_pos_orient.configure(text="Image Position and Orientation:")
+        self.Label_Tangle.configure(text="Image Angle")
+        self.Label_flip.configure(text="Flip Image")
+        self.Label_mirror.configure(text="Mirror Image")
+
+        # Left Column
+        w_label = 90
+        w_entry = 60
+        w_units = 35
+
+        x_label_L = 10
+        x_entry_L = x_label_L + w_label + 10
+        x_units_L = x_entry_L + w_entry + 5
+
+        Yloc = 6
+        self.Label_font_prop.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
+        Yloc = Yloc + 24
+        self.Label_Yscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        if self.useIMGsize.get():
+            self.Label_Yscale_u.place_forget()
+            self.Label_Yscale_pct.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        else:
+            self.Label_Yscale_pct.place_forget()
+            self.Label_Yscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+
+        self.Entry_Yscale.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_useIMGsize.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Checkbutton_useIMGsize.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_Sthick.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+        if self.cut_type.get() == "engrave":
+            self.Entry_Sthick.configure(state="normal")
+            self.Label_Sthick.configure(state="normal")
+            self.Label_Sthick_u.configure(state="normal")
+        else:
+            self.Entry_Sthick.configure(state="disabled")
+            self.Label_Sthick.configure(state="disabled")
+            self.Label_Sthick_u.configure(state="disabled")
+
+        Yloc = Yloc + 24
+        self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Xscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Xscale.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        self.Label_Cspace.place_forget()
+        self.Label_Cspace_u.place_forget()
+        self.Entry_Cspace.place_forget()
+
+        self.Label_Wspace.place_forget()
+        self.Label_Wspace_u.place_forget()
+        self.Entry_Wspace.place_forget()
+
+        self.Label_Lspace.place_forget()
+        self.Entry_Lspace.place_forget()
+
+        Yloc = Yloc + 24 + 12
+        self.separator1.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
+        Yloc = Yloc + 6
+        self.Label_pos_orient.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
+
+        Yloc = Yloc + 24
+        self.Label_Tangle.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Label_Tangle_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
+        self.Entry_Tangle.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
+
+        self.Label_Justify.place_forget()
+        self.Justify_OptionMenu.place_forget()
+
+        Yloc = Yloc + 24
+        self.Label_Origin.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Origin_OptionMenu.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_flip.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Checkbutton_flip.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        Yloc = Yloc + 24
+        self.Label_mirror.place(x=x_label_L, y=Yloc, width=w_label, height=21)
+        self.Checkbutton_mirror.place(x=x_entry_L, y=Yloc, width=w_entry + 40, height=23)
+
+        self.Label_text_on_arc.place_forget()
+        self.Label_Tradius.place_forget()
+        self.Label_Tradius_u.place_forget()
+        self.Entry_Tradius.place_forget()
+        self.Label_outer.place_forget()
+        self.Checkbutton_outer.place_forget()
+        self.Label_upper.place_forget()
+        self.Checkbutton_upper.place_forget()
+
+        # Right Column
+        x_label_R = x_label_L
+        x_entry_R = x_entry_L
+        x_units_R = x_units_L
+
+        Yloc = Yloc + 24 + 12
+        self.separator2.place(x=x_label_R, y=Yloc, width=w_label + 75 + 40, height=2)
+
+        Yloc = Yloc + 6
+        self.Label_gcode_opt.place(x=x_label_R, y=Yloc, width=w_label * 2, height=21)
+
+        Yloc = Yloc + 24
+        self.Entry_Feed.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
+        self.Label_Feed.place(x=x_label_R, y=Yloc, width=w_label, height=21)
+        self.Label_Feed_u.place(x=x_units_R, y=Yloc, width=w_units + 15, height=21)
+
+        Yloc = Yloc + 24
+        self.Entry_Plunge.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
+        self.Label_Plunge.place(x=x_label_R, y=Yloc, width=w_label, height=21)
+        self.Label_Plunge_u.place(x=x_units_R, y=Yloc, width=w_units + 15, height=21)
+
+        Yloc = Yloc + 24
+        self.Entry_Zsafe.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
+        self.Label_Zsafe.place(x=x_label_R, y=Yloc, width=w_label, height=21)
+        self.Label_Zsafe_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
+
+        Yloc = Yloc + 24
+        self.Label_Zcut.place(x=x_label_R, y=Yloc, width=w_label, height=21)
+        self.Label_Zcut_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
+        self.Entry_Zcut.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
+
+        if self.cut_type.get() == "engrave":
+            self.Entry_Zcut.configure(state="normal")
+            self.Label_Zcut.configure(state="normal")
+            self.Label_Zcut_u.configure(state="normal")
+        else:
+            self.Entry_Zcut.configure(state="disabled")
+            self.Label_Zcut.configure(state="disabled")
+            self.Label_Zcut_u.configure(state="disabled")
+
+        self.Label_List_Box.place_forget()
+        self.Listbox_1_frame.place_forget()
+        self.Checkbutton_fontdex.place_forget()
+
+        Yloc = Yloc + 24 + 12
+        self.separator3.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
+        Yloc = Yloc + 6
+        self.Label_fontfile.place(x=x_label_R, y=Yloc, width=w_label + 75, height=21)
+
+        # Buttons etc.
+        offset_R = 100
+        Ybut = self.h - 60
+        self.Recalculate.place(x=12, y=Ybut, width=95, height=30)
+
+        Ybut = self.h - 60
+        self.V_Carve_Calc.place(x=x_label_R + offset_R, y=Ybut, width=100, height=30)
+
+        Ybut = self.h - 105
+        self.Radio_Cut_E.place(x=x_label_R + offset_R, y=Ybut, width=w_label, height=23)
+        Ybut = self.h - 85
+        self.Radio_Cut_V.place(x=x_label_R + offset_R, y=Ybut, width=w_label, height=23)
+
+        self.PreviewCanvas.configure(width=self.w - 240, height=self.h - 45)
+        self.PreviewCanvas_frame.place(x=230, y=10)
+        self.Input_Label.place_forget()
+        self.Input_frame.place_forget()
 
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):
         XX1, YY1 = old
@@ -2433,7 +2306,6 @@ class Gui(Frame):
         self.statusbar.configure(bg='yellow')
         self.statusMessage.set(" Recalculation required.")
         self.do_it()
-
 
     def plot_toolpath(self):
         """
@@ -2520,11 +2392,7 @@ class Gui(Frame):
             self.segID.append(
                 self.PreviewCanvas.create_oval(Rpx_lft, Rpy_bot, Rpx_rgt, Rpy_top, outline="black", width=plot_width))
 
-        #########################################
         # Plot the original lines
-        #########################################
-
-        # scale
         scaled_coords = []
         if self.input_type.get() == "text":
             if len(self.text) > 0:
@@ -2549,19 +2417,17 @@ class Gui(Frame):
             self.segID.append(
                 self.PreviewCanvas.create_line(x1, y1, x2, y2, fill='black', width=plot_width, capstyle='round'))
 
+        # draw coordinate axis
         XOrigin = float(self.xorigin.get())
         YOrigin = float(self.yorigin.get())
 
-        # draw coordinate axis
         axis_length = (maxx - minx) / 4
         axis_x1 = cszw / 2 + (-midx + XOrigin) / plot_scale
         axis_x2 = cszw / 2 + (axis_length - midx + XOrigin) / plot_scale
         axis_y1 = cszh / 2 - (-midy + YOrigin) / plot_scale
         axis_y2 = cszh / 2 - (axis_length - midy + YOrigin) / plot_scale
 
-        #########################################
         # V-carve Plotting Stuff
-        #########################################
         if self.cut_type.get() == "v-carve":
             r_inlay_top = self.calc_r_inlay_top()
 
@@ -2602,9 +2468,7 @@ class Gui(Frame):
                 rold = r
                 old = new
 
-        ########################################
         # Plot cleanup path
-        ########################################
         if self.cut_type.get() == "v-carve":
             loop_old = -1
             for line in self.engrave.clean_coords_sort:
@@ -2637,10 +2501,6 @@ class Gui(Frame):
                     self.plot_line(old, new, midx, midy, cszw, cszh, color)
                 loop_old = loop
                 old = new
-
-        #########################################
-        # End V-carve Plotting Stuff
-        #########################################
 
         if self.show_axis.get() == True:
             # Plot coordinate system origin
@@ -2799,22 +2659,16 @@ class Gui(Frame):
             self.statusbar.configure( bg='red' )
             return
 
-        #############################
-        #   Text Transformations    #
-        #############################
+        # Text transformations
         alignment = self.justify.get()
         mirror = self.mirror.get()
         flip = self.flip.get()
         upper = self.upper.get()
 
         # print 'XScale:', XScale, ', YScale:', YScale # TEST
-
         self.text.transform_scale(XScale, YScale)
-
         self.text.align(alignment)
-
         self.text.transform_on_radius(alignment, Radius, upper)
-
         maxr2 = self.text.transform_angle(Angle)
         if mirror:
             self.text.transform_mirror()
@@ -2895,15 +2749,15 @@ class Gui(Frame):
             self.entry_set(self.Entry_Plunge,  self.Entry_Plunge_Check(),    1)
             self.entry_set(self.Entry_Zsafe,   self.Entry_Zsafe_Check(),     1)
             self.entry_set(self.Entry_Zcut,    self.Entry_Zcut_Check(),      1)
-            self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check(),    1)
-            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 1)
+            # self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check(),    1)
+            # self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 1)
 
             self.bounding_box.set("Bounding Box (WxH) = " +
                                   "%.3g" % (maxx - minx) +
-                                  " %s " % self.units.get() +
+                                  " %s " % self.settings.get('units') +
                                   " x " +
                                   "%.3g" % (maxy - miny) +
-                                  " %s " % self.units.get() +
+                                  " %s " % self.settings.get('units') +
                                   " %s" % msg)
 
             self.statusMessage.set(self.bounding_box.get())
@@ -2960,16 +2814,11 @@ class Gui(Frame):
         # reset the image coords (to avoid corruption, e.g. from previous transformations)
         self.image.set_coords_from_strokes()
 
-        #############################
-        #      Transformations      #
-        #############################
+        # Image transformations
         self.image.transform_scale(XScale, YScale)
-
         maxr2 = self.image.transform_angle(Angle)
-
         if self.mirror.get():
             self.image.transform_mirror()
-
         if self.flip.get():
             self.image.transform_flip()
 
@@ -2989,15 +2838,15 @@ class Gui(Frame):
             self.entry_set(self.Entry_Plunge,  self.Entry_Plunge_Check(),    1)
             self.entry_set(self.Entry_Zsafe,   self.Entry_Zsafe_Check(),     1)
             self.entry_set(self.Entry_Zcut,    self.Entry_Zcut_Check(),      1)
-            self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check(),    1)
-            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 1)
+            # self.entry_set(self.Entry_BoxGap,  self.Entry_BoxGap_Check(),    1) # TODO
+            # self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 1) # TODO
 
             self.bounding_box.set("Bounding Box (WxH) = " +
                                   "%.3g" % (maxx - minx) +
-                                  " %s " % self.units.get() +
+                                  " %s " % self.settings.get('units') +
                                   " x " +
                                   "%.3g" % (maxy - miny) +
-                                  " %s " % self.units.get()
+                                  " %s " % self.settings.get('units')
                                   )
 
             self.statusMessage.set(self.bounding_box.get())
@@ -3070,234 +2919,3 @@ class Gui(Frame):
 
         self.master.bind("<Configure>", self.Master_Configure)
 
-
-    ################################################################################
-    #                         General Settings Window                              #
-    ################################################################################
-    def GEN_Settings_Window(self):
-        gen_settings = Toplevel(width=600, height=500)
-        gen_settings.grab_set()  # Use grab_set to prevent user input in the main window during calculations
-        gen_settings.resizable(0, 0)
-        gen_settings.title('Settings')
-        gen_settings.iconname("Settings")
-
-        try:
-            gen_settings.iconbitmap(bitmap="@emblem64")
-        except:
-            try:  # Attempt to create temporary icon bitmap file
-                temp_icon("f_engrave_icon")
-                gen_settings.iconbitmap("@f_engrave_icon")
-                os.remove("f_engrave_icon")
-            except:
-                pass
-
-        D_Yloc = 6
-        D_dY = 24
-        xd_label_L = 12
-
-        dlta = 40
-        w_label = 110 + 25 + dlta
-        w_entry = 60
-        w_units = 35
-        xd_entry_L = xd_label_L + w_label + 10 + dlta
-        xd_units_L = xd_entry_L + w_entry + 5
-        x_radio_offset = 62
-
-        # Radio Button
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Units = Label(gen_settings, text="Units")
-        self.Label_Units.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.Radio_Units_IN = Radiobutton(gen_settings, text="inch", value="in", width="100", anchor=W)
-        self.Radio_Units_IN.place(x=w_label + x_radio_offset, y=D_Yloc, width=75, height=23)
-        self.Radio_Units_IN.configure(variable=self.units, command=self.Entry_units_var_Callback)
-
-        self.Radio_Units_MM = Radiobutton(gen_settings, text="mm", value="mm", width="100", anchor=W)
-        self.Radio_Units_MM.place(x=w_label + x_radio_offset + 60, y=D_Yloc, width=75, height=23)
-        self.Radio_Units_MM.configure(variable=self.units, command=self.Entry_units_var_Callback)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Xoffset = Label(gen_settings, text="X Offset")
-        self.Label_Xoffset.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_Xoffset_u = Label(gen_settings, textvariable=self.units, anchor=W)
-        self.Label_Xoffset_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_Xoffset = Entry(gen_settings, width="15")
-        self.Entry_Xoffset.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_Xoffset.configure(textvariable=self.xorigin)
-        self.xorigin.trace_variable("w", self.Entry_Xoffset_Callback)
-        self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Yoffset = Label(gen_settings, text="Y Offset")
-        self.Label_Yoffset.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_Yoffset_u = Label(gen_settings, textvariable=self.units, anchor=W)
-        self.Label_Yoffset_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_Yoffset = Entry(gen_settings, width="15")
-        self.Entry_Yoffset.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_Yoffset.configure(textvariable=self.yorigin)
-        self.yorigin.trace_variable("w", self.Entry_Yoffset_Callback)
-        self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_ArcAngle = Label(gen_settings, text="Arc Angle")
-        self.Label_ArcAngle.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_ArcAngle_u = Label(gen_settings, text="deg", anchor=W)
-        self.Label_ArcAngle_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_ArcAngle = Entry(gen_settings, width="15")
-        self.Entry_ArcAngle.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_ArcAngle.configure(textvariable=self.segarc)
-        self.segarc.trace_variable("w", self.Entry_ArcAngle_Callback)
-        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Accuracy = Label(gen_settings, text="Accuracy")
-        self.Label_Accuracy.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_Accuracy_u = Label(gen_settings, textvariable=self.units, anchor=W)
-        self.Label_Accuracy_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Entry_Accuracy = Entry(gen_settings, width="15")
-        self.Entry_Accuracy.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_Accuracy.configure(textvariable=self.accuracy)
-        self.accuracy.trace_variable("w", self.Entry_Accuracy_Callback)
-        self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_ext_char = Label(gen_settings, text="Extended Characters")
-        self.Label_ext_char.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Checkbutton_ext_char = Checkbutton(gen_settings, text="", anchor=W)
-        self.Checkbutton_ext_char.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_ext_char.configure(variable=self.ext_char)
-        self.ext_char.trace_variable("w", self.Settings_ReLoad_Click)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_arcfit = Label(gen_settings, text="Arc Fitting")
-        self.Label_arcfit.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Radio_arcfit_none = Radiobutton(gen_settings, text="None", \
-                                             value="none", width="110", anchor=W)
-        self.Radio_arcfit_none.place(x=w_label + x_radio_offset, y=D_Yloc, width=90, height=23)
-        self.Radio_arcfit_none.configure(variable=self.arc_fit)
-        self.Radio_arcfit_radius = Radiobutton(gen_settings, text="Radius Format", \
-                                               value="radius", width="110", anchor=W)
-        self.Radio_arcfit_radius.place(x=w_label + x_radio_offset + 65, y=D_Yloc, width=100, height=23)
-        self.Radio_arcfit_radius.configure(variable=self.arc_fit)
-        self.Radio_arcfit_center = Radiobutton(gen_settings, text="Center Format", \
-                                               value="center", width="110", anchor=W)
-        self.Radio_arcfit_center.place(x=w_label + x_radio_offset + 65 + 115, y=D_Yloc, width=100, height=23)
-        self.Radio_arcfit_center.configure(variable=self.arc_fit)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_no_com = Label(gen_settings, text="Suppress Comments")
-        self.Label_no_com.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Checkbutton_no_com = Checkbutton(gen_settings, text="", anchor=W)
-        self.Checkbutton_no_com.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_no_com.configure(variable=self.no_comments)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Gpre = Label(gen_settings, text="G Code Header")
-        self.Label_Gpre.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_Gpre = Entry(gen_settings, width="15")
-        self.Entry_Gpre.place(x=xd_entry_L, y=D_Yloc, width=300, height=23)
-        self.Entry_Gpre.configure(textvariable=self.gpre)
-        self.gpre.trace_variable("w", self.Entry_Gpre_Callback)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Gpost = Label(gen_settings, text="G Code Postscript")
-        self.Label_Gpost.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_Gpost = Entry(gen_settings)
-        self.Entry_Gpost.place(x=xd_entry_L, y=D_Yloc, width=300, height=23)
-        self.Entry_Gpost.configure(textvariable=self.gpost)
-        self.gpost.trace_variable("w", self.Entry_Gpost_Callback)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_var_dis = Label(gen_settings, text="Disable Variables")
-        self.Label_var_dis.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Label_var_dis_ToolTip = ToolTip(self.Label_var_dis, text= \
-            'Disable the use of variables in the generated G-Code.')
-        self.Checkbutton_var_dis = Checkbutton(gen_settings, text="", anchor=W)
-        self.Checkbutton_var_dis.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_var_dis.configure(variable=self.var_dis)
-        self.var_dis.trace_variable("w", self.Checkbutton_var_dis_Callback)
-
-        D_Yloc = D_Yloc + D_dY
-        font_entry_width = 215
-        self.Label_Fontdir = Label(gen_settings, text="Font Directory")
-        self.Label_Fontdir.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_Fontdir = Entry(gen_settings, width="15")
-        self.Entry_Fontdir.place(x=xd_entry_L, y=D_Yloc, width=font_entry_width, height=23)
-        self.Entry_Fontdir.configure(textvariable=self.fontdir)
-        self.Fontdir = Button(gen_settings, text="Select Dir")
-        self.Fontdir.place(x=xd_entry_L + font_entry_width + 10, y=D_Yloc, width=w_label - 80, height=23)
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_Hcalc = Label(gen_settings, text="Height Calculation")
-        self.Label_Hcalc.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.Radio_Hcalc_USE = Radiobutton(gen_settings, text="Max Used", \
-                                           value="max_use", width="110", anchor=W)
-        self.Radio_Hcalc_USE.place(x=w_label + x_radio_offset, y=D_Yloc, width=90, height=23)
-        self.Radio_Hcalc_USE.configure(variable=self.H_CALC)
-
-        self.Radio_Hcalc_ALL = Radiobutton(gen_settings, text="Max All", \
-                                           value="max_all", width="110", anchor=W)
-        self.Radio_Hcalc_ALL.place(x=w_label + x_radio_offset + 90, y=D_Yloc, width=90, height=23)
-        self.Radio_Hcalc_ALL.configure(variable=self.H_CALC)
-
-        if self.input_type.get() != "text":
-            self.Entry_Fontdir.configure(state="disabled")
-            self.Fontdir.configure(state="disabled")
-            self.Radio_Hcalc_ALL.configure(state="disabled")
-            self.Radio_Hcalc_USE.configure(state="disabled")
-        else:
-            self.Fontdir.bind("<ButtonRelease-1>", self.Fontdir_Click)
-
-        D_Yloc = D_Yloc + 24
-        self.Label_Box = Label(gen_settings, text="Add Box/Circle")
-        self.Label_Box.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.Checkbutton_plotbox = Checkbutton(gen_settings, text="", anchor=W)
-        self.Checkbutton_plotbox.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_plotbox.configure(variable=self.plotbox)
-        self.plotbox.trace_variable("w", self.Entry_Box_Callback)
-
-        self.Label_BoxGap = Label(gen_settings, text="Box/Circle Gap:", anchor=E)
-        self.Label_BoxGap.place(x=w_label + x_radio_offset + 25, y=D_Yloc, width=125, height=21)
-        self.Entry_BoxGap = Entry(gen_settings)
-        self.Entry_BoxGap.place(x=w_label + x_radio_offset + 165, y=D_Yloc, width=w_entry, height=23)
-        self.Entry_BoxGap.configure(textvariable=self.boxgap)
-        self.boxgap.trace_variable("w", self.Entry_BoxGap_Callback)
-        self.Label_BoxGap_u = Label(gen_settings, textvariable=self.units, anchor=W)
-        self.Label_BoxGap_u.place(x=w_label + x_radio_offset + 230, y=D_Yloc, width=100, height=21)
-        self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
-
-        # TODO Tkinter Checkbutton default values are 0/1, this seems to go with False and True, as used in settings.
-        # TODO Find out whether it is better to explicitly set on/off value to True respectively False
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_v_pplot = Label(gen_settings, text="Plot During V-Carve Calculation")
-        self.Label_v_pplot.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Checkbutton_v_pplot = Checkbutton(gen_settings, text="", anchor=W)
-        self.Checkbutton_v_pplot.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
-        self.Checkbutton_v_pplot.configure(variable=self.v_pplot)
-        self.v_pplot.trace_variable("w", self.Entry_v_pplot_Callback)
-
-        D_Yloc = D_Yloc + D_dY + 10
-        self.Label_SaveConfig = Label(gen_settings, text="Configuration File")
-        self.Label_SaveConfig.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.GEN_SaveConfig = Button(gen_settings, text="Save")
-        self.GEN_SaveConfig.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=21, anchor="nw")
-        self.GEN_SaveConfig.bind("<ButtonRelease-1>", self.write_config_file)
-
-        ## Buttons ##
-        gen_settings.update_idletasks()
-        Ybut = int(gen_settings.winfo_height()) - 30
-        Xbut = int(gen_settings.winfo_width() / 2)
-
-        self.GEN_Reload = Button(gen_settings, text="Recalculate")
-        self.GEN_Reload.place(x=Xbut - 65, y=Ybut, width=130, height=30, anchor="e")
-        self.GEN_Reload.bind("<ButtonRelease-1>", self.Recalculate_Click)
-
-        self.GEN_Recalculate = Button(gen_settings, text="Re-Load Image")
-        self.GEN_Recalculate.place(x=Xbut, y=Ybut, width=130, height=30, anchor="c")
-        self.GEN_Recalculate.bind("<ButtonRelease-1>", self.Settings_ReLoad_Click)
-
-        self.GEN_Close = Button(gen_settings, text="Close", command=self.Close_Current_Window_Click)
-        self.GEN_Close.place(x=Xbut + 65, y=Ybut, width=130, height=30, anchor="w")

@@ -1,5 +1,4 @@
-# from util import VERSION, OK, NOR, INV, NAN
-from util import *
+from util import VERSION, OK, NOR, INV, NAN
 from tooltip import ToolTip
 
 if VERSION == 3:
@@ -23,23 +22,20 @@ class BitmapSettings(object):
     """
     def __init__(self, master, settings):
 
-        self.master = master
         self.settings = settings
 
         # GUI callbacks
-        self.entry_set     = master.entry_set
-        self.statusMessage = master.statusMessage
+        self.entry_set             = master.entry_set
+        self.statusMessage         = master.statusMessage
+        self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
 
+        # Bitmap settings window
         self.bmp_settings = Toplevel(width=525, height=250)
         # Use grab_set to prevent user input in the main window during calculations
         self.bmp_settings.grab_set()
-
         self.bmp_settings.resizable(0, 0)
         self.bmp_settings.title('Bitmap Settings')
         self.bmp_settings.iconname("Bitmap Settings")
-
-        self.D_Yloc = 12
-        self.D_dY = 24
 
         # Bitmap entries
         self.Entry_BMPturdsize = Entry()
@@ -50,11 +46,10 @@ class BitmapSettings(object):
         self.bmp_turnpol = StringVar()
         self.bmp_turdsize = StringVar()
         self.bmp_alphamax = StringVar()
-        self.bmp_opttolerance = StringVar()
         self.bmp_longcurve = BooleanVar()
+        self.bmp_opttolerance = StringVar()
 
         self.initialise_variables()
-
         self.create_widgets()
         self.create_icon()
 
@@ -72,8 +67,8 @@ class BitmapSettings(object):
 
         bmp_settings = self.bmp_settings
 
-        D_Yloc = self.D_Yloc
-        D_dY = self.D_dY
+        D_Yloc = 12
+        D_dY = 24
 
         xd_label_L = 12
         w_label = 100
@@ -95,6 +90,7 @@ class BitmapSettings(object):
                                                 "majority",
                                                 "random")
         self.BMPturnpol_OptionMenu.place(x=xd_entry_L, y=D_Yloc, width=w_entry + 40, height=23)
+        self.bmp_turnpol.trace_variable("w", self.Entry_BMPTurnpol_Callback)
 
         D_Yloc = D_Yloc + D_dY
         self.Label_BMPturdsize = Label(bmp_settings, text="Turd Size")
@@ -126,6 +122,7 @@ class BitmapSettings(object):
         self.Checkbutton_BMP_longcurve.configure(variable=self.bmp_longcurve)
         self.Label_BMP_longcurve2 = Label(bmp_settings, text="Enable Curve Optimization")
         self.Label_BMP_longcurve2.place(x=xd_entry_L + w_entry * 1.5, y=D_Yloc, width=300, height=21)
+        self.bmp_longcurve.trace_variable("w", self.Entry_BMPLongcurve_Callback)
 
         D_Yloc = D_Yloc + D_dY
         self.Label_BMPoptTolerance = Label(bmp_settings, text="Opt Tolerance")
@@ -144,7 +141,7 @@ class BitmapSettings(object):
 
         self.PBM_Reload = Button(bmp_settings, text="Re-Load Image")
         self.PBM_Reload.place(x=Xbut, y=Ybut, width=130, height=30, anchor="e")
-        self.PBM_Reload.bind("<ButtonRelease-1>", self.master.Settings_ReLoad_Click)
+        self.PBM_Reload.bind("<ButtonRelease-1>", self.Settings_ReLoad_Click)
 
         self.PBM_Close = Button(bmp_settings, text="Close", command=self.Close_Current_Window_Click)
         self.PBM_Close.place(x=Xbut, y=Ybut, width=130, height=30, anchor="w")
@@ -176,6 +173,12 @@ class BitmapSettings(object):
 
     def Entry_BMPalphamax_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), setting='bmp_alphamax' )
+
+    def Entry_BMPTurnpol_Callback(self, varName, index, mode):
+        self.settings.set('bmp_turnpol', self.bmp_turnpol.get())
+
+    def Entry_BMPLongcurve_Callback(self, varName, index, mode):
+        self.settings.set('bmp_longcurve', self.bmp_longcurve.get())
 
     def Entry_BMPoptTolerance_Check(self):
         try:

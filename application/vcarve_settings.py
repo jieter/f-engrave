@@ -1,5 +1,4 @@
-# from util import VERSION, OK, NOR, INV, NAN
-from util import *
+from util import VERSION, OK, NOR, INV, NAN
 from tooltip import ToolTip
 
 if VERSION == 3:
@@ -16,36 +15,31 @@ class VCarveSettings(object):
 
     def __init__(self, master, settings):
 
-        self.master = master
         self.settings = settings
 
         # GUI callbacks
         self.entry_set                 = master.entry_set
         self.statusMessage             = master.statusMessage
         self.Entry_recalc_var_Callback = master.Entry_recalc_var_Callback
-        self.Entry_Box_Callback        = master.Entry_Box_Callback
-        self.Entry_BoxGap_Callback     = master.Entry_BoxGap_Callback
         self.calc_depth_limit          = master.calc_depth_limit
         self.Calculate_CLEAN_Click     = master.Calculate_CLEAN_Click
         self.Write_Clean_Click         = master.Write_Clean_Click
         self.Write_V_Clean_Click       = master.Write_V_Clean_Click
         self.Recalc_RQD                = master.Recalc_RQD
         self.recalculate_click         = master.Recalculate_Click
+        self.V_Carve_Calc_Click        = master.V_Carve_Calc_Click
 
         # GUI Engraver callback
         self.init_clean_coords         = master.engrave.init_clean_coords
         self.refresh_v_pplot           = master.engrave.refresh_v_pplot
 
+        # V-Carve settings window
         self.vcarve_settings = Toplevel(width=580, height=690)
         # Use grab_set to prevent user input in the main window during calculations
         self.vcarve_settings.grab_set()
-
         self.vcarve_settings.resizable(0, 0)
         self.vcarve_settings.title('V-Carve Settings')
         self.vcarve_settings.iconname("V-Carve Settings")
-
-        self.D_Yloc = 12
-        self.D_dY = 24
 
         # V-Carve entries
         self.Entry_Vbitangle = Entry()
@@ -60,11 +54,9 @@ class VCarveSettings(object):
         self.Entry_STEP_OVER = Entry()
         self.Entry_V_CLEAN = Entry()
 
-        # other variables
+        # V-Carve variables
         self.units = self.settings.get('units')
         # self.maxcut = self.settings.get('maxcut')
-
-        # V-Carve variables
         self.bit_shape = StringVar()
         self.v_bit_angle = StringVar()
         self.v_bit_dia = StringVar()
@@ -80,10 +72,11 @@ class VCarveSettings(object):
         self.v_flop = BooleanVar()
         self.v_pplot = BooleanVar()
         self.inlay = BooleanVar()
+
         self.plotbox = BooleanVar()
         self.boxgap = StringVar()
 
-        # clean related variables
+        # clean vars
         self.clean_dia = StringVar()
         self.clean_step = StringVar()
         self.clean_v = StringVar()
@@ -142,8 +135,8 @@ class VCarveSettings(object):
 
         vcarve_settings = self.vcarve_settings
 
-        D_Yloc = self.D_Yloc
-        D_dY = self.D_dY
+        D_Yloc = 12
+        D_dY = 24
 
         xd_label_L = 12
         w_label = 250
@@ -691,10 +684,12 @@ class VCarveSettings(object):
         except:
             pass
 
+    # TODO same validation is part of General settings
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
         self.refresh_v_pplot() # TODO only needed when plotting
 
+    # TODO same validation is part of General settings
     def Entry_BoxGap_Check(self):
         try:
             value = float(self.boxgap.get())
@@ -705,6 +700,7 @@ class VCarveSettings(object):
             return NAN
         return OK
 
+    # TODO same validation is part of General settings
     def Entry_BoxGap_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
         try:
@@ -719,9 +715,18 @@ class VCarveSettings(object):
         except:
             pass
 
+    # TODO same validation is part of General settings
+    def Entry_Box_Callback(self, varName, index, mode):
+        try:
+            self.Entry_BoxGap_Callback(varName, index, mode)
+        except:
+            pass
+        self.settings.set('plotbox', self.plotbox.get())
+        self.Recalc_RQD()
+
     def vcarve_recalculate_click(self):
 
-        self.master.V_Carve_Calc_Click()
+        self.V_Carve_Calc_Click()
 
         try:
             self.vcarve_settings.withdraw()
@@ -733,6 +738,7 @@ class VCarveSettings(object):
     def Entry_Bit_Shape_var_Callback(self, varName, index, mode):
         self.Entry_Bit_Shape_Check()
         self.settings.set('bit_shape', self.bit_shape.get())
+
     def vbit_picture(self):
         self.PHOTO = PhotoImage(format='gif', data=
         'R0lGODlhoABQAIABAAAAAP///yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEK'

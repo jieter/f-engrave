@@ -22,9 +22,9 @@ def cast_string(value):
 
 
 CAST_TYPES = {
+    'str': cast_string,
     'bool': cast_boolean,
     'int': int,
-    'str': cast_string,
     'float': float
 }
 
@@ -155,6 +155,9 @@ class Settings(object):
         # options: 'in', 'mm'
         'units': 'mm',
 
+        # options: 'in/min', 'mm/min'
+        'feed_units': 'mm/min',
+
         # horizontal feedrate [GCODE]
         'feedrate': 60.0,
 
@@ -202,7 +205,7 @@ class Settings(object):
         # options: 'black', 'white', 'right', 'left', 'minority', 'majority', or 'random'
         'bmp_turnpol': 'minority',
         'bmp_turdsize': 2,
-        'bmp_alphamax': 1,
+        'bmp_alphamax': 1.0,
         'bmp_opttolerance': 0.2,
         'bmp_longcurve': True,
 
