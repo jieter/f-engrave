@@ -4,7 +4,8 @@ from settings import CUT_TYPE_VCARVE
 from util import fmessage
 
 import writers
-
+from geometry.coords import MyImage, MyText
+from geometry.engrave import Engrave
 
 class JobError(Exception):
     pass
@@ -14,6 +15,10 @@ class Job(object):
 
     settings = None
     coords = []
+    # clean_coords = []
+    # clean_coords_sort = []
+    # v_coords = []
+    # v_clean_coords_sort = []
 
     def __init__(self, settings):
         self.settings = settings
@@ -21,20 +26,43 @@ class Job(object):
     def execute(self):
         # erase old data
         self.segID = []
-        self.coords = []
-        self.vcoords = []
-        self.clean_coords = []
-        self.clean_segment = []
-        self.clean_coords_sort = []
-        self.v_clean_coords_sort = []
 
-        self._move_origin()
         self.load_font()
 
-        if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
-            self.vcarve()
-        else:
-            self.engrave()
+        # self._move_origin()
+
+        # if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
+        #     self.vcarve()
+        # else:
+        #     self.engrave()
+
+        self.text = MyText()
+        self.text.set_font(self.font)
+        self.text.set_text(self.settings.get('default_text'))
+
+        # self.image = MyImage()
+        # stroke_list = self.font[ord("F")].stroke_list
+        # self.image.set_coords_from_strokes(stroke_list)
+
+        self.engrave = Engrave(self.settings)
+        if self.settings.get('input_type') == "text":
+            self.text.set_coords_from_strokes()
+            self.engrave.set_image(self.text)
+
+        elif self.settings.get('input_type.get') == "image":
+            self.image.set_coords_from_strokes()
+            self.engrave.set_image(self.image)
+
+        self.coords = self.engrave.coords
+
+        self.clean_coords = self.engrave.clean_coords
+
+        self.clean_coords_sort = self.engrave.clean_coords_sort
+
+        self.v_coords = self.engrave.v_coords
+
+        self.v_clean_coords_sort = self.engrave.v_clean_coords_sort
+
 
     def get_svg(self):
         return '\n'.join(writers.svg(self)).strip()
@@ -50,7 +78,7 @@ class Job(object):
 
     def load_font(self):
         font = self.get_font()
-        if font == 0:
+        if font is None or len(font) == 0:
             raise JobError('No font file loaded')
 
         self.font = font

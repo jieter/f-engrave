@@ -53,22 +53,22 @@ class MyImage(object):
 
     def transform_scale(self, xscale, yscale):
         for XY in self.coords:
-            XY[0] = XY[0] * xscale
-            XY[1] = XY[1] * yscale
-            XY[2] = XY[2] * xscale
-            XY[3] = XY[3] * yscale
+            XY[0] *= xscale
+            XY[1] *= yscale
+            XY[2] *= xscale
+            XY[3] *= yscale
         self._set_bbox()
 
     def transform_flip(self):
         for XY in self.coords:
-            XY[1] = -XY[1]
-            XY[3] = -XY[3]
+            XY[1] *= -1
+            XY[3] *= -1
         self._set_bbox()
 
     def transform_mirror(self):
         for XY in self.coords:
-            XY[0] = -XY[0]
-            XY[2] = -XY[2]
+            XY[0] *= -1
+            XY[2] *= -1
         self._set_bbox()
 
     def transform_angle(self, angle):

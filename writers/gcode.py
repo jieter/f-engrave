@@ -290,9 +290,9 @@ def vcarve_gcode(job):
     Lend = []
     Lbeg.append(0)
     if job.number_of_v_coords() > 0:
-        loop_old = job.vcoords[0][3]
+        loop_old = job.v_coords[0][3]
         for i in range(1, job.number_of_v_coords()):
-            loop = job.vcoords[i][3]
+            loop = job.v_coords[i][3]
             if loop != loop_old:
                 Lbeg.append(i)
                 Lend.append(i - 1)
@@ -307,17 +307,17 @@ def vcarve_gcode(job):
         for i in range(total - 1):
             ii = Lend.pop(inext)
             Lbeg.pop(inext)
-            Xcur = job.vcoords[ii][0]
-            Ycur = job.vcoords[ii][1]
+            Xcur = job.v_coords[ii][0]
+            Ycur = job.v_coords[ii][1]
 
-            dx = Xcur - job.vcoords[Lbeg[0]][0]
-            dy = Ycur - job.vcoords[Lbeg[0]][1]
+            dx = Xcur - job.v_coords[Lbeg[0]][0]
+            dy = Ycur - job.v_coords[Lbeg[0]][1]
             min_dist = dx * dx + dy * dy
 
             inext = 0
             for j in range(1, len(Lbeg)):
-                dx = Xcur - job.vcoords[Lbeg[j]][0]
-                dy = Ycur - job.vcoords[Lbeg[j]][1]
+                dx = Xcur - job.v_coords[Lbeg[j]][0]
+                dy = Ycur - job.v_coords[Lbeg[j]][1]
                 dist = dx * dx + dy * dy
                 if dist < min_dist:
                     min_dist = dist
@@ -328,7 +328,7 @@ def vcarve_gcode(job):
         for line in order_out:
             temp = line
             for i in range(temp[0], temp[1] + 1):
-                new_coords.append(job.vcoords[i])
+                new_coords.append(job.v_coords[i])
 
         bit_shape = settings.get('bit_shape')
         half_angle = radians(settings.get('v_bit_angle') / 2.0)

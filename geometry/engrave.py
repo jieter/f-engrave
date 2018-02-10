@@ -78,7 +78,7 @@ class Engrave(object):
             self.coords = []
         else:
             self.coords = self.image.coords
-        self.vcoords = []
+        self.v_coords = []
         self.init_clean_coords()
 
     def init_clean_coords(self):
@@ -114,7 +114,7 @@ class Engrave(object):
         return len(self.clean_segment)
 
     def number_of_v_coords(self):
-        return len(self.vcoords)
+        return len(self.v_coords)
 
     def number_of_clean_coords(self):
         return len(self.clean_coords)
@@ -259,7 +259,7 @@ class Engrave(object):
                         self.clean_coords = []
                         calc_flag = 0
                     else:
-                        self.vcoords = []
+                        self.v_coords = []
                     done = False
                     break
 
@@ -317,7 +317,7 @@ class Engrave(object):
 
                 if delta < v_drv_corner and bit_angle != 0 and not_b_carve and not clean:
                     # drive to corner
-                    self.vcoords.append([x1, y1, 0.0, loop_cnt])
+                    self.v_coords.append([x1, y1, 0.0, loop_cnt])
 
                 if delta > float(v_step_corner):
                     ###########################
@@ -394,7 +394,7 @@ class Engrave(object):
                     delta = get_angle(d_seg_sin, d_seg_cos)
                     if delta < v_drv_corner and not clean:
                         # drive to corner
-                        self.vcoords.append([xa, ya, 0.0, loop_cnt])
+                        self.v_coords.append([xa, ya, 0.0, loop_cnt])
 
                     elif delta > v_step_corner:
                         # add substeps around corner
@@ -574,7 +574,7 @@ class Engrave(object):
             if rout >= rbit:
                 self.clean_coords.append([xnormv, ynormv, rout, loop_cnt])
         else:
-            self.vcoords.append([xnormv, ynormv, rout, loop_cnt])
+            self.v_coords.append([xnormv, ynormv, rout, loop_cnt])
             if abs(rbit - rout) <= Zero:
                 need_clean = 1
 

@@ -1401,7 +1401,7 @@ class Gui(Frame):
         self.Recalc_RQD()
 
     def useIMGsize_var_Callback(self):
-        if self.input_type.get() != "text":
+        if self.settings.get('input_type') != "text":
             readers.read_image_file()
         try:
             ymx = max(self.font[key].get_ymax() for key in self.font)
@@ -1591,7 +1591,7 @@ class Gui(Frame):
             init_dir = self.HOME_DIR
 
         fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        if self.input_type.get() == "image":
+        if self.settings.get('input_type') == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
         else:
@@ -1637,7 +1637,7 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        if self.input_type.get() == "image":
+        if self.settings.get('input_type') == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
         else:
@@ -1676,7 +1676,7 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        if self.input_type.get() == "image":
+        if self.settings.get('input_type') == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
             fileName_tmp, fileExtension = os.path.splitext(init_file)
@@ -1718,7 +1718,7 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        if self.input_type.get() == "image":
+        if self.settings.get('input_type') == "image":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
         else:
@@ -1757,7 +1757,7 @@ class Gui(Frame):
             init_dir = self.HOME_DIR
 
         # fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        if self.input_type.get() != "text":
+        if self.settings.get('input_type') != "text":
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
         else:
@@ -1807,7 +1807,7 @@ class Gui(Frame):
         dummy_event.widget = self.master
         self.Master_Configure(dummy_event, 1)
         self.delay_calc = False
-        if self.input_type.get() == "text":
+        if self.settings.get('input_type') == "text":
             self.font = readers.readFontFile(self.settings)
         else:
             self.font = readers.read_image_file(self.settings)
@@ -1886,7 +1886,7 @@ class Gui(Frame):
             else:
                 self.V_Carve_Calc.configure(state="disabled", command=None)
 
-            if self.input_type.get() == "text":
+            if self.settings.get('input_type') == "text":
                 self.master_configure_text()
             else:
                 self.master_configure_image()
@@ -2296,7 +2296,7 @@ class Gui(Frame):
         cszh = int(self.PreviewCanvas.cget("height"))
         buff = 10
 
-        if self.input_type.get() == "text":
+        if self.settings.get('input_type') == "text":
             minx, maxx, miny, maxy = self.text.get_bbox()
         else:
             minx, maxx, miny, maxy = self.image.get_bbox()
@@ -2308,7 +2308,7 @@ class Gui(Frame):
         else:
             Thick = float(self.STHICK.get())
 
-        if self.input_type.get() == "text":
+        if self.settings.get('input_type') == "text":
             Radius_in = float(self.TRADIUS.get())
         else:
             Radius_in = 0.0
@@ -2365,7 +2365,7 @@ class Gui(Frame):
 
         # Plot the original lines
         scaled_coords = []
-        if self.input_type.get() == "text":
+        if self.settings.get('input_type') == "text":
             if len(self.text) > 0:
                 for XY in self.text.get_coords():
                     # for XY in self.text.coords:
@@ -2402,7 +2402,7 @@ class Gui(Frame):
         if self.cut_type.get() == "v-carve":
             r_inlay_top = self.calc_r_inlay_top()
 
-            for XY in self.engrave.vcoords:
+            for XY in self.engrave.v_coords:
                 x1 = XY[0]
                 y1 = XY[1]
                 r = XY[2]
@@ -2420,7 +2420,7 @@ class Gui(Frame):
 
             loop_old = -1
             rold = -1
-            for line in self.engrave.vcoords:
+            for line in self.engrave.v_coords:
                 new = (line[0], line[1])
                 r = XY[2]
                 loop = XY[3]
@@ -2507,11 +2507,11 @@ class Gui(Frame):
 
         self.segID = []
 
-        if self.input_type.get() == "text":
+        if self.settings.get('input_type') == "text":
             self.engrave.set_image(self.text)
             self.do_it_text()
 
-        elif self.input_type.get() == "image":
+        elif self.settings.get('input_type') == "image":
             self.engrave.set_image(self.image)
             self.do_it_image()
 
@@ -2858,7 +2858,7 @@ class Gui(Frame):
                     self.plot_toolpath()
 
             # TODO move this to Model
-            if self.input_type.get() == "image" and not clean:
+            if self.settings.get('input_type') == "image" and not clean:
                 self.engrave.sort_for_v_carve()
 
             done = self.engrave.v_carve(clean)

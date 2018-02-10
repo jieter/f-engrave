@@ -47,10 +47,7 @@ style_guide = flake8.get_style_guide(
 
 
 def base_directory():
-    print 'base_directory()'
     current = os.path.dirname(os.path.realpath(__file__))
-    print 'Current:', current
-
     return os.path.join(current, '..')
 
 
