@@ -21,11 +21,11 @@ from writers import *
 
 if VERSION == 3:
     from tkinter import *
-    # from tkinter.filedialog import *
+    from tkinter.filedialog import *
     # import tkinter.messagebox
 else:
     from Tkinter import *
-    # from tkFileDialog import *
+    from tkFileDialog import *
     # import tkMessageBox
 
 

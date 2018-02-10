@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+from application.settings import Settings
+
 """
     f-engrave.py G-Code Generator
     Copyright (C) <2017>  <Scorch>
@@ -12,9 +15,7 @@
 
 version = '1.65'
 
-#TODO insert psyco / pypy
-
-from application.settings import Settings
+# TODO insert psyco / pypy
 
 settings = Settings(autoload=True)
 
@@ -29,11 +30,9 @@ else:
     try:
         from tkinter import *
         from tkinter.filedialog import *
-        import tkinter.messagebox
     except:
         from Tkinter import *
         from tkFileDialog import *
-        import tkMessageBox
 
     root = Tk()
     app = Gui(root, settings)

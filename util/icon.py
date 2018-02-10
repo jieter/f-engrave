@@ -1,4 +1,6 @@
 import os
+from util import *
+
 
 def add_to_app(app):
     try:
@@ -18,7 +20,7 @@ def add_to_app(app):
 
 
 def temp_icon(icon_file_name):
-    f = open(icon_file_name,'w')
+    f = open(icon_file_name, 'w')
     f.write("#define f_engrave_icon_width 64\n")
     f.write("#define f_engrave_icon_height 64\n")
     f.write("static unsigned char f_engrave_icon_bits[] = {\n")

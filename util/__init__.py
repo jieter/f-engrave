@@ -18,15 +18,16 @@ INV = 2  # value is invalid
 NAN = 3  # value is not a number
 
 if VERSION == 3:
-    from tkinter import *
-    from tkinter.filedialog import *
+    # from tkinter import *
+    # from tkinter.filedialog import *
     import tkinter.messagebox
     MAXINT = sys.maxsize
 else:
-    from Tkinter import *
-    from tkFileDialog import *
+    # from Tkinter import *
+    # from tkFileDialog import *
     import tkMessageBox
     MAXINT = sys.maxint
+
 
 def fmessage(text, newline=True):
     if IN_AXIS or QUIET:
@@ -37,6 +38,7 @@ def fmessage(text, newline=True):
             sys.stdout.write("\n")
     except:
         pass
+
 
 try:
     PIL = externals.check_pil()
@@ -61,12 +63,14 @@ def header_text():
 
     return header
 
+
 def message_box(title, message):
     if VERSION == 3:
         tkinter.messagebox.showinfo(title, message)
     else:
         tkMessageBox.showinfo(title, message)
         pass
+
 
 def message_ask_ok_cancel(title, message):
     if VERSION == 3:

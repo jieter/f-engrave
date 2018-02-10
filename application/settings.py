@@ -242,8 +242,7 @@ class Settings(object):
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
 
-        # 'default_text': 'F-Engrave'
-        'default_text': 'F-Engrave\nEn dergelijke\ndus'  # TEST
+        'default_text': 'F-Engrave'
     }
 
     def __init__(self, filename=None, autoload=False):

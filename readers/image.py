@@ -5,6 +5,7 @@ import dxf
 from util import fmessage, VERSION
 from geometry.font import Font
 
+
 def read_image_file(settings):
 
     font = Font()
@@ -65,7 +66,7 @@ def read_image_file(settings):
         except:
             fmessage("Unable To create path data from bitmap File.")
     else:
-        fmessage("Unknown filetype: "+fileExtension)
+        fmessage("Unknown filetype: " + fileExtension)
 
     # Reset Entry Fields in Bitmap Settings
     # if (not settings.get('batch.get()):
