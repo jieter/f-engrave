@@ -7,6 +7,7 @@ import writers
 from geometry.coords import MyImage, MyText
 from geometry.engrave import Engrave
 
+
 class JobError(Exception):
     pass
 
@@ -54,15 +55,68 @@ class Job(object):
             self.engrave.set_image(self.image)
 
         self.coords = self.engrave.coords
-
         self.clean_coords = self.engrave.clean_coords
-
         self.clean_coords_sort = self.engrave.clean_coords_sort
-
         self.v_coords = self.engrave.v_coords
-
         self.v_clean_coords_sort = self.engrave.v_clean_coords_sort
 
+        Thick = self.settings.get('line_thickness')
+        if self.settings.get('cut_type') == "v-carve":
+            Thick = 0.0
+        XScale_in = self.settings.get('xscale')
+        YScale_in = self.settings.get('yscale')
+        Angle = self.settings.get('text_angle')
+
+        # TODO image calculation
+        # if self.useIMGsize.get():
+        YScale = YScale_in / 100
+        XScale = XScale_in * YScale / 100
+
+        # TODO reduce code overlap (with Gui)
+
+        if self.settings.get('input_type') == "text":
+
+            font_line_height = self.font.line_height()
+            font_line_depth = self.font.line_depth()
+
+            # text outside or inside circle
+            Radius_in = self.settings.get('text_radius')
+            if Radius_in != 0.0:
+                if self.settings.get('outer'):
+                    if self.settings.get('upper'):
+                        Radius = Radius_in + Thick / 2 + YScale * (-font_line_depth)
+                    else:
+                        Radius = -Radius_in - Thick / 2 - YScale * (font_line_height)
+                else:
+                    if self.settings.get('upper'):
+                        Radius = Radius_in - Thick / 2 - YScale * (font_line_height)
+                    else:
+                        Radius = -Radius_in + Thick / 2 + YScale * (-font_line_depth)
+            else:
+                Radius = Radius_in
+
+            # Text transformations
+            alignment = self.settings.get('justify')
+            mirror = self.settings.get('mirror')
+            flip = self.settings.get('flip')
+            upper = self.settings.get('upper')
+
+            self.text.transform_scale(XScale, YScale)
+            self.text.align(alignment)
+            self.text.transform_on_radius(alignment, Radius, upper)
+            self.text.transform_angle(Angle)
+            if mirror:
+                self.text.transform_mirror()
+            if flip:
+                self.text.transform_flip()
+        else:
+            # Image transformations
+            self.image.transform_scale(XScale, YScale)
+            self.image.transform_angle(Angle)
+            if self.settings.get('mirror'):
+                self.image.transform_mirror()
+            if self.settings.get('flip'):
+                self.image.transform_flip()
 
     def get_svg(self):
         return '\n'.join(writers.svg(self)).strip()
@@ -114,131 +168,6 @@ class Job(object):
                 return base_radius - thickness / 2 - yscale * font.line_height()
             else:
                 return -base_radius + thickness / 2 + yscale * -font.line_depth()
-
-    def engrave(self):
-        settings = self.settings
-
-        font = self.font
-        engrave_text = self.settings.get('default_text')
-        line_thickness = settings.get('line_thickness')
-
-        if settings.get('height_calculation') == 'max_all':
-            bbox = font.bbox
-        else:
-            bbox = font.get_char_bbox_used(engrave_text)
-
-        font_line_height = bbox.ymax
-        font_line_depth = bbox.ymin
-        font_char_width = bbox.xmax
-
-        font_word_space = font_char_width * (settings.get('word_space') / 100.0)
-
-        yscale = (settings.get('yscale') - line_thickness) / (font_line_height - font_line_depth)
-        if yscale <= Zero:
-            yscale = .1
-
-        xscale = settings.get('xscale') * yscale / 100
-
-        font_char_space = font_char_width * (settings.get('char_space') / 100.0)
-        font_line_space = (font_line_height - font_line_depth + line_thickness / yscale) * settings.get('line_space')
-
-        # loop over chars and add
-        line_count = 0
-
-        xposition = 0.0
-        yposition = 0.0
-
-        text_bbox = BoundingBox()
-        line_bbox = BoundingBox()
-        lines_bboxes = []
-
-        for char_count, char in enumerate(engrave_text):
-
-            if char == ' ':
-                xposition += font_word_space
-                continue
-
-            elif char == '\t':
-                xposition += 3 * font_word_space
-
-            elif char == '\n':
-                xposition = 0
-                yposition += font_line_space
-                line_count += 1
-
-                lines_bboxes.append(line_bbox)
-                line_bbox = BoundingBox()
-
-                continue
-
-            line_bbox.extend(font[ord(char)])
-
-            for stroke in font[ord(char)].stroke_list:
-                x1 = stroke.xstart
-                y1 = stroke.ystart
-                x2 = stroke.xend
-                y2 = stroke.yend
-
-                # translate
-                x1, y1 = translate(x1, y1, xposition, -yposition)
-                x2, y2 = translate(x2, y2, xposition, -yposition)
-
-                # scale
-                x1, y1 = scale(x1, y1, xscale, yscale)
-                x2, y2 = scale(x2, y2, xscale, yscale)
-
-                # append
-                self.coords.append([x1, y1, x2, y2, line_count, char_count])
-
-                line_bbox.extend(BoundingBox(x1, x2, y1, y2))
-
-            char_width = font[ord(char)].get_xmax()
-            xposition += font_char_space + char_width
-
-            text_bbox.extend(line_bbox)
-
-        self._transform_justify()
-
-        self._transform_radius()
-
-        if settings.get('mirror'):
-            self._transform_mirror()
-
-        if settings.get('flip'):
-            self._transform_flip()
-
-        if settings.get('plotbox'):
-            self._draw_box()
-
-    def _transform_justify(self):
-        """Justify the text"""
-        justify = self.settings.get('justify')
-
-        if justify is 'Left':
-            pass
-        elif justify is 'Center':
-            for i, line in enumerate(self.coords):
-                pass
-                # TODO: implement justify center.
-        elif justify is 'Right':
-            for i, line in enumerate(self.coords):
-                pass
-                # TODO: implement justify right
-
-    def _transform_mirror(self):
-        """Mirror in x-axis"""
-        for i, line in enumerate(self.coords):
-            line[0] *= -1
-            line[2] *= -1
-
-            self.coords[i] = line
-
-    def _transform_flip(self):
-        for i, line in enumerate(self.coords):
-            line[1] *= -1
-            line[3] *= -1
-
-            self.coords[i] = line
 
     def _draw_box(self):
         line_thickness = self.settings.get('line_thickness')
@@ -312,10 +241,3 @@ class Job(object):
 
         self.xzero = x_zero
         self.yzero = y_zero
-
-    def vcarve(self):
-        if self.settings.get('units') == 'mm' and self.settings.get('v_step_len') <= .01:
-            fmessage('v_step_len is too small, setting to default metric value')
-            self.settings.reset('v_step_len')
-
-        raise Exception('Not implemented yet.')

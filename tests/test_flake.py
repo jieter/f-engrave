@@ -11,21 +11,22 @@ import unittest
 
 from flake8.api import legacy as flake8
 
-# disbale flake8 logger:
+# disbale the flake8 logger:
 # http://flake8.pycqa.org/en/latest/user/python-api.html
 from logging import getLogger
 
 getLogger('flake8').propagate = False
 
-
 style_guide = flake8.get_style_guide(
     ignore=(
+        'E129',  # visually indented line with same indent (in gui.py)
         'E501',  # Line too long
+        'E126',  # continuation line over-indented for hanging indent
+        'E128',  # continuation line under-indented for visual indent
+        'E221',  # Multiple spaces before operator
+        'E222',  # Multiple spaces after operator
         'F403',  # 'import *'
         'F405',  # 'import *'
-        'E128',  # continuation line under-indented for visual indent?
-        'E221',  # Multiple spaces before operator
-        'E222'  # Multiple spaces after operator
     ),
     report=None,
     exclude=[
@@ -33,15 +34,15 @@ style_guide = flake8.get_style_guide(
         # 'f-engrave-140.py',
         # 'py2exe_setup.py',
 
-        # exclude these files that have been cleaned up allready:
-        'gui.py',
-        '__init__.py'
-        'externals.py'
-        'nurbs.py',
-        'bspline.py',
-        'linearcfitter.py',
-        'dxf_class.py',
-        'engrave.py'
+        # exclude these files that have been cleaned up already:
+        # 'gui.py',
+        # '__init__.py'
+        # 'externals.py'
+        # 'nurbs.py',
+        # 'bspline.py',
+        # 'linearcfitter.py',
+        # 'dxf_class.py',
+        # 'engrave.py'
     ]
 )
 

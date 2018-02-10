@@ -2593,7 +2593,7 @@ class Gui(Frame):
 
             return
 
-        if self.cut_type.get() == "v-carve":
+        if self.settings.get('cut_type') == "v-carve":
             Thick = 0.0
             # self.text.set_thickness(0.0)
 
@@ -2830,7 +2830,7 @@ class Gui(Frame):
                 v_step_len = 0.01
                 self.settings.set('v_step_len', v_step_len)
         else:
-            if fv_step_len < .0005:
+            if v_step_len < .0005:
                 v_step_len = 0.0005
                 self.settings.set('v_step_len', v_step_len)
 
@@ -2862,22 +2862,6 @@ class Gui(Frame):
                 self.engrave.sort_for_v_carve()
 
             done = self.engrave.v_carve(clean)
-
-            # Reset Entry Fields in V-Carve Settings
-
-            # TODO refresh from settings?
-            # if not self.batch.get():
-            #     self.entry_set(self.Entry_Vbitangle,   self.Entry_Vbitangle_Check()   ,1)
-            #     self.entry_set(self.Entry_Vbitdia,     self.Entry_Vbitdia_Check()     ,1)
-            #     self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check() ,1)
-            #     self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check() ,1)
-            #     self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check(),1)
-            #     self.entry_set(self.Entry_StepSize,    self.Entry_StepSize_Check()    ,1)
-            #     self.entry_set(self.Entry_Allowance,   self.Entry_Allowance_Check()   ,1)
-            #     self.entry_set(self.Entry_Accuracy,    self.Entry_Accuracy_Check()    ,1)
-            #     self.entry_set(self.Entry_CLEAN_DIA,   self.Entry_CLEAN_DIA_Check()   ,1)
-            #     self.entry_set(self.Entry_STEP_OVER,   self.Entry_STEP_OVER_Check()   ,1)
-            #     self.entry_set(self.Entry_V_CLEAN,     self.Entry_V_CLEAN_Check()     ,1)
 
             if done and (not self.batch.get()):
                 self.statusMessage.set('Done -- ' + self.bounding_box.get())

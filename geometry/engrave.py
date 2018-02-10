@@ -1,5 +1,5 @@
 from time import time
-from math import ( ceil, fabs, floor, sqrt, tan )
+from math import (ceil, fabs, floor, sqrt, tan)
 
 from util import fmessage
 from geometry import *
