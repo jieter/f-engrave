@@ -755,7 +755,13 @@ class Gui(Frame):
 
     def CopyClipboard_SVG(self):
         self.clipboard_clear()
-        svgcode = svg(self.engrave)
+
+        # TODO
+        # svgcode = svg(self.engrave)
+        self.engrave.init_coords()
+        self.coords = self.engrave.coords
+        svgcode = svg(self)
+
         for line in svgcode:
             self.clipboard_append(line + '\n')
 
@@ -1631,6 +1637,8 @@ class Gui(Frame):
             if not message_ask_ok_cancel("Continue", mess):
                 return
 
+        # TODO
+        self.engrave.init_coords()
         g_code = gcode(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
@@ -1712,7 +1720,12 @@ class Gui(Frame):
 
     def menu_File_Save_SVG_File(self):
 
-        svg_code = svg(self.engrave)
+        # TODO
+        # svg_code = svg(self.engrave)
+        self.engrave.init_coords()
+        self.coords = self.engrave.coords
+        # self.coords = self.text.coords
+        svg_code = svg(self)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -1751,6 +1764,8 @@ class Gui(Frame):
 
     def menu_File_Save_DXF_File(self, close_loops=False):
 
+        # TODO
+        self.engrave.init_coords()
         DXF_CODE = dxf(self.engrave, close_loops=close_loops)
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
