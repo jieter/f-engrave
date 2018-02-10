@@ -57,15 +57,7 @@ class MyImage(object):
             XY[1] = XY[1] * yscale
             XY[2] = XY[2] * xscale
             XY[3] = XY[3] * yscale
-
         self._set_bbox()
-
-        # TODO a more elegant way of adjusting the line max vals?
-        for vals in self.line_max_vals:
-            vals[0] = vals[0] * xscale
-            vals[1] = vals[1] * xscale
-            vals[2] = vals[2] * yscale
-            vals[3] = vals[3] * yscale
 
     def transform_flip(self):
         for XY in self.coords:
@@ -274,6 +266,17 @@ class MyText(MyImage):
                     pass
 
         self._set_bbox()
+
+    def transform_scale(self, xscale, yscale):
+
+        super(MyText, self).transform_scale(xscale, yscale)
+
+        # TODO a more elegant way of adjusting the line max vals?
+        for vals in self.line_max_vals:
+            vals[0] = vals[0] * xscale
+            vals[1] = vals[1] * xscale
+            vals[2] = vals[2] * yscale
+            vals[3] = vals[3] * yscale
 
     def transform_on_radius(self, alignment, radius, upper):
 

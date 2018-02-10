@@ -71,7 +71,7 @@ class BSplineClass:
         zeile = []
         for j in range(d + 1):
             zeile.append(0.0)
-        a.append(zeile[:]);
+        a.append(zeile[:])
         a.append(zeile[:])
 
         # Initialize the ndu matrix
@@ -113,12 +113,12 @@ class BSplineClass:
 
         # This section computes the derivatives (Eq. [2.9])
         for r in range(d + 1):  # Loop over function index
-            s1 = 0;
+            s1 = 0
             s2 = 1  # Alternate rows in array a
             a[0][0] = 1.0
             for k in range(1, n + 1):
                 der = 0.0
-                rk = r - k;
+                rk = r - k
                 pk = d - k
                 if (r >= k):
                     a[s2][0] = a[s1][0] / ndu[pk + 1][rk]
@@ -142,8 +142,8 @@ class BSplineClass:
                     der += a[s2][k] * ndu[r][pk]
 
                 ders[k][r] = der
-                j = s1;
-                s1 = s2;
+                j = s1
+                s1 = s2
                 s2 = j  # Switch rows
 
         # Multiply through by the the correct factors

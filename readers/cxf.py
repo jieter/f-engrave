@@ -1,7 +1,8 @@
 from math import sin, cos, radians
 import re
 
-from geometry import Character, Line, Font
+from geometry import Line
+from geometry.font import Character, Font
 
 
 def parse(file, segarc):

@@ -1,10 +1,7 @@
 from math import atan2, cos, sin, degrees, radians, hypot, sqrt
 
 from boundingbox import BoundingBox
-from font import *
 from util import MAXINT
-
-from pathsorter import *
 
 Zero = 1e-6
 
@@ -19,6 +16,7 @@ def transform(x, y, angle):
     newy = x * sin(angle) + y * cos(angle)
 
     return newx, newy
+
 
 def rotation(x, y, angle, radius):
     """
@@ -41,11 +39,14 @@ def rotation(x, y, angle, radius):
 
     return newx, newy, alpha
 
+
 def scale(x, y, xscale, yscale):
     return x * xscale, y * yscale
 
+
 def translate(x1, y1, x2, y2):
     return x1 + x2, y1 + y2
+
 
 def point_inside_polygon(x, y, poly):
     """
@@ -73,6 +74,7 @@ def point_inside_polygon(x, y, poly):
 
     return inside
 
+
 def detect_intersect(coords0, coords1, lcoords, XY_T_F=True):
     """
     Find intersecting lines
@@ -93,7 +95,7 @@ def detect_intersect(coords0, coords1, lcoords, XY_T_F=True):
     len_seg = sqrt(dx * dx + dy * dy)
 
     if len_seg < Zero:
-        if XY_T_F == False:
+        if XY_T_F is False:
             return False
         else:
             return []
@@ -122,8 +124,8 @@ def detect_intersect(coords0, coords1, lcoords, XY_T_F=True):
                 if (xr0 > Zero and xr0 < len_seg - Zero):
                     Xint_local = xr0  # True
             else:
-                dyr = yr1 - yr0;
-                mr = dyr / dxr;
+                dyr = yr1 - yr0
+                mr = dyr / dxr
                 br = yr1 - mr * xr1
                 xint = -br / mr
                 if (xint > Zero and xint < len_seg - Zero):
@@ -131,13 +133,13 @@ def detect_intersect(coords0, coords1, lcoords, XY_T_F=True):
 
             # Check if there was a intersection detected
             if Xint_local != 0:
-                if XY_T_F == False:
+                if XY_T_F is False:
                     return True
                 else:
                     Xint_list.append(Xint_local)
                     Xint_local = 0
 
-    if XY_T_F == False:
+    if XY_T_F is False:
 
         return False
 
@@ -185,10 +187,11 @@ class Line(object):
         return "Line([%s, %s, %s, %s])" % (self.xstart, self.ystart, self.xend, self.yend)
 
 
-################################################################################
-#             Author.py                                                        #
-#             A component of emc2                                              #
-################################################################################
+"""
+    Author.py
+    A component of emc2
+"""
+
 
 def dist_lseg(l1, l2, p, z_only=False):
     """
@@ -204,18 +207,22 @@ def dist_lseg(l1, l2, p, z_only=False):
     dz = za - z0
     d2 = dx * dx + dy * dy + dz * dz
 
-    if d2 == 0: return 0
+    if d2 == 0:
+        return 0
 
     t = (dx * (xi - x0) + dy * (yi - y0) + dz * (zi - z0)) / d2
-    if t < 0: t = 0
-    if t > 1: t = 1
+    if t < 0:
+        t = 0
+    if t > 1:
+        t = 1
 
-    if (z_only == True):
+    if (z_only is True):
         dist2 = (zi - z0 - t * dz) ** 2
     else:
         dist2 = (xi - x0 - t * dx) ** 2 + (yi - y0 - t * dy) ** 2 + (zi - z0 - t * dz) ** 2
 
     return dist2 ** .5
+
 
 def rad1(x1, y1, x2, y2, x3, y3):
     x12 = x1 - x2
@@ -226,8 +233,10 @@ def rad1(x1, y1, x2, y2, x3, y3):
     y31 = y3 - y1
 
     den = abs(x12 * y23 - x23 * y12)
-    if abs(den) < 1e-5: return MAXINT
-    return hypot(float(x12), float(y12)) * hypot(float(x23), float(y23)) * hypot(float(x31), float(y31)) / 2 / den
+    if abs(den) < 1e-5:
+        return MAXINT
+    else:
+        return hypot(float(x12), float(y12)) * hypot(float(x23), float(y23)) * hypot(float(x31), float(y31)) / 2 / den
 
 
 class Point:
@@ -235,7 +244,8 @@ class Point:
         self.x = x
         self.y = y
 
-    def __str__(self): return "<%f,%f>" % (self.x, self.y)
+    def __str__(self):
+        return "<%f,%f>" % (self.x, self.y)
 
     def __sub__(self, other):
         return Point(self.x - other.x, self.y - other.y)
@@ -267,7 +277,8 @@ def cent1(x1, y1, x2, y2, x3, y3):
     P3 = Point(x3, y3)
 
     den = abs((P1 - P2).cross(P2 - P3))
-    if abs(den) < 1e-5: return MAXINT, MAXINT
+    if abs(den) < 1e-5:
+        return MAXINT, MAXINT
 
     alpha = (P2 - P3).mag2() * (P1 - P2).dot(P1 - P3) / 2 / den / den
     beta = (P1 - P3).mag2() * (P2 - P1).dot(P2 - P3) / 2 / den / den
@@ -276,31 +287,47 @@ def cent1(x1, y1, x2, y2, x3, y3):
     Pc = alpha * P1 + beta * P2 + gamma * P3
     return Pc.x, Pc.y
 
+
 def arc_center(plane, p1, p2, p3):
     x1, y1, z1 = p1
     x2, y2, z2 = p2
     x3, y3, z3 = p3
 
-    if plane == 17: return cent1(x1, y1, x2, y2, x3, y3)
-    if plane == 18: return cent1(x1, z1, x2, z2, x3, z3)
-    if plane == 19: return cent1(y1, z1, y2, z2, y3, z3)
+    if plane == 17:
+        return cent1(x1, y1, x2, y2, x3, y3)
+    if plane == 18:
+        return cent1(x1, z1, x2, z2, x3, z3)
+    if plane == 19:
+        return cent1(y1, z1, y2, z2, y3, z3)
+    return None
+
 
 def arc_rad(plane, P1, P2, P3):
-    if plane is None: return MAXINT
+    if plane is None:
+        return MAXINT
 
     x1, y1, z1 = P1
     x2, y2, z2 = P2
     x3, y3, z3 = P3
 
-    if plane == 17: return rad1(x1, y1, x2, y2, x3, y3)
-    if plane == 18: return rad1(x1, z1, x2, z2, x3, z3)
-    if plane == 19: return rad1(y1, z1, y2, z2, y3, z3)
-    return None, 0
+    if plane == 17:
+        return rad1(x1, y1, x2, y2, x3, y3)
+    if plane == 18:
+        return rad1(x1, z1, x2, z2, x3, z3)
+    if plane == 19:
+        return rad1(y1, z1, y2, z2, y3, z3)
+    # TODO? return None
+
 
 def get_pts(plane, x, y, z):
-    if plane == 17: return x, y
-    if plane == 18: return x, z
-    if plane == 19: return y, z
+    if plane == 17:
+        return x, y
+    if plane == 18:
+        return x, z
+    if plane == 19:
+        return y, z
+    # TODO? return None
+
 
 def one_quadrant(plane, c, p1, p2, p3):
     xc, yc = c
@@ -309,8 +336,10 @@ def one_quadrant(plane, c, p1, p2, p3):
     x3, y3 = get_pts(plane, p3[0], p3[1], p3[2])
 
     def sign(x):
-        if abs(x) < 1e-5: return 0
-        if x < 0: return -1
+        if abs(x) < 1e-5:
+            return 0
+        if x < 0:
+            return -1
         return 1
 
     signs = set((
@@ -319,7 +348,8 @@ def one_quadrant(plane, c, p1, p2, p3):
         (sign(x3 - xc), sign(y3 - yc))
     ))
 
-    if len(signs) == 1: return True
+    if len(signs) == 1:
+        return True
 
     if (1, 1) in signs:
         signs.discard((1, 0))
@@ -334,7 +364,9 @@ def one_quadrant(plane, c, p1, p2, p3):
         signs.discard((-1, 0))
         signs.discard((0, -1))
 
-    if len(signs) == 1: return True
+    if len(signs) == 1:
+        return True
+
 
 def arc_dir(plane, c, p1, p2, p3):
     xc, yc = c
@@ -367,6 +399,7 @@ def arc_dir(plane, c, p1, p2, p3):
     # xc, yc = 0.141980825, 1.032178989
     return ccw
 
+
 def get_angle(s, c):
     """
     routine takes a sin and cos and returns the angle (between 0 and 360)
@@ -377,6 +410,7 @@ def get_angle(s, c):
         angle = 360 + angle
 
     return angle
+
 
 def arc_fmt(plane, c1, c2, p1):
     x, y, z = p1

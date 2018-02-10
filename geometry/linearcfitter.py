@@ -94,10 +94,10 @@ def line_arc_fit(lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz, FLAG_arc,
                             abs(y_center_last - y_center) > Zero):
                         SKIP = 1
 
-                if (max(cord_a, cord_b) <= cord_limit and abs(ez) <= Zero and
-                        L_a ** 2 + L_b ** 2 < L_c ** 2 and cord_a / cord_b >= 1.0 / 1.5 and
-                        cord_a / cord_b <= 1.5 and sagitta_min > Zero and SKIP == 0
-                ):
+                if (max(cord_a, cord_b) <= cord_limit and
+                        abs(ez) <= Zero and L_a ** 2 + L_b ** 2 < L_c ** 2 and
+                        cord_a / cord_b >= 1.0 / 1.5 and cord_a / cord_b <= 1.5 and
+                        sagitta_min > Zero and SKIP == 0):
                     seg_sin_test = (y1 - lasty) / cord_a
                     seg_cos_test = -(x1 - lastx) / cord_a
                     phi_test = get_angle(seg_sin_test, seg_cos_test)

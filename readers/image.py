@@ -3,11 +3,11 @@ from subprocess import Popen, PIPE
 
 import dxf
 from util import fmessage, VERSION
-from geometry import Font
+from geometry.font import Font
 
 def read_image_file(settings):
 
-    font = {}
+    font = Font()
 
     file_full = settings.get('IMAGE_FILE')
     if not os.path.isfile(file_full):

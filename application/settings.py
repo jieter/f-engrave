@@ -309,8 +309,7 @@ class Settings(object):
                     # print '?? ', name
 
     def to_gcode(self):
-        #return '\n'.join(
-        gcode = [CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n')) \
+        gcode = [CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))
                  for key, value in self._settings.items()]
         return gcode
 

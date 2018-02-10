@@ -7,7 +7,7 @@ from math import (
     ceil, floor
 )
 
-from geometry import get_angle, transform, Zero
+from geometry import get_angle, transform
 from util import fmessage, VERSION
 
 from elements import *
@@ -126,13 +126,13 @@ class DXF_CLASS(object):
         else:
             sign = -1
 
-        dx      = x1 - x0
-        dy      = y1 - y0
-        c       = sqrt(dx ** 2 + dy ** 2)
-        alpha   = 2.0 * (atan(bulge))
-        R       = c / (2 * sin(alpha))
-        L       = R * cos(alpha)
-        steps   = ceil(2 * alpha / radians(tol_deg))
+        dx = x1 - x0
+        dy = y1 - y0
+        c = sqrt(dx ** 2 + dy ** 2)
+        alpha = 2.0 * (atan(bulge))
+        R = c / (2 * sin(alpha))
+        L = R * cos(alpha)
+        steps = ceil(2 * alpha / radians(tol_deg))
 
         if abs(c) < Zero:
             phi = 0
@@ -244,19 +244,19 @@ class DXF_CLASS(object):
                 self.coords.append([x0, y0, x1, y1])
             # ARC #############
             elif e.type == "ARC":
-                x     = e.data["10"]
-                y     = e.data["20"]
-                r     = e.data["40"]
+                x = e.data["10"]
+                y = e.data["20"]
+                r = e.data["40"]
                 start = e.data["50"]
-                end   = e.data["51"]
+                end = e.data["51"]
 
                 if end < start:
                     end = end + 360.0
-                delta  = end - start
+                delta = end - start
                 angle_steps = max(floor(delta / tol_deg), 2)
 
                 start_r = radians(start)
-                end_r   = radians(end)
+                end_r = radians(end)
 
                 step_phi = radians(delta / angle_steps)
                 x0 = x + r * cos(start_r)

@@ -1,4 +1,5 @@
-from geometry import Character, Line, Font
+from geometry import Line
+from geometry.font import Character, Font
 from geometry.boundingbox import BoundingBox
 
 from dxf_class import DXF_CLASS

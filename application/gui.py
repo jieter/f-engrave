@@ -9,11 +9,14 @@ from bitmap_settings import BitmapSettings
 from vcarve_settings import VCarveSettings
 from general_settings import GeneralSettings
 
+# from geometry.font import Font
 from geometry.coords import MyImage, MyText
+from geometry.font import Font
 # from geometry.engrave import Engrave, Toolbit, VCarve, Straight
 from geometry.engrave import Engrave, Toolbit
 
 import readers
+from readers import *
 from writers import *
 
 if VERSION == 3:
@@ -41,6 +44,7 @@ class Gui(Frame):
         self.settings = settings
         self.engrave = Engrave(self.settings)
 
+        self.font = Font()
         self.text = MyText()
         self.image = MyImage()
         self.tool = Toolbit()
@@ -501,9 +505,9 @@ class Gui(Frame):
             font_files = " "
 
         for name in font_files:
-            if str.find(name.upper(), '.CXF') != -1 \
-                    or (str.find(name.upper(), '.TTF') != -1 and TTF_AVAILABLE):
+            if str.find(name.upper(), '.CXF') != -1 or (str.find(name.upper(), '.TTF') != -1 and TTF_AVAILABLE):
                 self.Listbox_1.insert(END, name)
+
         if len(self.fontfile.get()) < 4:
             try:
                 self.fontfile.set(self.Listbox_1.get(0))
