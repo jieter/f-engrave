@@ -7,7 +7,7 @@ from math import (
     ceil, floor
 )
 
-from geometry import get_angle, transform
+from geometry import get_angle, transform, Zero
 from util import fmessage, VERSION
 
 from elements import *
@@ -214,14 +214,12 @@ class DXF_CLASS(object):
                         while True:
                             g_code, value = next(data)
 
-                            ###################################
                             if g_code == 0:
                                 TYPE = value
                             if TYPE == "LWPOLYLINE" and g_code == 10 and g_code_last == 20:
                                 # Add missing code 42
                                 en.update((42, 0.0))
                             g_code_last = g_code
-                            ###################################
 
                             if value == "ENDSEC":
                                 break

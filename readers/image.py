@@ -3,7 +3,7 @@ from subprocess import Popen, PIPE
 
 import dxf
 from util import fmessage, VERSION
-from geometry.font import Font
+from geometry.font import *
 
 
 def read_image_file(settings):
@@ -50,8 +50,8 @@ def read_image_file(settings):
 
             cmd = ' '.join(map(str, cmd))
             p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-
             stdout, stderr = p.communicate()
+
             if VERSION == 3:
                 dxf_file = bytes.decode(stdout).split("\n")
             else:
@@ -60,7 +60,6 @@ def read_image_file(settings):
             # build stroke lists from font file
             font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
             # font['DXF_source'] = DXF_source
-
             settings.set('input_type', 'image')
 
         except:

@@ -9,7 +9,6 @@ from bitmap_settings import BitmapSettings
 from vcarve_settings import VCarveSettings
 from general_settings import GeneralSettings
 
-# from geometry.font import Font
 from geometry.coords import MyImage, MyText
 from geometry.font import Font
 # from geometry.engrave import Engrave, Toolbit, VCarve, Straight
@@ -105,22 +104,20 @@ class Gui(Frame):
 
     def create_widgets(self):
         self.batch = BooleanVar()
+
+        self.show_thick = BooleanVar()
         self.show_axis = BooleanVar()
         self.show_box = BooleanVar()
-        self.show_thick = BooleanVar()
+
         self.flip = BooleanVar()
         self.mirror = BooleanVar()
         self.outer = BooleanVar()
         self.upper = BooleanVar()
+
         self.fontdex = BooleanVar()
         self.v_pplot = BooleanVar()
-        self.inlay = BooleanVar()
-        self.no_comments = BooleanVar()
-        self.ext_char = BooleanVar()
-        self.var_dis = BooleanVar()
-        self.useIMGsize = BooleanVar()
-        self.plotbox = BooleanVar()
 
+        self.useIMGsize = BooleanVar()
         self.arc_fit = StringVar()
         self.YSCALE = StringVar()
         self.XSCALE = StringVar()
@@ -613,23 +610,20 @@ class Gui(Frame):
         Initialise the TK widgets with the values from settings
         """
         self.batch.set(self.settings.get('batch'))
+
         self.show_axis.set(self.settings.get('show_axis'))
         self.show_box.set(self.settings.get('show_box'))
         self.show_thick.set(self.settings.get('show_thick'))
+
         self.flip.set(self.settings.get('flip'))
         self.mirror.set(self.settings.get('mirror'))
         self.outer.set(self.settings.get('outer'))
         self.upper.set(self.settings.get('upper'))
+
         self.fontdex.set(self.settings.get('fontdex'))
-        self.useIMGsize.set(self.settings.get('useIMGsize'))
-        self.plotbox.set(self.settings.get('plotbox'))
-
         self.v_pplot.set(self.settings.get('v_pplot'))
-        self.inlay.set(self.settings.get('inlay'))
-        self.no_comments.set(self.settings.get('no_comments'))
-        self.ext_char.set(self.settings.get('ext_char'))
-        self.var_dis.set(self.settings.get('var_dis'))
 
+        self.useIMGsize.set(self.settings.get('useIMGsize'))
         self.arc_fit.set(self.settings.get('arc_fit'))
         self.YSCALE.set(self.settings.get('yscale'))
         self.XSCALE.set(self.settings.get('xscale'))
@@ -890,12 +884,12 @@ class Gui(Frame):
 
         win_id = self.grab_current()
 
-        if (self.settings('clean_P') +
-            self.settings('clean_X') +
-            self.settings('clean_Y') +
-            self.settings('v_clean_P') +
-            self.settings('v_clean_Y') +
-            self.settings('v_clean_X')) != 0:
+        if (self.settings.get('clean_P') +
+            self.settings.get('clean_X') +
+            self.settings.get('clean_Y') +
+            self.settings.get('v_clean_P') +
+            self.settings.get('v_clean_Y') +
+            self.settings.get('v_clean_X')) != 0:
 
             if self.engrave.number_of_clean_coords_sort == 0:
                 mess = "Calculate Cleanup must be executed\n"
@@ -921,12 +915,12 @@ class Gui(Frame):
 
         win_id = self.grab_current()
 
-        if (self.settings('clean_P') +
-            self.settings('clean_X') +
-            self.settings('clean_Y') +
-            self.settings('v_clean_P') +
-            self.settings('v_clean_Y') +
-            self.settings('v_clean_X')) != 0:
+        if (self.settings.get('clean_P') +
+            self.settings.get('clean_X') +
+            self.settings.get('clean_Y') +
+            self.settings.get('v_clean_P') +
+            self.settings.get('v_clean_Y') +
+            self.settings.get('v_clean_X')) != 0:
 
             if self.engrave.number_of_v_clean_coords_sort == 0:
                 mess = "Calculate Cleanup must be executed\n"
@@ -1244,6 +1238,8 @@ class Gui(Frame):
 
         return ERROR_cnt
 
+    # TODO refactor into separate code
+
     def V_Carve_Calc_Click(self):
         if self.Check_All_Variables() > 0:
             return
@@ -1417,7 +1413,7 @@ class Gui(Frame):
             else:
                 image_height = 50
 
-        if self.useIMGsize.get():
+        if self.settings.get('useIMGsize'):
             self.YSCALE.set('%.3g' % (100 * float(self.YSCALE.get()) / image_height))
         else:
             self.YSCALE.set('%.3g' % (float(self.YSCALE.get()) / 100 * image_height))
@@ -1485,7 +1481,9 @@ class Gui(Frame):
             self.Open_G_Code_File(fileselect)
 
     def menu_File_Open_DXF_File(self):
+
         init_dir = os.path.dirname(self.IMAGE_FILE)  # TODO  settings
+
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
@@ -1516,10 +1514,12 @@ class Gui(Frame):
 
             # TODO future read_image_file will return a MyImage instead of a Font instance
             self.font = readers.read_image_file(self.settings)
-            stroke_list = self.font[ord("F")].stroke_list
-            self.image.set_coords_from_strokes(stroke_list)
-
-            self.input_type.set(self.settings.get('input_type'))  # input_type may have been changed by read_image_file
+            if len(self.font) >  0:
+                stroke_list = self.font[ord("F")].stroke_list
+                self.image.set_coords_from_strokes(stroke_list)
+                self.input_type.set(self.settings.get('input_type'))  # input_type may have been changed by read_image_file
+            else:
+                self.image = MyImage()
             self.do_it()
 
     def Open_G_Code_File(self, filename):
@@ -1685,9 +1685,9 @@ class Gui(Frame):
             init_file = "text"
 
         if bit_type == "v-bit":
-            init_file = init_file + "_v" + self.clean_name.get()
+            init_file = init_file + "_v" + self.settings.get('clean_name')
         else:
-            init_file = init_file + self.clean_name.get()
+            init_file = init_file + self.settings.get('clean_name')
 
         filename = asksaveasfilename(defaultextension='.ngc',
                                      filetypes=[("G-Code File", "*.ngc"), ("TAP File", "*.tap"), ("All Files", "*")],
@@ -2092,7 +2092,7 @@ class Gui(Frame):
         self.Label_font_prop.place(x=x_label_L, y=Yloc, width=w_label * 2, height=21)
         Yloc = Yloc + 24
         self.Label_Yscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
-        if self.useIMGsize.get():
+        if self.settings.get('useIMGsize'):
             self.Label_Yscale_u.place_forget()
             self.Label_Yscale_pct.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         else:
@@ -2319,7 +2319,7 @@ class Gui(Frame):
         self.plot_scale = plot_scale
 
         Radius_plot = 0
-        if self.plotbox.get() and self.cut_type.get() == "engrave":
+        if self.settings.get('plotbox') and self.cut_type.get() == "engrave":
             if Radius_in != 0:
                 Radius_plot = float(self.RADIUS_PLOT)
 
@@ -2413,7 +2413,7 @@ class Gui(Frame):
                     if r >= rbit:
                         self.plot_circle((x1, y1), midx, midy, cszw, cszh, color, r, 1)
                 else:
-                    if self.inlay.get():
+                    if self.settings.get('inlay'):
                         self.plot_circle((x1, y1), midx, midy, cszw, cszh, color, r - r_inlay_top, 1)
                     else:
                         self.plot_circle((x1, y1), midx, midy, cszw, cszh, color, r, 1)

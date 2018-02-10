@@ -9,12 +9,12 @@ from dxf_class import DXF_CLASS
 
 def parse(dxf_file, segarc, new_origin=True):
 
-    # Initialize / reset
     font = Font()
 
     DXF_source = " "
     dxf_import = DXF_CLASS()
     dxf_import.GET_DXF_DATA(dxf_file, tol_deg=segarc)
+
     dxfcoords = dxf_import.DXF_COORDS_GET(new_origin)
 
     if "POTRACE" in dxf_import.comment.upper():
