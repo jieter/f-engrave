@@ -90,7 +90,7 @@ class Settings(object):
 
         # text plotted on a circle with radius
         'text_radius': 0.0,
-        'outer': False,  # outside circle
+        'outer': True,  # outside circle
         'upper': True,  # on top of cirle
         'fontdex': False,
         'useIMGsize': False,
@@ -170,10 +170,10 @@ class Settings(object):
         'height_calculation': 'max_use',
 
         # Add a box/circle around plot
-        'plotbox': False,
+        'plotbox': True,
 
         # Gap between box and engraving
-        'boxgap': 0.25,
+        'boxgap': 5.0,
 
         # font location and name
         'fontdir': 'fonts',

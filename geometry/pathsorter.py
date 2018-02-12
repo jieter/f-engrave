@@ -20,7 +20,7 @@ def sort_paths(ecoords, i_loop=2):
             loop_old = loop
         Lend.append(i)
 
-    # Find new order based on distance to next beg or end #
+    # Find new order based on distance to next beg or end
     order_out = []
     use_beg = 0
     if len(ecoords) > 0:

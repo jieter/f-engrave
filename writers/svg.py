@@ -1,4 +1,6 @@
 from geometry import BoundingBox, Line
+# TODO How to import higher level package:
+# from settings import CUT_TYPE_VCARVE
 
 color = 'blue'
 
@@ -20,7 +22,7 @@ def svg(job):
 
     settings = job.settings
 
-    if settings.get('cut_type') == "v-carve":
+    if settings.get('cut_type') == "v-carve":  # TODO use CUT_TYPE_VCARVE
         thickness = 0.001
     else:
         thickness = settings.get('line_thickness')
@@ -33,8 +35,9 @@ def svg(job):
 
     # plot_radius = job.get_plot_radius()
     # if plot_radius != 0:
-        # origin = job.get_origin()
+    #     origin = job.get_origin()
 
+    # if radius_plot != 0:
     #     maxx = max(maxx, origin[0] + plot_radus - job.xzero)
     #     minx = min(minx, origin[0] - plot_radus - job.xzero)
     #     miny = min(miny, origin[1] - plot_radus - job.yzero)
@@ -57,7 +60,7 @@ def svg(job):
     })
 
     # # Make Circle
-    # if Radius_plot != 0 and settings.get('cut_type.get') == "engrave":
+    # if plot_radius != 0 and settings.get('cut_type') != CUT_TYPE_ENGRAVE:
     #     params = ( )
     #
     #     svgcode.append(circle_template % (

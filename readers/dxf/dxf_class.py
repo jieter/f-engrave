@@ -97,8 +97,6 @@ class DXF_CLASS(object):
             try:
                 group_code = int(line)
                 value = next(fd_iter).replace('\r', '')
-                # value = fd_iter.next().replace('\r', '')
-
                 value = value.replace('\n', '')
                 value = value.lstrip(' ')
                 value = value.rstrip(' ')
@@ -115,7 +113,7 @@ class DXF_CLASS(object):
 
     def bulge_coords(self, x0, y0, x1, y1, bulge, tol_deg=20):
 
-        global Zero
+        # global Zero
 
         bcoords = []
         if bulge < 0.0:

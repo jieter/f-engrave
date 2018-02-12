@@ -1,5 +1,6 @@
 from util import VERSION, OK, NOR, INV, NAN
 from tooltip import ToolTip
+from settings import CUT_TYPE_VCARVE
 
 if VERSION == 3:
     from tkinter import *
@@ -449,7 +450,7 @@ class VCarveSettings(object):
                                          command=self.vcarve_recalculate_click)
         self.VCARVE_Recalculate.place(x=Xbut, y=Ybut, width=130, height=30, anchor="e")
 
-        if self.cut_type.get() == "v-carve":
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.VCARVE_Recalculate.configure(state="normal", command=None)
         else:
             self.VCARVE_Recalculate.configure(state="disabled", command=None)

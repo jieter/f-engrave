@@ -20,29 +20,57 @@ getLogger('flake8').propagate = False
 style_guide = flake8.get_style_guide(
     ignore=(
         'E129',  # visually indented line with same indent (in gui.py)
-        'E501',  # Line too long
+        'E501',  # line too long
         'E126',  # continuation line over-indented for hanging indent
         'E128',  # continuation line under-indented for visual indent
-        'E221',  # Multiple spaces before operator
-        'E222',  # Multiple spaces after operator
-        'F403',  # 'import *'
-        'F405',  # 'import *'
+        # 'E221',  # multiple spaces before operator
+        # 'E222',  # multiple spaces after operator
+        'F403',  # 'import *' used; unable to detect undefined names
+        'F405',  # ... may be undefined, or defined from star imports: ...
     ),
     report=None,
     exclude=[
-        # old files
+        # old files:
         # 'f-engrave-140.py',
         # 'py2exe_setup.py',
 
-        # exclude these files that have been cleaned up already:
-        # 'gui.py',
+        # new files:
         # '__init__.py'
-        # 'externals.py'
-        # 'nurbs.py',
-        # 'bspline.py',
-        # 'linearcfitter.py',
-        # 'dxf_class.py',
+        # 'gui.py',
+        # 'job.py',
+        # 'settings.py',
+        # 'tooltip.py',
+
+        # 'bitmap_settings.py',
+        # 'general_settings.py',
+        # 'vcarve_settings.py',
+
+        # geometry:
+        # 'boundingbox.py'
+        # 'coords.py',
         # 'engrave.py'
+        # 'font.py',
+        # 'linearcfitter.py',
+        # 'pathsorter.py',
+
+        # readers:
+        # 'bspline.py',
+        # 'dxf_class.py',
+        # 'elements.py',
+        # 'nurbs.py',
+
+        # 'cxf.py',
+        # 'font.py',
+        # 'image.py'
+
+        # writers:
+        # 'dxf.py',
+        # 'gcode.py',
+        # 'svg.py',
+
+        # util:
+        # 'externals.py'
+        # 'icon.py'
     ]
 )
 

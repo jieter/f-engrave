@@ -6,6 +6,8 @@ from geometry.pathsorter import sort_paths
 from geometry.linearcfitter import line_arc_fit
 
 from util import MAXINT, header_text, fmessage
+# TODO How to import higher level package:
+# from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE
 
 
 def gcode(job):
@@ -34,10 +36,10 @@ def gcode(job):
         code.append(line)
 
     # The actual cutting is done here:
-    if settings.get('cut_type') == "engrave":
-        code.extend(engrave_gcode(job))
-    else:
+    if settings.get('cut_type') == "v-carve":  # TODO use settings CUT_TYPE_VCARVE
         code.extend(vcarve_gcode(job))
+    else:
+        code.extend(engrave_gcode(job))
 
     for line in settings.get('gcode_postamble').split('|'):
         code.append(line)
@@ -221,7 +223,7 @@ def engrave_gcode(job):
     if settings.get('outer'):
         plot_radius -= settings.get('yscale') / 2
 
-    if settings.get('plotbox') and plot_radius != 0 and settings.get('cut_type') == "engrave":
+    if settings.get('plotbox') and plot_radius != 0 and settings.get('cut_type') == "engrave":  # TODO use CUT_TYPE_ENGRAVE
         xorigin, yorigin = settings.get('xorigin'), settings.get('yorigin')
         code.append('( Engraving Circle )')
         code.append('G0 Z%s' % safe_val)

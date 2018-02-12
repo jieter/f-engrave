@@ -51,6 +51,15 @@ class MyImage(object):
     def get_bbox(self):
         return self.bbox.tuple()
 
+    def get_max_radius(self):
+
+        maxr = 0
+
+        for XY in self.coords:
+            maxr = max(maxr, float(XY[0] * XY[0] + XY[1] * XY[1]), float(XY[2] * XY[2] + XY[3] * XY[3]))
+
+        return maxr
+
     def transform_scale(self, xscale, yscale):
         for XY in self.coords:
             XY[0] *= xscale
@@ -72,20 +81,11 @@ class MyImage(object):
         self._set_bbox()
 
     def transform_angle(self, angle):
-
-        maxr = 0
-
         for XY in self.coords:
-
             if angle != 0.0:
                 XY[0], XY[1], A1 = rotation(XY[0], XY[1], angle, 0)
                 XY[2], XY[3], A2 = rotation(XY[2], XY[3], angle, 0)
-
-            maxr = max(maxr, float(XY[0] * XY[0] + XY[1] * XY[1]), float(XY[2] * XY[2] + XY[3] * XY[3]))
-
         self._set_bbox()
-
-        return maxr
 
     def _set_bbox(self):
 

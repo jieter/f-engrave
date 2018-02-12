@@ -10,13 +10,15 @@ from vcarve_settings import VCarveSettings
 from general_settings import GeneralSettings
 
 from geometry.coords import MyImage, MyText
-from geometry.font import Font
+# from geometry.font import Font
 # from geometry.engrave import Engrave, Toolbit, VCarve, Straight
 from geometry.engrave import Engrave, Toolbit
 
 import readers
 from readers import *
 from writers import *
+
+from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE
 
 if VERSION == 3:
     from tkinter import *
@@ -156,7 +158,7 @@ class Gui(Frame):
         self.segID = []
         self.font = Font()
 
-        self.RADIUS_PLOT = 0
+        # self.RADIUS_PLOT = 0
         self.MAXX = 0
         self.MINX = 0
         self.MAXY = 0
@@ -224,12 +226,13 @@ class Gui(Frame):
                     fileName, fileExtension = os.path.splitext(value)
                     TYPE = fileExtension.upper()
                     if TYPE == '.CXF' or TYPE == '.TTF':
-                        self.input_type.set("text")
+                        self.input_type.set('text')
                         self.settings.set('fontdir', dirname)
                         self.settings.set('fontfile.', os.path.basename(fileName) + fileExtension)
                     else:
-                        self.settings.set('input_type', 'image')
+                        self.input_type.set('image')
                         self.IMAGE_FILE = value
+                    self.settings.set('input_type', self.input_type.get())
                 else:
                     fmessage("File/Directory Not Found:\t%s" % value)
 
@@ -248,7 +251,8 @@ class Gui(Frame):
                 self.batch.set(True)
                 self.settings.set('batch', True)
 
-        if self.batch.get():
+        if self.settings.get('batch') is True:
+
             fmessage('(F-Engrave Batch Mode)')
 
             if self.settings.get('input_type') == "text":
@@ -258,7 +262,7 @@ class Gui(Frame):
 
             self.do_it()
 
-            if self.settings.get('cut_type') == "v-carve":
+            if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
                 self.v_carve_it()
 
             g_code = gcode(self.engrave)
@@ -267,6 +271,7 @@ class Gui(Frame):
                     sys.stdout.write(line + '\n')
                 except:
                     sys.stdout.write('(skipping line)\n')
+
             sys.exit()
 
         # make a Status Bar
@@ -1171,7 +1176,7 @@ class Gui(Frame):
         Check all variables set.
         :return: the number of vars in error, 0 if all variables are Ok.
         """
-        if self.batch.get():
+        if self.settings.get('batch'):
             return 0  # nothing to be done in batchmode
 
         MAIN_error_cnt = \
@@ -1407,7 +1412,7 @@ class Gui(Frame):
         self.Recalc_RQD()
 
     def useIMGsize_var_Callback(self):
-        if self.settings.get('input_type') != "text":
+        if self.settings.get('input_type') == "image":
             readers.read_image_file()
         try:
             ymx = max(self.font[key].get_ymax() for key in self.font)
@@ -1520,7 +1525,7 @@ class Gui(Frame):
 
             # TODO future read_image_file will return a MyImage instead of a Font instance
             self.font = readers.read_image_file(self.settings)
-            if len(self.font) >  0:
+            if len(self.font) > 0:
                 stroke_list = self.font[ord("F")].stroke_list
                 self.image.set_coords_from_strokes(stroke_list)
                 self.input_type.set(self.settings.get('input_type'))  # input_type may have been changed by read_image_file
@@ -1550,6 +1555,7 @@ class Gui(Frame):
         if TYPE != '.CXF' and TYPE != '.TTF' and TYPE != '':
             if os.path.isfile(file_full):
                 self.input_type.set("image")
+                self.settings.set('input_type', self.input_type.get())
 
         if boxsize != "0":
             self.boxgap.set(float(boxsize) * self.settings.get('line_thickness'))
@@ -1629,7 +1635,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        if self.engrave.number_of_v_coords() == 0 and self.cut_type.get() == "v-carve":
+        if self.engrave.number_of_v_coords() == 0 and self.cut_type.get() == CUT_TYPE_VCARVE:
             mess = "V-carve path data does not exist.  "
             mess = mess + "Only settings will be saved.\n\n"
             mess = mess + "To generate V-Carve path data Click on the"
@@ -1808,7 +1814,7 @@ class Gui(Frame):
         self.menu_View_Refresh()
 
     def menu_View_Refresh(self):
-        if self.initComplete and (not self.batch.get()) and (not self.delay_calc):
+        if self.initComplete and self.settings.get('batch') is False and self.delay_calc is False:
             dummy_event = Event()
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, 1)
@@ -1817,11 +1823,15 @@ class Gui(Frame):
         self.menu_View_Refresh()
 
     def menu_mode_change(self):
+
+        self.settings.set('input_type', self.input_type.get())
+
         self.delay_calc = True
         dummy_event = Event()
         dummy_event.widget = self.master
         self.Master_Configure(dummy_event, 1)
         self.delay_calc = False
+
         if self.settings.get('input_type') == "text":
             self.font = readers.readFontFile(self.settings)
         else:
@@ -1880,7 +1890,7 @@ class Gui(Frame):
         if event.widget != self.master:
             return
 
-        if self.batch.get():
+        if self.settings.get('batch'):
             return
 
         x = int(self.master.winfo_x())
@@ -1896,7 +1906,7 @@ class Gui(Frame):
             self.w = w
             self.h = h
 
-            if self.cut_type.get() == "v-carve":
+            if self.cut_type.get() == CUT_TYPE_VCARVE:
                 self.V_Carve_Calc.configure(state="normal", command=None)
             else:
                 self.V_Carve_Calc.configure(state="disabled", command=None)
@@ -1943,14 +1953,14 @@ class Gui(Frame):
         self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
 
-        if self.cut_type.get() == "engrave":
-            self.Entry_Sthick.configure(state="normal")
-            self.Label_Sthick.configure(state="normal")
-            self.Label_Sthick_u.configure(state="normal")
-        else:
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.Entry_Sthick.configure(state="disabled")
             self.Label_Sthick.configure(state="disabled")
             self.Label_Sthick_u.configure(state="disabled")
+        else:
+            self.Entry_Sthick.configure(state="normal")
+            self.Label_Sthick.configure(state="normal")
+            self.Label_Sthick_u.configure(state="normal")
 
         Yloc = Yloc + 24
         self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
@@ -2050,14 +2060,14 @@ class Gui(Frame):
         self.Label_Zcut_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
         self.Entry_Zcut.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
 
-        if self.cut_type.get() == "engrave":
-            self.Entry_Zcut.configure(state="normal")
-            self.Label_Zcut.configure(state="normal")
-            self.Label_Zcut_u.configure(state="normal")
-        else:
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.Entry_Zcut.configure(state="disabled")
             self.Label_Zcut.configure(state="disabled")
             self.Label_Zcut_u.configure(state="disabled")
+        else:
+            self.Entry_Zcut.configure(state="normal")
+            self.Label_Zcut.configure(state="normal")
+            self.Label_Zcut_u.configure(state="normal")
 
         Yloc = Yloc + 24 + 6
         self.Label_List_Box.place(x=x_label_R + 0, y=Yloc, width=113, height=22)
@@ -2124,14 +2134,14 @@ class Gui(Frame):
         self.Label_Sthick.place(x=x_label_L, y=Yloc, width=w_label, height=21)
         self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-        if self.cut_type.get() == "engrave":
-            self.Entry_Sthick.configure(state="normal")
-            self.Label_Sthick.configure(state="normal")
-            self.Label_Sthick_u.configure(state="normal")
-        else:
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.Entry_Sthick.configure(state="disabled")
             self.Label_Sthick.configure(state="disabled")
             self.Label_Sthick_u.configure(state="disabled")
+        else:
+            self.Entry_Sthick.configure(state="normal")
+            self.Label_Sthick.configure(state="normal")
+            self.Label_Sthick_u.configure(state="normal")
 
         Yloc = Yloc + 24
         self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
@@ -2214,14 +2224,14 @@ class Gui(Frame):
         self.Label_Zcut_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
         self.Entry_Zcut.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
 
-        if self.cut_type.get() == "engrave":
-            self.Entry_Zcut.configure(state="normal")
-            self.Label_Zcut.configure(state="normal")
-            self.Label_Zcut_u.configure(state="normal")
-        else:
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.Entry_Zcut.configure(state="disabled")
             self.Label_Zcut.configure(state="disabled")
             self.Label_Zcut_u.configure(state="disabled")
+        else:
+            self.Entry_Zcut.configure(state="normal")
+            self.Label_Zcut.configure(state="normal")
+            self.Label_Zcut_u.configure(state="normal")
 
         self.Label_List_Box.place_forget()
         self.Listbox_1_frame.place_forget()
@@ -2315,66 +2325,62 @@ class Gui(Frame):
             minx, maxx, miny, maxy = self.text.get_bbox()
         else:
             minx, maxx, miny, maxy = self.image.get_bbox()
+
+        # Radius_plot = sqrt(maxr2) + Thick + float(self.boxgap.get())
+        # minx = -Radius_plot - Thick / 2
+        # maxx = -minx
+        # miny = minx
+        # maxy = maxx
+        # midx = 0
+        # midy = 0
+
         midx = (minx + maxx) / 2
         midy = (miny + maxy) / 2
 
-        if self.cut_type.get() == "v-carve":
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
             Thick = 0.0
         else:
             Thick = float(self.STHICK.get())
-
-        if self.settings.get('input_type') == "text":
-            Radius_in = float(self.TRADIUS.get())
-        else:
-            Radius_in = 0.0
 
         plot_scale = max((maxx - minx + Thick) / (cszw - buff), (maxy - miny + Thick) / (cszh - buff))
         if plot_scale <= 0:
             plot_scale = 1.0
         self.plot_scale = plot_scale
 
-        Radius_plot = 0
-        if self.settings.get('plotbox') and self.cut_type.get() == "engrave":
-            if Radius_in != 0:
-                Radius_plot = float(self.RADIUS_PLOT)
-
+        # show shaded background with the size of the image bounding box,
+        # including the circle to be plotted, if any
         x_lft = cszw / 2 + (minx - midx) / plot_scale
         x_rgt = cszw / 2 + (maxx - midx) / plot_scale
         y_bot = cszh / 2 + (maxy - midy) / plot_scale
         y_top = cszh / 2 + (miny - midy) / plot_scale
-        # show shaded background with the size of the image bounding box
         if self.show_box.get():
             self.segID.append(
                 self.PreviewCanvas.create_rectangle(x_lft, y_bot, x_rgt, y_top, fill="gray80",
                                                     outline="gray80",
                                                     width=0))
 
-        if Radius_in != 0:
-            Rx_lft = cszw / 2 + (-Radius_in - midx) / plot_scale
-            Rx_rgt = cszw / 2 + (Radius_in - midx) / plot_scale
-            Ry_bot = cszh / 2 + (Radius_in + midy) / plot_scale
-            Ry_top = cszh / 2 + (-Radius_in + midy) / plot_scale
-            self.segID.append(
-                self.PreviewCanvas.create_oval(Rx_lft, Ry_bot, Rx_rgt, Ry_top, outline="gray90", width=0, dash=3))
+        # if radius_in != 0:
+        #     Rx_lft = cszw / 2 + (-radius_in - midx) / plot_scale
+        #     Rx_rgt = cszw / 2 + (radius_in - midx) / plot_scale
+        #     Ry_bot = cszh / 2 + (radius_in + midy) / plot_scale
+        #     Ry_top = cszh / 2 + (-radius_in + midy) / plot_scale
+        #     self.segID.append(
+        #         self.PreviewCanvas.create_oval(Rx_lft, Ry_bot, Rx_rgt, Ry_top, outline="gray90", width=0, dash=3))
 
         if self.show_thick.get():
             plot_width = Thick / plot_scale
         else:
             plot_width = 1.0
 
-        # Plot circle
+        # the center of the plot circle
+        radius_plot = self.get_radius_plot()
         x_zero = self.xzero
         y_zero = self.yzero
-
-        if self.settings.get('outer'):
-            Radius_plot -= 2 * self.settings.get('boxgap')
-            Radius_plot -= self.settings.get('yscale')
-
-        if Radius_plot != 0:
-            Rpx_lft = cszw / 2 + (-Radius_plot - midx - x_zero) / plot_scale
-            Rpx_rgt = cszw / 2 + (Radius_plot - midx - x_zero) / plot_scale
-            Rpy_bot = cszh / 2 + (Radius_plot + midy + y_zero) / plot_scale
-            Rpy_top = cszh / 2 + (-Radius_plot + midy + y_zero) / plot_scale
+        if radius_plot != 0:
+            Rpx_lft = cszw / 2 + (-radius_plot - midx - x_zero) / plot_scale
+            Rpx_rgt = cszw / 2 + (radius_plot - midx - x_zero) / plot_scale
+            Rpy_bot = cszh / 2 + (radius_plot + midy + y_zero) / plot_scale
+            Rpy_top = cszh / 2 + (-radius_plot + midy + y_zero) / plot_scale
             self.segID.append(
                 self.PreviewCanvas.create_oval(Rpx_lft, Rpy_bot, Rpx_rgt, Rpy_top, outline="black", width=plot_width))
 
@@ -2414,7 +2420,7 @@ class Gui(Frame):
         axis_y2 = cszh / 2 - (axis_length - midy + YOrigin) / plot_scale
 
         # V-carve Plotting Stuff
-        if self.cut_type.get() == "v-carve":
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
             r_inlay_top = self.calc_r_inlay_top()
 
             for XY in self.engrave.v_coords:
@@ -2455,7 +2461,7 @@ class Gui(Frame):
                 old = new
 
         # Plot cleanup path
-        if self.cut_type.get() == "v-carve":
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
             loop_old = -1
             for line in self.engrave.clean_coords_sort:
                 new = (line[0], line[1])
@@ -2497,6 +2503,20 @@ class Gui(Frame):
                                                              axis_x1, axis_y2,
                                                              fill='green', width=0))
 
+    def get_radius_plot(self):
+        """
+        Get the radius of the circle to be plotted
+        """
+        radius_plot = 0
+
+        if self.settings.get('input_type') == "text":
+            if self.settings.get('plotbox') and \
+                    self.cut_type.get() == CUT_TYPE_ENGRAVE and \
+                    self.settings.get('text_radius') != 0:
+                radius_plot = self.settings.get('text_radius')
+
+        return radius_plot
+
     def do_it(self):
         """
         Show the original data and plot toolpaths, if any were generated
@@ -2507,7 +2527,7 @@ class Gui(Frame):
         self.menu_View_Refresh()
 
         if not self.batch.get:
-            if self.cut_type.get() == "v-carve":
+            if self.cut_type.get() == CUT_TYPE_VCARVE:
                 self.V_Carve_Calc.configure(state="normal", command=None)
             else:
                 self.V_Carve_Calc.configure(state="disabled", command=None)
@@ -2520,7 +2540,7 @@ class Gui(Frame):
             self.master.update_idletasks()
             self.PreviewCanvas.delete(ALL)
 
-        self.segID = []
+        # self.segID = []  # TODO cleanup?
 
         if self.settings.get('input_type') == "text":
             self.engrave.set_image(self.text)
@@ -2543,33 +2563,10 @@ class Gui(Frame):
             self.statusMessage.set("No Font Characters Loaded")
             return
 
-        # # TODO Check completeness necessary? All vars should have a valid entry?
-        # try:
-        #     SegArc = float(self.segarc.get())
-        #     XScale_in = float(self.XSCALE.get())
-        #     YScale_in = float(self.YSCALE.get())
-        #     CSpaceP = float(self.CSPACE.get())
-        #     WSpaceP = float(self.WSPACE.get())
-        #     LSpace = float(self.LSPACE.get())
-        #     Angle = float(self.TANGLE.get())
-        #     Thick = float(self.STHICK.get())
-        #     XOrigin = float(self.xorigin.get())
-        #     YOrigin = float(self.yorigin.get())
-        # except:
-        #     self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
-        #     self.statusbar.configure(bg='red')
-        #     return
-
-        try:
-            Angle = self.settings.get('text_angle')
-            XOrigin = self.settings.get('xorigin')
-            YOrigin = self.settings.get('yorigin')
-            Thick = self.settings.get('line_thickness')
-            # Thick_Border = self.settings.get('border_thickness')
-        except:
-            self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
-            self.statusbar.configure(bg='red')
-            return
+        Angle = self.settings.get('text_angle')
+        XOrigin = self.settings.get('xorigin')
+        YOrigin = self.settings.get('yorigin')
+        Thick = self.settings.get('line_thickness')
 
         self.text.set_font(self.font)
         self.text.set_radius(self.settings.get('text_radius'))
@@ -2577,14 +2574,12 @@ class Gui(Frame):
         self.text.set_line_space(self.settings.get('line_space'))
         self.text.set_char_space(self.settings.get('char_space'))
 
-        if self.batch.get():
+        if self.settings.get('batch'):
             self.text.set_text(self.default_text)
         else:
             self.text.set_text(self.Input.get(1.0, END))
 
         self.text.set_coords_from_strokes()
-
-        # TODO use font properties (settings to be set in font selection)
 
         font_line_height = self.font.line_height()
         font_line_depth = self.font.line_depth()
@@ -2608,7 +2603,7 @@ class Gui(Frame):
 
             return
 
-        if self.settings.get('cut_type') == "v-carve":
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             Thick = 0.0
             # self.text.set_thickness(0.0)
 
@@ -2623,21 +2618,26 @@ class Gui(Frame):
             YScale = .1
         XScale = XScale_in * YScale / 100
 
-        # text outside or inside circle
-        Radius_in = self.settings.get('text_radius')
-        if Radius_in != 0.0:
+        # text inside or outside of the circle
+        radius_in = self.settings.get('text_radius')
+        delta = Thick / 2 + self.settings.get('boxgap')
+
+        if radius_in == 0.0:
+            text_radius = radius_in
+        else:
             if self.settings.get('outer'):
+                # text outside circle
                 if self.settings.get('upper'):
-                    Radius = Radius_in + Thick / 2 + YScale * (-font_line_depth)
+                    text_radius = radius_in + delta - YScale * font_line_depth
                 else:
-                    Radius = -Radius_in - Thick / 2 - YScale * (font_line_height)
+                    text_radius = radius_in - delta - YScale * font_line_height
             else:
                 if self.settings.get('upper'):
-                    Radius = Radius_in - Thick / 2 - YScale * (font_line_height)
+                    text_radius = radius_in - delta - YScale * font_line_height
                 else:
-                    Radius = -Radius_in + Thick / 2 + YScale * (-font_line_depth)
-        else:
-            Radius = Radius_in
+                    text_radius = -radius_in + delta - YScale * font_line_depth
+
+            # adjust bounding box
 
         # there were characters missing in the Font set
         if self.text.no_font_record == []:
@@ -2653,39 +2653,23 @@ class Gui(Frame):
 
         self.text.transform_scale(XScale, YScale)
         self.text.align(alignment)
-        self.text.transform_on_radius(alignment, Radius, upper)
-        maxr2 = self.text.transform_angle(Angle)
+        self.text.transform_on_radius(alignment, text_radius, upper)
+        self.text.transform_angle(Angle)
+
         if mirror:
             self.text.transform_mirror()
         if flip:
             self.text.transform_flip()
 
-        # minx, maxx, miny, maxy = self.text.get_bbox()
-
+        # Engrave box or circle
+        # self.RADIUS_PLOT = 0
         if self.settings.get('plotbox'):
-            delta = Thick / 2 + self.settings.get('boxgap')
-            if Radius_in == 0 or self.settings.get('cut_type') == "v-carve":
+            if radius_in == 0 or self.settings.get('cut_type') == CUT_TYPE_VCARVE:
                 self.text.add_box(delta, mirror, flip)
-            else:
-                Radius_plot = sqrt(maxr2) + Thick + float(self.boxgap.get())
-                minx = -Radius_plot - Thick / 2
-                maxx = -minx
-                miny = minx
-                maxy = maxx
-                midx = 0
-                midy = 0
-                self.RADIUS_PLOT = Radius_plot
-                # Don't create the circle coords here, a G-code circle command
-                # is generated later when not v-carving
-                # self.text.add_circle()
-
-            # TODO adjust bounding box?
-            # if self.cut_type.get() != "v-carve":
-            #     delta = delta + Thick / 2
-            # minx = minx - delta
-            # maxx = maxx + delta
-            # miny = miny - delta
-            # maxy = maxy + delta
+            # else:
+            #     self.RADIUS_PLOT = radius_in
+            # Don't create the circle coords here, a G-code circle command
+            # is generated later (when not v-carving)
 
         ##########################################
         #         ORIGIN LOCATING STUFF          #
@@ -2866,15 +2850,11 @@ class Gui(Frame):
             self.master.update()
 
         # V-Carve Stuff
-        if self.cut_type.get() == "v-carve" and not self.fontdex.get():
+        if self.cut_type.get() == CUT_TYPE_VCARVE and self.fontdex.get() is False:
 
             if not self.batch.get():
                 if self.v_pplot.get() == 1:
                     self.plot_toolpath()
-
-            # TODO move this to Model
-            if self.settings.get('input_type') == "image" and not clean:
-                self.engrave.sort_for_v_carve()
 
             done = self.engrave.v_carve(clean)
 

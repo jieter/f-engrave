@@ -1,10 +1,11 @@
-from geometry import BoundingBox, Zero, scale, translate, rotation
+# from geometry import BoundingBox, Zero, scale, translate, rotation
+from geometry import BoundingBox, Zero, rotation
 from readers.cxf import parse as parse_cxf
 from settings import CUT_TYPE_VCARVE
-from util import fmessage
+# from util import fmessage
 
 import writers
-from geometry.coords import MyImage, MyText
+from geometry.coords import MyText
 from geometry.engrave import Engrave
 
 
@@ -61,14 +62,14 @@ class Job(object):
         self.v_clean_coords_sort = self.engrave.v_clean_coords_sort
 
         Thick = self.settings.get('line_thickness')
-        if self.settings.get('cut_type') == "v-carve":
+        if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
             Thick = 0.0
         XScale_in = self.settings.get('xscale')
         YScale_in = self.settings.get('yscale')
         Angle = self.settings.get('text_angle')
 
         # TODO image calculation
-        # if self.useIMGsize.get():
+        # if self.settings.get('useIMGsize'):
         YScale = YScale_in / 100
         XScale = XScale_in * YScale / 100
 

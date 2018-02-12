@@ -6,6 +6,8 @@ from geometry import *
 from geometry.pathsorter import sort_paths
 
 from writers import douglas
+# TODO How to import higher level package:
+# from settings import CUT_TYPE_VCARVE
 
 
 class Toolbit(object):
@@ -220,6 +222,9 @@ class Engrave(object):
         else:
             v_drv_corner = self.settings.get('v_drv_corner')
 
+        if self.settings.get('input_type') == "image" and clean is False:
+            self._sort_for_v_carve(self.coords, LN_START=0)
+
         TOT_LENGTH = self.get_segments_length(i_x1, i_y1, i_x2, i_y2, clean)
         CUR_LENGTH = 0.0
         START_TIME = time()
@@ -315,14 +320,12 @@ class Engrave(object):
                     d_seg_cos = xtmp1 / Ltmp
                     delta = get_angle(d_seg_sin, d_seg_cos)
 
-                if delta < v_drv_corner and bit_angle != 0 and not_b_carve and not clean:
+                if delta < v_drv_corner and bit_angle != 0 and not_b_carve and clean is False:
                     # drive to corner
                     self.v_coords.append([x1, y1, 0.0, loop_cnt])
 
                 if delta > float(v_step_corner):
-                    ###########################
                     # add sub-steps around corner
-                    ###########################
                     phisteps = max(floor((delta - 180) / dangle), 2)
                     step_phi = (delta - 180) / phisteps
                     pcnt = 0
@@ -382,9 +385,7 @@ class Engrave(object):
                         phi2a = phi2
                         routa = rout
 
-                #################################################
                 # Check to see if we need to close an open loop
-                #################################################
                 if abs(x2 - xa) < self.accuracy and abs(y2 - ya) < self.accuracy:
                     xtmp1 = (xb - xa) * seg_cos0 - (yb - ya) * seg_sin0
                     ytmp1 = (xb - xa) * seg_sin0 + (yb - ya) * seg_cos0
@@ -392,7 +393,7 @@ class Engrave(object):
                     d_seg_sin = ytmp1 / Ltmp
                     d_seg_cos = xtmp1 / Ltmp
                     delta = get_angle(d_seg_sin, d_seg_cos)
-                    if delta < v_drv_corner and not clean:
+                    if delta < v_drv_corner and clean is False:
                         # drive to corner
                         self.v_coords.append([xa, ya, 0.0, loop_cnt])
 
@@ -503,8 +504,8 @@ class Engrave(object):
                     check_points.append([x_ind_check, y_ind_check])
                     y_ind_check = y_ind_check + 1
 
-            #  For each grid box in check_points add the grid box and all adjacent grid boxes
-            #  to the list of boxes for this line segment
+            # For each grid box in check_points add the grid box and all adjacent grid boxes
+            # to the list of boxes for this line segment
             for xy_point in check_points:
                 xy_p = xy_point
                 xIndex = xy_p[0]
@@ -581,9 +582,7 @@ class Engrave(object):
         return (xnormv, ynormv), rout, need_clean
 
     def calc_vbit_radius(self):
-        """
-        Calculate the V-Bit radius
-        """
+
         vbit_dia = self.settings.get('v_bit_dia')
         depth_lim = self.settings.get('v_depth_lim')
         half_angle = radians(self.settings.get('v_bit_angle') / 2.0)
@@ -630,9 +629,7 @@ class Engrave(object):
         R_A = abs(rmin)
         Bcnt = -1
 
-        ############################################################
-        # Loop over active partitions for the current line segment #
-        ############################################################
+        # Loop over active partitions for the current line segment
         for line_B in self.partitionList[xIndex][yIndex]:
             Bcnt = Bcnt + 1
             X_B = line_B[len(line_B) - 3]
@@ -721,11 +718,6 @@ class Engrave(object):
                         rmin = 0.0
 
         return rmin
-
-    # TODO Do not change the self.coords object, use intermediate, preferably not a deep copy...
-
-    def sort_for_v_carve(self, LN_START=0):
-        self.coords = self._sort_for_v_carve(self.coords, LN_START)
 
     def _sort_for_v_carve(self, sort_coords, LN_START):
 
@@ -1016,7 +1008,10 @@ class Engrave(object):
                         temp_coords[-1][3] = ya
                     else:
                         temp_coords.append([x1, y1, xa, ya, LN, 0])
-        return temp_coords
+
+            self.coords = temp_coords
+
+        return
 
     def _find_paths(self, check_coords_in, clean_dia, Radjust, clean_step, skip, direction):
 
@@ -1208,6 +1203,7 @@ class Engrave(object):
                 if R > 0.0 and R < flat_clean_r - offset - Zero:
                     check_coords.append(XY)
 
+        # TODO use CUT_TYPE_VCARVE
         if self.settings.get('cut_type') == "v-carve" and len(self.clean_coords) > 1 and test_clean > 0:
             DX = clean_dia * clean_step
             DY = DX

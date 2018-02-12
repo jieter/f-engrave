@@ -30,7 +30,7 @@ def read_image_file(settings):
                 # build stroke lists from image file
                 font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
                 # font['DXF_source'] = DXF_source
-                settings.set('input_type', 'image')
+                settings.set('input_type', "image")
 
         except Exception, e:
             fmessage("Unable To open Drawing Exchange File (DXF) file.")
@@ -60,7 +60,7 @@ def read_image_file(settings):
             # build stroke lists from font file
             font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
             # font['DXF_source'] = DXF_source
-            settings.set('input_type', 'image')
+            settings.set('input_type', "image")
 
         except:
             fmessage("Unable To create path data from bitmap File.")
