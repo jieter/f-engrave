@@ -31,7 +31,7 @@ class Job(object):
 
         self.load_font()
 
-        # self._move_origin()
+        self._move_origin()
 
         # if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
         #     self.vcarve()
@@ -47,6 +47,7 @@ class Job(object):
         # self.image.set_coords_from_strokes(stroke_list)
 
         self.engrave = Engrave(self.settings)
+
         if self.settings.get('input_type') == "text":
             self.text.set_coords_from_strokes()
             self.engrave.set_image(self.text)
@@ -61,40 +62,25 @@ class Job(object):
         self.v_coords = self.engrave.v_coords
         self.v_clean_coords_sort = self.engrave.v_clean_coords_sort
 
-        Thick = self.settings.get('line_thickness')
+        thickness = self.settings.get('line_thickness')
         if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
-            Thick = 0.0
-        XScale_in = self.settings.get('xscale')
-        YScale_in = self.settings.get('yscale')
+            thickness = 0.0
+        # x_scale_in = self.settings.get('xscale')
+        # y_scale_in = self.settings.get('yscale')
         Angle = self.settings.get('text_angle')
 
         # TODO image calculation
         # if self.settings.get('useIMGsize'):
-        YScale = YScale_in / 100
-        XScale = XScale_in * YScale / 100
+        # y_scale = y_scale_in / 100
+        # x_scale = x_scale_in * y_scale / 100
 
-        # TODO reduce code overlap (with Gui)
+        x_scale, y_scale = self.get_xy_scale()
+
+        # TODO refactor code overlap (with Gui)
 
         if self.settings.get('input_type') == "text":
 
-            font_line_height = self.font.line_height()
-            font_line_depth = self.font.line_depth()
-
-            # text outside or inside circle
-            Radius_in = self.settings.get('text_radius')
-            if Radius_in != 0.0:
-                if self.settings.get('outer'):
-                    if self.settings.get('upper'):
-                        Radius = Radius_in + Thick / 2 + YScale * (-font_line_depth)
-                    else:
-                        Radius = -Radius_in - Thick / 2 - YScale * (font_line_height)
-                else:
-                    if self.settings.get('upper'):
-                        Radius = Radius_in - Thick / 2 - YScale * (font_line_height)
-                    else:
-                        Radius = -Radius_in + Thick / 2 + YScale * (-font_line_depth)
-            else:
-                Radius = Radius_in
+            text_radius = self.get_plot_radius()
 
             # Text transformations
             alignment = self.settings.get('justify')
@@ -102,17 +88,25 @@ class Job(object):
             flip = self.settings.get('flip')
             upper = self.settings.get('upper')
 
-            self.text.transform_scale(XScale, YScale)
+            self.text.transform_scale(x_scale, y_scale)
             self.text.align(alignment)
-            self.text.transform_on_radius(alignment, Radius, upper)
+            self.text.transform_on_radius(alignment, text_radius, upper)
             self.text.transform_angle(Angle)
             if mirror:
                 self.text.transform_mirror()
             if flip:
                 self.text.transform_flip()
+
+            # Engrave box or circle
+            if self.settings.get('plotbox'):
+                if text_radius == 0:
+                    delta = thickness / 2 + self.settings.get('boxgap')
+                    self.text.add_box(delta, mirror, flip)
+                # Don't create the circle coords here, a G-code circle command
+                # is generated later (when not v-carving)
         else:
             # Image transformations
-            self.image.transform_scale(XScale, YScale)
+            self.image.transform_scale(x_scale, y_scale)
             self.image.transform_angle(Angle)
             if self.settings.get('mirror'):
                 self.image.transform_mirror()
@@ -145,30 +139,65 @@ class Job(object):
         )
 
     def get_plot_radius(self):
-        settings = self.settings
 
-        base_radius = settings.get('text_radius')
-        thickness = settings.get('line_thickness')
-        font = self.font
+        font_line_height = self.font.line_height()
+        font_line_depth = self.font.line_depth()
+
+        thickness = self.settings.get('line_thickness')
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+            # self.text.set_thickness(0.0)
 
         # TODO this assumes height_calculation = 'max_all'.
         # We should look in bounding box with max_char, maybe
         # set the string as Font parameter and set a height_calculation
         # flag in Font
-        yscale = settings.get('yscale') - thickness / (font.line_height() - font.line_depth())
-        if yscale <= Zero:
-            yscale = 0.1
+        x_scale, y_scale = self.get_xy_scale()
 
-        if settings.get('outer'):
-            if settings.get('upper'):
-                return base_radius + thickness / 2 + yscale * -font.line_height()
-            else:
-                return -base_radius - thickness / 2 - yscale * font.line_depth()
+        # text inside or outside of the circle
+        radius_in = self.settings.get('text_radius')
+        if radius_in == 0.0:
+            radius = radius_in
         else:
-            if settings.get('upper'):
-                return base_radius - thickness / 2 - yscale * font.line_height()
+            delta = thickness / 2 + self.settings.get('boxgap')
+            if self.settings.get('outer'):
+                # text outside circle
+                if self.settings.get('upper'):
+                    radius = radius_in + delta - y_scale * font_line_depth
+                else:
+                    radius = radius_in - delta - y_scale * font_line_height
             else:
-                return -base_radius + thickness / 2 + yscale * -font.line_depth()
+                if self.settings.get('upper'):
+                    radius = radius_in - delta - y_scale * font_line_height
+                else:
+                    radius = -radius_in + delta - y_scale * font_line_depth
+
+        return radius
+
+    def get_xy_scale(self):
+
+        font_line_height = self.font.line_height()
+        font_line_depth = self.font.line_depth()
+
+        thickness = self.settings.get('line_thickness')
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+
+        x_scale_in = self.settings.get('xscale')
+        y_scale_in = self.settings.get('yscale')
+
+        try:
+            y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
+        except:
+            y_scale = .1
+
+        if y_scale <= Zero:
+            y_scale = .1
+
+        y_scale = y_scale_in / 100
+        x_scale = x_scale_in * y_scale / 100
+
+        return x_scale, y_scale
 
     def _draw_box(self):
         line_thickness = self.settings.get('line_thickness')

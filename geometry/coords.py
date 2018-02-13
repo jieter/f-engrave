@@ -48,7 +48,7 @@ class MyImage(object):
     def get_coords(self):
         return self.coords
 
-    def get_bbox(self):
+    def get_bbox_tuple(self):
         return self.bbox.tuple()
 
     def get_max_radius(self):
@@ -242,7 +242,7 @@ class MyText(MyImage):
             line_miny.append(max_vals[2])
             line_maxy.append(max_vals[3])
 
-        minx, maxx, miny, maxy = self.get_bbox()
+        minx, maxx, miny, maxy = self.get_bbox_tuple()
 
         if alignment == "Left":
             pass
@@ -314,7 +314,7 @@ class MyText(MyImage):
         """
         Add box outline
         """
-        minx, maxx, miny, maxy = self.get_bbox()
+        minx, maxx, miny, maxy = self.get_bbox_tuple()
 
         if mirror ^ flip:
             self.coords.append([minx - delta, miny - delta, minx - delta, maxy + delta, 0, 0])

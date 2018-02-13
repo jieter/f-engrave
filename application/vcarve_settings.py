@@ -45,7 +45,6 @@ class VCarveSettings(object):
         self.Entry_Vbitdia = Entry()
         self.Entry_VDepthLimit = Entry()
         self.Entry_InsideAngle = Entry()
-        self.Entry_OutsideAngle = Entry()
         self.Entry_StepSize = Entry()
         self.Entry_Allowance = Entry()
         self.Entry_W_CLEAN = Entry()
@@ -226,6 +225,7 @@ class VCarveSettings(object):
         self.Checkbutton_v_flop = Checkbutton(vcarve_settings, text="", anchor=W)
         self.Checkbutton_v_flop.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
         self.Checkbutton_v_flop.configure(variable=self.v_flop)
+        self.v_flop.trace_variable("w", self.Entry_v_flop_Callback)
         self.v_flop.trace_variable("w", self.Entry_recalc_var_Callback)
 
         x_radio_offset = 62 - 40
@@ -516,20 +516,6 @@ class VCarveSettings(object):
         self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check())
         # TODO setting
 
-    def Entry_OutsideAngle_Check(self):
-        try:
-            value = float(self.v_step_corner.get())
-            if value <= 180.0 or value >= 360.0:
-                self.statusMessage.set(" Angle should be between 180 and 360 ")
-                return INV
-        except:
-            return NAN
-        return OK
-
-    def Entry_OutsideAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check())
-        # TODO setting
-
     def Entry_StepSize_Check(self):
         try:
             value = float(self.v_step_len.get())
@@ -541,7 +527,10 @@ class VCarveSettings(object):
         return OK
 
     def Entry_StepSize_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), setting='step_len')
+        self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), setting='v_step_len')
+
+    def Entry_v_flop_Callback(self, varName, index, mode):
+        self.settings.set('v_flop', self.v_flop.get())
 
     def Entry_Allowance_Check(self):
         try:

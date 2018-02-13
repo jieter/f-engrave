@@ -52,8 +52,17 @@ class JobTest(unittest.TestCase):
 
     def test_write_box(self):
         job = self._job_with_settings(
-            ('default_text', 'plotbox\nboxgap=50 '),
-            ('plotbox', 'box'),
+            ('default_text', 'plotbox\nboxgap=50'),
+            ('plotbox', 'True'),
             ('boxgap', 50)
         )
         self._save_testfiles(job, 'box')
+
+    def test_write_circle(self):
+        job = self._job_with_settings(
+            ('default_text', 'plotcircle\nboxgap=50\n'),
+            ('plotbox', 'True'),
+            ('text_radius', '30.0'),
+            ('boxgap', 50)
+        )
+        self._save_testfiles(job, 'circle')

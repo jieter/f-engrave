@@ -3,7 +3,7 @@ from geometry import Zero, get_angle, transform
 
 
 def line_arc_fit(lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz, FLAG_arc, code,
-                 R_last, x_center_last, y_center_last, FLAG_line, accuracy):
+                 R_last, x_center_last, y_center_last, FLAG_line, accuracy, seg_arc):
     """
     Line fit and arc fit (curve fit)
     """
@@ -53,9 +53,6 @@ def line_arc_fit(lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz, FLAG_arc,
 
     # TODO: fix arc_fit = bool(self.arc_fit.get()) == 1
     arc_fit = 1
-
-    # TODO fix: seg_arc = float(self.segarc.get())
-    seg_arc = 5.0
 
     if (FLAG_line != 1 and FLAG_line_last != 1 and line_t != 0 and arc_fit):
         dx_b = nextx - x1

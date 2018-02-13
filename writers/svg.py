@@ -1,6 +1,6 @@
 from geometry import BoundingBox, Line
 # TODO How to import higher level package:
-# from settings import CUT_TYPE_VCARVE
+# from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE
 
 color = 'blue'
 
@@ -33,9 +33,11 @@ def svg(job):
     for line in job.coords:
         bbox.extend(Line(line[0:4]))
 
-    # plot_radius = job.get_plot_radius()
-    # if plot_radius != 0:
-    #     origin = job.get_origin()
+    minx, maxx, miny, maxy = bbox.tuple()
+
+    plot_radius = job.get_plot_radius()
+    if plot_radius != 0:
+        x_origin, y_origin = job.get_origin()
 
     # if radius_plot != 0:
     #     maxx = max(maxx, origin[0] + plot_radus - job.xzero)
@@ -59,16 +61,16 @@ def svg(job):
         'height': height
     })
 
-    # # Make Circle
-    # if plot_radius != 0 and settings.get('cut_type') != CUT_TYPE_ENGRAVE:
-    #     params = ( )
-    #
-    #     svgcode.append(circle_template % (
-    #                 ( XOrigin - job.Xzero - minx) * dpi,
-    #                 (-YOrigin + job.Yzero + maxy) * dpi,
-    #                   Radius_plot               ) * dpi,
-    #                   thickness                   * dpi)
-    # # End Circle
+    # make Circle
+    if settings.get('plotbox') and \
+            plot_radius != 0 and \
+            settings.get('cut_type') == "engrave":  # TODO use CUT_TYPE_ENGRAVE
+        svgcode.append(circle_template % (
+            (x_origin - job.xzero - minx) * dpi,
+            (-y_origin + job.yzero + maxy) * dpi,
+            plot_radius * dpi,
+            thickness * dpi)
+                       )
 
     for l in job.coords:
         # translate

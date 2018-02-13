@@ -77,7 +77,7 @@ class Gui(Frame):
         cszw = int(self.PreviewCanvas.cget("width"))
         cszh = int(self.PreviewCanvas.cget("height"))
 
-        minx, maxx, miny, maxy = self.engrave.image.get_bbox()
+        minx, maxx, miny, maxy = self.engrave.get_image.bbox_tuple()
         midx = (maxx + minx) / 2
         midy = (maxy + miny) / 2
 
@@ -157,12 +157,6 @@ class Gui(Frame):
 
         self.segID = []
         self.font = Font()
-
-        # self.RADIUS_PLOT = 0
-        self.MAXX = 0
-        self.MINX = 0
-        self.MAXY = 0
-        self.MINY = 0
 
         self.xzero = float(0.0)
         self.yzero = float(0.0)
@@ -584,6 +578,9 @@ class Gui(Frame):
         top_View.add_checkbutton(label="Show Origin Axis", variable=self.show_axis, command=self.menu_View_Refresh)
         top_View.add_checkbutton(label="Show Bounding Box", variable=self.show_box, command=self.menu_View_Refresh)
         self.menuBar.add("cascade", label="View", menu=top_View)
+        self.show_thick.trace_variable("w", self.Entry_show_thick_Callback)
+        self.show_axis.trace_variable("w", self.Entry_show_axis_Callback)
+        self.show_box.trace_variable("w", self.Entry_show_box_Callback)
 
         top_Settings = Menu(self.menuBar, tearoff=0)
         top_Settings.add("command", label="General Settings", command=self.general_settings_window)
@@ -704,7 +701,9 @@ class Gui(Frame):
         elif (check_flag == OK or check_flag == NOR) and new == 2:
                 return 0
 
-        if (setting is not None) and check_flag == OK and new == 0:
+        if (setting is not None) and \
+                (check_flag == OK or check_flag == NOR) and \
+                new == 0:
             self.settings.set(setting, val.get())
 
         return 1
@@ -761,10 +760,7 @@ class Gui(Frame):
     def CopyClipboard_SVG(self):
         self.clipboard_clear()
 
-        # TODO
-        # svgcode = svg(self.engrave)
-        self.engrave.init_coords()
-        self.coords = self.engrave.coords
+        self.coords = self.engrave.get_coords()
         svgcode = svg(self)
 
         for line in svgcode:
@@ -1004,6 +1000,18 @@ class Gui(Frame):
         return r_inlay_top
 
     ###############
+    # Menu        #
+    ###############
+    def Entry_show_axis_Callback(self, varName, index, mode):
+        self.settings.set('show_axis', self.show_axis.get())
+
+    def Entry_show_box_Callback(self, varName, index, mode):
+        self.settings.set('show_box', self.show_box.get())
+
+    def Entry_show_thick_Callback(self, varName, index, mode):
+        self.settings.set('show_thick', self.show_thick.get())
+
+    ###############
     # Left Column #
     ###############
     def Entry_Yscale_Check(self):
@@ -1215,7 +1223,6 @@ class Gui(Frame):
         # self.entry_set(self.Entry_Vbitangle,    self.Entry_Vbitangle_Check()   , 2) +\
         # self.entry_set(self.Entry_Vbitdia,      self.Entry_Vbitdia_Check()     , 2) +\
         # self.entry_set(self.Entry_InsideAngle,  self.Entry_InsideAngle_Check() , 2) +\
-        # self.entry_set(self.Entry_OutsideAngle, self.Entry_OutsideAngle_Check(), 2) +\
         # self.entry_set(self.Entry_StepSize,     self.Entry_StepSize_Check()    , 2) +\
         # self.entry_set(self.Entry_CLEAN_DIA,    self.Entry_CLEAN_DIA_Check()   , 2) +\
         # self.entry_set(self.Entry_STEP_OVER,    self.Entry_STEP_OVER_Check()   , 2) +\
@@ -1419,7 +1426,7 @@ class Gui(Frame):
             ymn = min(self.font[key].get_ymin() for key in self.font)
             image_height = ymx - ymn
         except:
-            if self.units.get() == 'in':
+            if self.settings.get('units') == 'in':
                 image_height = 2
             else:
                 image_height = 50
@@ -1643,8 +1650,6 @@ class Gui(Frame):
             if not message_ask_ok_cancel("Continue", mess):
                 return
 
-        # TODO
-        self.engrave.init_coords()
         g_code = gcode(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
@@ -1726,11 +1731,7 @@ class Gui(Frame):
 
     def menu_File_Save_SVG_File(self):
 
-        # TODO
-        # svg_code = svg(self.engrave)
-        self.engrave.init_coords()
-        self.coords = self.engrave.coords
-        # self.coords = self.text.coords
+        self.coords = self.engrave.get_coords()
         svg_code = svg(self)
 
         init_dir = os.path.dirname(self.NGC_FILE)
@@ -1770,8 +1771,6 @@ class Gui(Frame):
 
     def menu_File_Save_DXF_File(self, close_loops=False):
 
-        # TODO
-        self.engrave.init_coords()
         DXF_CODE = dxf(self.engrave, close_loops=close_loops)
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -2322,17 +2321,9 @@ class Gui(Frame):
         buff = 10
 
         if self.settings.get('input_type') == "text":
-            minx, maxx, miny, maxy = self.text.get_bbox()
+            minx, maxx, miny, maxy = self.text.get_bbox_tuple()
         else:
-            minx, maxx, miny, maxy = self.image.get_bbox()
-
-        # Radius_plot = sqrt(maxr2) + Thick + float(self.boxgap.get())
-        # minx = -Radius_plot - Thick / 2
-        # maxx = -minx
-        # miny = minx
-        # maxy = maxx
-        # midx = 0
-        # midy = 0
+            minx, maxx, miny, maxy = self.image.get_bbox_tuple()
 
         midx = (minx + maxx) / 2
         midy = (miny + maxy) / 2
@@ -2340,7 +2331,7 @@ class Gui(Frame):
         if self.cut_type.get() == CUT_TYPE_VCARVE:
             Thick = 0.0
         else:
-            Thick = float(self.STHICK.get())
+            Thick = self.settings.get('line_thickness')
 
         plot_scale = max((maxx - minx + Thick) / (cszw - buff), (maxy - miny + Thick) / (cszh - buff))
         if plot_scale <= 0:
@@ -2353,27 +2344,19 @@ class Gui(Frame):
         x_rgt = cszw / 2 + (maxx - midx) / plot_scale
         y_bot = cszh / 2 + (maxy - midy) / plot_scale
         y_top = cszh / 2 + (miny - midy) / plot_scale
-        if self.show_box.get():
+        if self.settings.get('show_box'):
             self.segID.append(
                 self.PreviewCanvas.create_rectangle(x_lft, y_bot, x_rgt, y_top, fill="gray80",
                                                     outline="gray80",
                                                     width=0))
 
-        # if radius_in != 0:
-        #     Rx_lft = cszw / 2 + (-radius_in - midx) / plot_scale
-        #     Rx_rgt = cszw / 2 + (radius_in - midx) / plot_scale
-        #     Ry_bot = cszh / 2 + (radius_in + midy) / plot_scale
-        #     Ry_top = cszh / 2 + (-radius_in + midy) / plot_scale
-        #     self.segID.append(
-        #         self.PreviewCanvas.create_oval(Rx_lft, Ry_bot, Rx_rgt, Ry_top, outline="gray90", width=0, dash=3))
-
-        if self.show_thick.get():
+        if self.settings.get('show_thick'):
             plot_width = Thick / plot_scale
         else:
             plot_width = 1.0
 
         # the center of the plot circle
-        radius_plot = self.get_radius_plot()
+        radius_plot = self.get_text_radius()
         x_zero = self.xzero
         y_zero = self.yzero
         if radius_plot != 0:
@@ -2410,14 +2393,14 @@ class Gui(Frame):
                 self.PreviewCanvas.create_line(x1, y1, x2, y2, fill='black', width=plot_width, capstyle='round'))
 
         # draw coordinate axis
-        XOrigin = float(self.xorigin.get())
-        YOrigin = float(self.yorigin.get())
+        x_origin = float(self.xorigin.get())
+        y_origin = float(self.yorigin.get())
 
         axis_length = (maxx - minx) / 4
-        axis_x1 = cszw / 2 + (-midx + XOrigin) / plot_scale
-        axis_x2 = cszw / 2 + (axis_length - midx + XOrigin) / plot_scale
-        axis_y1 = cszh / 2 - (-midy + YOrigin) / plot_scale
-        axis_y2 = cszh / 2 - (axis_length - midy + YOrigin) / plot_scale
+        axis_x1 = cszw / 2 + (-midx + x_origin) / plot_scale
+        axis_x2 = cszw / 2 + (axis_length - midx + x_origin) / plot_scale
+        axis_y1 = cszh / 2 - (-midy + y_origin) / plot_scale
+        axis_y2 = cszh / 2 - (axis_length - midy + y_origin) / plot_scale
 
         # V-carve Plotting Stuff
         if self.cut_type.get() == CUT_TYPE_VCARVE:
@@ -2494,7 +2477,7 @@ class Gui(Frame):
                 loop_old = loop
                 old = new
 
-        if self.show_axis.get():
+        if self.settings.get('show_axis'):
             # Plot coordinate system origin
             self.segID.append(self.PreviewCanvas.create_line(axis_x1, axis_y1,
                                                              axis_x2, axis_y1,
@@ -2502,20 +2485,6 @@ class Gui(Frame):
             self.segID.append(self.PreviewCanvas.create_line(axis_x1, axis_y1,
                                                              axis_x1, axis_y2,
                                                              fill='green', width=0))
-
-    def get_radius_plot(self):
-        """
-        Get the radius of the circle to be plotted
-        """
-        radius_plot = 0
-
-        if self.settings.get('input_type') == "text":
-            if self.settings.get('plotbox') and \
-                    self.cut_type.get() == CUT_TYPE_ENGRAVE and \
-                    self.settings.get('text_radius') != 0:
-                radius_plot = self.settings.get('text_radius')
-
-        return radius_plot
 
     def do_it(self):
         """
@@ -2566,7 +2535,6 @@ class Gui(Frame):
         Angle = self.settings.get('text_angle')
         XOrigin = self.settings.get('xorigin')
         YOrigin = self.settings.get('yorigin')
-        Thick = self.settings.get('line_thickness')
 
         self.text.set_font(self.font)
         self.text.set_radius(self.settings.get('text_radius'))
@@ -2603,47 +2571,13 @@ class Gui(Frame):
 
             return
 
-        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            Thick = 0.0
-            # self.text.set_thickness(0.0)
-
-        # X/Y Scale
-        XScale_in = self.settings.get('xscale')
-        YScale_in = self.settings.get('yscale')
-        try:
-            YScale = (YScale_in - Thick) / (font_line_height - font_line_depth)
-        except:
-            YScale = .1
-        if YScale <= Zero:
-            YScale = .1
-        XScale = XScale_in * YScale / 100
-
-        # text inside or outside of the circle
-        radius_in = self.settings.get('text_radius')
-        delta = Thick / 2 + self.settings.get('boxgap')
-
-        if radius_in == 0.0:
-            text_radius = radius_in
-        else:
-            if self.settings.get('outer'):
-                # text outside circle
-                if self.settings.get('upper'):
-                    text_radius = radius_in + delta - YScale * font_line_depth
-                else:
-                    text_radius = radius_in - delta - YScale * font_line_height
-            else:
-                if self.settings.get('upper'):
-                    text_radius = radius_in - delta - YScale * font_line_height
-                else:
-                    text_radius = -radius_in + delta - YScale * font_line_depth
-
-            # adjust bounding box
-
-        # there were characters missing in the Font set
         if self.text.no_font_record == []:
             msg = ""
         else:
             msg = ", CHECK OUTPUT! Some characters not found in font file."
+
+        x_scale, y_scale = self.get_xy_scale()
+        text_radius = self.get_plot_radius()
 
         # Text transformations
         alignment = self.settings.get('justify')
@@ -2651,7 +2585,7 @@ class Gui(Frame):
         flip = self.settings.get('flip')
         upper = self.settings.get('upper')
 
-        self.text.transform_scale(XScale, YScale)
+        self.text.transform_scale(x_scale, y_scale)
         self.text.align(alignment)
         self.text.transform_on_radius(alignment, text_radius, upper)
         self.text.transform_angle(Angle)
@@ -2662,41 +2596,14 @@ class Gui(Frame):
             self.text.transform_flip()
 
         # Engrave box or circle
-        # self.RADIUS_PLOT = 0
         if self.settings.get('plotbox'):
-            if radius_in == 0 or self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            if text_radius == 0:
+                delta = self.get_delta()
                 self.text.add_box(delta, mirror, flip)
-            # else:
-            #     self.RADIUS_PLOT = radius_in
             # Don't create the circle coords here, a G-code circle command
             # is generated later (when not v-carving)
 
-        ##########################################
-        #         ORIGIN LOCATING STUFF          #
-        ##########################################
-        # TODO single out method (maxx, maxy, ... object properties, e.g. the Boundingbox or similar class)
-        origin = self.settings.get('origin')
-        if origin == 'Default':
-            origin = 'Arc-Center'
-
-        x_zero = y_zero = 0
-        vertical, horizontal = origin.split('-')
-        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
-            if vertical is 'Top':
-                y_zero = maxy
-            elif vertical is 'Mid':
-                y_zero = midy
-            elif vertical is 'Bot':
-                y_zero = miny
-
-            if horizontal is 'Center':
-                x_zero = midx
-            elif horizontal is 'Right':
-                x_zero = maxx
-            elif horizontal is 'Left':
-                x_zero = minx
-        else:  # "Default"
-            pass
+        x_zero, y_zero = self.get_origin(self.text.get_bbox_tuple())
 
         for i, XY in enumerate(self.text.coords):
             self.text.coords[i][0] = XY[0] - x_zero + XOrigin
@@ -2704,7 +2611,8 @@ class Gui(Frame):
             self.text.coords[i][2] = XY[2] - x_zero + XOrigin
             self.text.coords[i][3] = XY[3] - y_zero + YOrigin
 
-        minx, maxx, miny, maxy = self.text.get_bbox()
+        minx, maxx, miny, maxy = self.text.get_bbox_tuple()
+
         if not self.batch.get():
             # Reset Status Bar and Entry Fields
             self.Input.configure(bg='white')
@@ -2739,6 +2647,111 @@ class Gui(Frame):
             for entry in self.text.no_font_record:
                 fmessage("%s," % (entry), FALSE)
             fmessage(")")
+
+    def get_origin(self, bbox):
+
+        minx, maxx, miny, maxy = bbox
+        x_zero = y_zero = 0
+
+        origin = self.settings.get('origin')
+        if origin == 'Default':
+            origin = 'Arc-Center'
+
+        vertical, horizontal = origin.split('-')
+        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
+            if vertical is 'Top':
+                y_zero = maxy
+            elif vertical is 'Mid':
+                y_zero = midy
+            elif vertical is 'Bot':
+                y_zero = miny
+
+            if horizontal is 'Center':
+                x_zero = midx
+            elif horizontal is 'Right':
+                x_zero = maxx
+            elif horizontal is 'Left':
+                x_zero = minx
+        else:  # "Default"
+            pass
+
+        self.xzero = x_zero
+        self.yzero = y_zero
+
+        # return (
+        #     self.settings.get('xorigin'),
+        #     self.settings.get('yorigin')
+        # )
+
+        return (x_zero, y_zero)
+
+    def get_xy_scale(self):
+
+        font_line_height = self.font.line_height()
+        font_line_depth = self.font.line_depth()
+
+        thickness = self.settings.get('line_thickness')
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+
+        x_scale_in = self.settings.get('xscale')
+        y_scale_in = self.settings.get('yscale')
+        try:
+            y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
+        except:
+            y_scale = .1
+        if y_scale <= Zero:
+            y_scale = .1
+        x_scale = x_scale_in * y_scale / 100
+
+        return x_scale, y_scale
+
+    def get_text_radius(self):
+
+        text_radius = 0.0
+
+        if self.settings.get('input_type') == "text":
+            if self.settings.get('plotbox') and \
+                    self.cut_type.get() == CUT_TYPE_ENGRAVE and \
+                    self.settings.get('text_radius') != 0:
+                text_radius = self.settings.get('text_radius')
+
+        return text_radius
+
+    def get_delta(self):
+
+        thickness = self.settings.get('line_thickness')
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+
+        return thickness / 2 + self.settings.get('boxgap')
+
+    def get_plot_radius(self):
+
+        x_scale, y_scale = self.get_xy_scale()
+
+        font_line_height = self.font.line_height()
+        font_line_depth = self.font.line_depth()
+
+        # text inside or outside of the circle
+        radius_in = self.settings.get('text_radius')
+        if radius_in == 0.0:
+            radius = radius_in
+        else:
+            delta = self.get_delta()
+            if self.settings.get('outer'):
+                # text outside circle
+                if self.settings.get('upper'):
+                    radius = radius_in + delta - y_scale * font_line_depth
+                else:
+                    radius = radius_in - delta - y_scale * font_line_height
+            else:
+                if self.settings.get('upper'):
+                    radius = radius_in - delta - y_scale * font_line_height
+                else:
+                    radius = -radius_in + delta - y_scale * font_line_depth
+
+        return radius
 
     def do_it_image(self):
 
@@ -2823,8 +2836,9 @@ class Gui(Frame):
         self.master.unbind("<Configure>")
         self.STOP_CALC = False
 
+        # step length value floor
         v_step_len = self.settings.get('v_step_len')
-        if self.units.get() == "mm":
+        if self.settings.get('units') == "mm":
             if v_step_len < .01:
                 v_step_len = 0.01
                 self.settings.set('v_step_len', v_step_len)

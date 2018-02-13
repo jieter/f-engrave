@@ -9,6 +9,8 @@ from writers import douglas
 # TODO How to import higher level package:
 # from settings import CUT_TYPE_VCARVE
 
+# TODO Use Toolbit objects
+
 
 class Toolbit(object):
 
@@ -129,6 +131,12 @@ class Engrave(object):
 
     def number_of_segments(self):
         return len(self.coords)
+
+    def get_image_bbox_tuple(self):
+        return self.image.bbox.tuple()
+
+    def get_coords(self):
+        return self.coords
 
     def get_segments_length(self, i_x1, i_y1, i_x2, i_y2, clean):
 
@@ -339,7 +347,7 @@ class Engrave(object):
                         normv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rout, loop_cnt, clean)
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
-                        if self.v_pplot and (self.plot_progress_callback is not None) and (not clean):
+                        if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
                             self.plot_progress_callback(normv, "blue", rv, 0)
 
                 theta = phi
@@ -376,7 +384,7 @@ class Engrave(object):
                     normv, rv, clean_seg = self.record_v_carve_data(xpt, ypt, phi2, rout, loop_cnt, clean)
                     self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
-                    if self.v_pplot and (self.plot_progress_callback is not None) and (not clean):
+                    if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
                         self.plot_progress_callback(normv, "blue", rv, 0)
 
                     if New_Loop == 1 and cnt == 1:
@@ -413,7 +421,7 @@ class Engrave(object):
                             normv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt, clean)
                             self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
-                            if self.v_pplot and (self.plot_progress_callback is not None) and (not clean):
+                            if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
                                 self.plot_progress_callback(normv, "blue", rv, 0)
 
                         normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean)
@@ -445,7 +453,7 @@ class Engrave(object):
             coded_index = []
 
             # find the local coordinates of the line segment ends
-            minx, maxx, miny, maxy = self.image.get_bbox()
+            minx, maxx, miny, maxy = self.image.get_bbox_tuple()
             x1_G = XY_R[0] - minx
             y1_G = XY_R[1] - miny
             x2_G = XY_R[2] - minx
@@ -530,7 +538,7 @@ class Engrave(object):
         """
         Setup Grid Partitions for the cleaning toolpath
         """
-        minx, maxx, miny, maxy = self.image.get_bbox()
+        minx, maxx, miny, maxy = self.image.get_bbox_tuple()
         xLength = maxx - minx
         yLength = maxy - miny
 
@@ -620,7 +628,7 @@ class Engrave(object):
         rtmp = rmin
 
         # TODO make x/yPartitionLength function parameters
-        minx, maxx, miny, maxy = self.image.get_bbox()
+        minx, maxx, miny, maxy = self.image.get_bbox_tuple()
         xIndex = int((xpt - minx) / self.xPartitionLength)
         yIndex = int((ypt - miny) / self.yPartitionLength)
 

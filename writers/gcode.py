@@ -117,6 +117,8 @@ def engrave_gcode(job):
     # lift engraver
     # code.append("G0 Z%s ( safe Z )" % safe_val)
 
+    seg_arc = settings.get('segarc')
+
     for line in order_out:
         temp = line
         if temp[0] > temp[1]:
@@ -176,7 +178,8 @@ def engrave_gcode(job):
                     line_arc_fit(lastx, lasty, lastz, x1, y1, z1,
                                  nextx, nexty, nextz,
                                  FLAG_arc, arccode,
-                                 R_last, x_center_last, y_center_last, FLAG_line, accuracy)
+                                 R_last, x_center_last, y_center_last, FLAG_line, accuracy,
+                                 seg_arc)
 
                 if (WRITE == 1 or nextloop == -99):
                     if arccode in ('G2', 'G3'):
@@ -219,11 +222,14 @@ def engrave_gcode(job):
 
     # Make Circle
     plot_radius = settings.get('text_radius')
-    plot_radius += settings.get('boxgap')
-    if settings.get('outer'):
-        plot_radius -= settings.get('yscale') / 2
+    if settings.get('plotbox') and \
+            plot_radius != 0 and \
+            settings.get('cut_type') == "engrave":  # TODO use CUT_TYPE_ENGRAVE
 
-    if settings.get('plotbox') and plot_radius != 0 and settings.get('cut_type') == "engrave":  # TODO use CUT_TYPE_ENGRAVE
+        plot_radius += settings.get('boxgap')
+        if settings.get('outer'):
+            plot_radius -= settings.get('yscale') / 2
+
         xorigin, yorigin = settings.get('xorigin'), settings.get('yorigin')
         code.append('( Engraving Circle )')
         code.append('G0 Z%s' % safe_val)
@@ -560,9 +566,7 @@ def write_clean_up(job, bit_type="straight"):
         rough_again = False
         zmin = zmin + maxDZ
 
-        ########################################################################
-        # The clean coords have already been sorted so we can just write them  #
-        ########################################################################
+        # The clean coords have already been sorted so we can just write them
         order_out = sort_paths(coords_out, 3)
         new_coords = []
         for line in order_out:

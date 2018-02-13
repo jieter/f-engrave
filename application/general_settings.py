@@ -221,6 +221,7 @@ class GeneralSettings(object):
                                                value="center", width="110", anchor=W)
         self.Radio_arcfit_center.place(x=w_label + x_radio_offset + 65 + 115, y=D_Yloc, width=100, height=23)
         self.Radio_arcfit_center.configure(variable=self.arc_fit)
+        self.arc_fit.trace_variable("w", self.Entry_arcfit_Callback)
 
         D_Yloc = D_Yloc + D_dY
         self.Label_no_com = Label(general_settings, text="Suppress Comments")
@@ -363,7 +364,7 @@ class GeneralSettings(object):
         return NOR
 
     def Entry_Xoffset_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xoffset')
+        self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xorigin')
 
     def Entry_Yoffset_Check(self):
         try:
@@ -373,7 +374,7 @@ class GeneralSettings(object):
         return NOR
 
     def Entry_Yoffset_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yoffset')
+        self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yorigin')
 
     def Entry_ArcAngle_Check(self):
         try:
@@ -383,7 +384,7 @@ class GeneralSettings(object):
         return OK
 
     def Entry_ArcAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='arc_angle')
+        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='segarc')
 
     def Entry_Accuracy_Check(self):
         try:
@@ -395,14 +396,17 @@ class GeneralSettings(object):
     def Entry_Accuracy_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy')
 
+    def Entry_arcfit_Callback(self, varName, index, mode):
+        self.settings.set('arc_fit', self.arc_fit.get())
+
     def Entry_Gpre_Callback(self, varName, index, mode):
-        self.settings.set('gcode_preamble', self.gpre.get(), setting='gcode_preamble')
+        self.settings.set('gcode_preamble', self.gpre.get())
 
     def Entry_Gpost_Callback(self, varName, index, mode):
-        self.settings.set('gcode_postamble', self.gpost.get(), setting='gcode_postamble')
+        self.settings.set('gcode_postamble', self.gpost.get())
 
     def Checkbutton_var_dis_Callback(self, varName, index, mode):
-        self.settings.set('var_dis', self.var_dis.get(), setting='var_dis')
+        self.settings.set('var_dis', self.var_dis.get())
 
     # TODO same validation is part of V-Carve settings
     def Entry_BoxGap_Check(self):

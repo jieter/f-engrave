@@ -170,7 +170,7 @@ class Settings(object):
         'height_calculation': 'max_use',
 
         # Add a box/circle around plot
-        'plotbox': True,
+        'plotbox': False,
 
         # Gap between box and engraving
         'boxgap': 5.0,
