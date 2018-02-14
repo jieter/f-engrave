@@ -1,5 +1,6 @@
 import getopt
 import webbrowser
+from math import tan
 
 # from util import VERSION, POTRACE_AVAILABLE, TTF_AVAILABLE, PIL, IN_AXIS, header_text
 from util import *
@@ -72,16 +73,14 @@ class Gui(Frame):
         self.master.update()
         # self.PreviewCanvas.update()
 
-    def plot_progress(self, normv, color, radius, fill=False):
+    def plot_progress(self, normv, color, radius):
         """Engraver progress callback"""
         cszw = int(self.PreviewCanvas.cget("width"))
         cszh = int(self.PreviewCanvas.cget("height"))
 
-        minx, maxx, miny, maxy = self.engrave.get_image.bbox_tuple()
-        midx = (maxx + minx) / 2
-        midy = (maxy + miny) / 2
+        midx, midy = self.engrave.image.get_midxy()
 
-        self.plot_circle(normv, midx, midy, cszw, cszh, color, radius, fill)
+        self.plot_circle(normv, midx, midy, cszw, cszh, color, radius, False)
 
     def f_engrave_init(self):
         self.master.update()
@@ -158,8 +157,9 @@ class Gui(Frame):
         self.segID = []
         self.font = Font()
 
-        self.xzero = float(0.0)
-        self.yzero = float(0.0)
+        self.xzero = 0.0
+        self.yzero = 0.0
+
         self.current_input_file.set(" ")
         self.bounding_box.set(" ")
 
@@ -245,7 +245,7 @@ class Gui(Frame):
                 self.batch.set(True)
                 self.settings.set('batch', True)
 
-        if self.settings.get('batch') is True:
+        if self.batch.get() is True:
 
             fmessage('(F-Engrave Batch Mode)')
 
@@ -388,6 +388,7 @@ class Gui(Frame):
                                             command=self.Recalculate_RQD_Click)
         self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
                                             text='Origin determins where the X and Y zero position is located relative to the engraving.')
+        self.origin.trace_variable("w", self.Entry_recalc_var_Callback)
 
         self.Label_flip = Label(self.master, text="Flip Text")
         self.Checkbutton_flip = Checkbutton(self.master, text=" ", anchor=W)
@@ -760,7 +761,8 @@ class Gui(Frame):
     def CopyClipboard_SVG(self):
         self.clipboard_clear()
 
-        self.coords = self.engrave.get_coords()
+        self.engrave.refresh_coords()  # TODO
+        self.coords = self.engrave.coords
         svgcode = svg(self)
 
         for line in svgcode:
@@ -961,11 +963,18 @@ class Gui(Frame):
         self.settings.set('v_pplot', self.v_pplot.get())
         self.engrave.refresh_v_pplot()
 
+    # This method is used in Engrave
+    # TODO and the same code is part of GCode writer
+
     def calc_depth_limit(self):
+
+        settings = self.settings
+
         try:
-            bit_shape = self.settings.get('bit_shape')
-            v_bit_dia = self.settings.get('v_bit_dia')
-            v_bit_angle = self.settings.get('v_bit_angle')
+            depth_lim_in = settings.get('v_depth_lim')
+            bit_shape = settings.get('bit_shape')
+            v_bit_dia = settings.get('v_bit_dia')
+            v_bit_angle = settings.get('v_bit_angle')
 
             if bit_shape == "VBIT":
                 half_angle = radians(v_bit_angle) / 2.0
@@ -977,21 +986,26 @@ class Gui(Frame):
             else:
                 pass
 
-            depth_lim = self.settings.get('v_depth_lim')
-            if bit_shape != "FLAT":
-                if depth_lim < 0.0:
-                    self.settings.set('maxcut', max(bit_depth, depth_lim))
+            if settings.get('bit_shape') != "FLAT":
+                if depth_lim_in < 0.0:
+                    depth_limit = max(bit_depth, depth_lim_in)
                 else:
-                    self.settings.set('maxcut', bit_depth)
+                    depth_limit = bit_depth
             else:
-                if depth_lim < 0.0:
-                    self.settings.set('maxcut', depth_lim)
+                if depth_lim_in < 0.0:
+                    depth_limit = depth_lim_in
                 else:
-                    self.settings.set('maxcut', bit_depth)
-            # self.maxcut.set("%.3f", self.settings.get('maxcut'))
+                    depth_limit = bit_depth
+
+            depth_limit = "%.3f" % depth_limit
+
         except:
-            # self.maxcut.set("error")
-            pass
+            # set to an invalid (float) value
+            # depth_limit = "error"
+            depth_limit = -1
+
+        # settings.set('max_cut', depth_limit)
+        settings.set('v_max_cut', depth_limit)
 
     def calc_r_inlay_top(self):
         half_angle = radians(self.settings.get('v_bit_angle') / 2.0)
@@ -1184,7 +1198,7 @@ class Gui(Frame):
         Check all variables set.
         :return: the number of vars in error, 0 if all variables are Ok.
         """
-        if self.settings.get('batch'):
+        if self.batch.get():
             return 0  # nothing to be done in batchmode
 
         MAIN_error_cnt = \
@@ -1357,7 +1371,7 @@ class Gui(Frame):
             return False
 
     def Entry_recalc_var_Callback(self, varName, index, mode):
-        # TODO check whether these vars indeed have been set already
+        self.settings.set('origin', self.origin.get())
         self.settings.set('justify', self.justify.get())
         self.settings.set('flip', self.flip.get())
         self.settings.set('mirror', self.mirror.get())
@@ -1650,6 +1664,7 @@ class Gui(Frame):
             if not message_ask_ok_cancel("Continue", mess):
                 return
 
+        self.engrave.refresh_coords()  # TODO
         g_code = gcode(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
@@ -1731,7 +1746,8 @@ class Gui(Frame):
 
     def menu_File_Save_SVG_File(self):
 
-        self.coords = self.engrave.get_coords()
+        self.engrave.refresh_coords()  # TODO
+        self.coords = self.engrave.coords
         svg_code = svg(self)
 
         init_dir = os.path.dirname(self.NGC_FILE)
@@ -1813,7 +1829,7 @@ class Gui(Frame):
         self.menu_View_Refresh()
 
     def menu_View_Refresh(self):
-        if self.initComplete and self.settings.get('batch') is False and self.delay_calc is False:
+        if self.initComplete and self.batch() is False and self.delay_calc is False:
             dummy_event = Event()
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, 1)
@@ -1889,7 +1905,7 @@ class Gui(Frame):
         if event.widget != self.master:
             return
 
-        if self.settings.get('batch'):
+        if self.batch.get():
             return
 
         x = int(self.master.winfo_x())
@@ -2322,11 +2338,10 @@ class Gui(Frame):
 
         if self.settings.get('input_type') == "text":
             minx, maxx, miny, maxy = self.text.get_bbox_tuple()
+            midx, midy = self.text.get_midxy()
         else:
             minx, maxx, miny, maxy = self.image.get_bbox_tuple()
-
-        midx = (minx + maxx) / 2
-        midy = (miny + maxy) / 2
+            midx, midy = self.image.get_midxy()
 
         if self.cut_type.get() == CUT_TYPE_VCARVE:
             Thick = 0.0
@@ -2393,14 +2408,12 @@ class Gui(Frame):
                 self.PreviewCanvas.create_line(x1, y1, x2, y2, fill='black', width=plot_width, capstyle='round'))
 
         # draw coordinate axis
-        x_origin = float(self.xorigin.get())
-        y_origin = float(self.yorigin.get())
-
         axis_length = (maxx - minx) / 4
-        axis_x1 = cszw / 2 + (-midx + x_origin) / plot_scale
-        axis_x2 = cszw / 2 + (axis_length - midx + x_origin) / plot_scale
-        axis_y1 = cszh / 2 - (-midy + y_origin) / plot_scale
-        axis_y2 = cszh / 2 - (axis_length - midy + y_origin) / plot_scale
+        x_origin, y_origin = self.get_origin()
+        axis_x1 = cszw / 2 + (x_origin - midx) / plot_scale
+        axis_x2 = cszw / 2 + (x_origin - midx + axis_length) / plot_scale
+        axis_y1 = cszh / 2 - (y_origin - midy) / plot_scale
+        axis_y2 = cszh / 2 - (y_origin - midy + axis_length) / plot_scale
 
         # V-carve Plotting Stuff
         if self.cut_type.get() == CUT_TYPE_VCARVE:
@@ -2445,6 +2458,7 @@ class Gui(Frame):
 
         # Plot cleanup path
         if self.cut_type.get() == CUT_TYPE_VCARVE:
+
             loop_old = -1
             for line in self.engrave.clean_coords_sort:
                 new = (line[0], line[1])
@@ -2495,7 +2509,7 @@ class Gui(Frame):
 
         self.menu_View_Refresh()
 
-        if not self.batch.get:
+        if not self.batch.get():
             if self.cut_type.get() == CUT_TYPE_VCARVE:
                 self.V_Carve_Calc.configure(state="normal", command=None)
             else:
@@ -2527,14 +2541,10 @@ class Gui(Frame):
 
     def do_it_text(self):
 
-        if (self.font is None or len(self.font) == 0) and (not self.batch.get()):
+        if (self.font is None or len(self.font) == 0) and self.batch.get() is False:
             self.statusbar.configure(bg='red')
             self.statusMessage.set("No Font Characters Loaded")
             return
-
-        Angle = self.settings.get('text_angle')
-        XOrigin = self.settings.get('xorigin')
-        YOrigin = self.settings.get('yorigin')
 
         self.text.set_font(self.font)
         self.text.set_radius(self.settings.get('text_radius'))
@@ -2542,7 +2552,8 @@ class Gui(Frame):
         self.text.set_line_space(self.settings.get('line_space'))
         self.text.set_char_space(self.settings.get('char_space'))
 
-        if self.settings.get('batch'):
+        # the text to be carved or engraved
+        if self.batch.get():
             self.text.set_text(self.default_text)
         else:
             self.text.set_text(self.Input.get(1.0, END))
@@ -2550,7 +2561,6 @@ class Gui(Frame):
         self.text.set_coords_from_strokes()
 
         font_line_height = self.font.line_height()
-        font_line_depth = self.font.line_depth()
         if font_line_height <= -1e10:
 
             if not self.batch.get():
@@ -2584,11 +2594,12 @@ class Gui(Frame):
         mirror = self.settings.get('mirror')
         flip = self.settings.get('flip')
         upper = self.settings.get('upper')
+        angle = self.settings.get('text_angle')
 
         self.text.transform_scale(x_scale, y_scale)
         self.text.align(alignment)
         self.text.transform_on_radius(alignment, text_radius, upper)
-        self.text.transform_angle(Angle)
+        self.text.transform_angle(angle)
 
         if mirror:
             self.text.transform_mirror()
@@ -2603,16 +2614,13 @@ class Gui(Frame):
             # Don't create the circle coords here, a G-code circle command
             # is generated later (when not v-carving)
 
-        x_zero, y_zero = self.get_origin(self.text.get_bbox_tuple())
-
-        for i, XY in enumerate(self.text.coords):
-            self.text.coords[i][0] = XY[0] - x_zero + XOrigin
-            self.text.coords[i][1] = XY[1] - y_zero + YOrigin
-            self.text.coords[i][2] = XY[2] - x_zero + XOrigin
-            self.text.coords[i][3] = XY[3] - y_zero + YOrigin
+        x_origin, y_origin = self.get_origin()
+        x_zero, y_zero = self.move_origin()
+        x_offset = x_origin - x_zero
+        y_offset = y_origin - y_zero
+        self.text.transform_translate(x_offset, y_offset)
 
         minx, maxx, miny, maxy = self.text.get_bbox_tuple()
-
         if not self.batch.get():
             # Reset Status Bar and Entry Fields
             self.Input.configure(bg='white')
@@ -2648,10 +2656,18 @@ class Gui(Frame):
                 fmessage("%s," % (entry), FALSE)
             fmessage(")")
 
-    def get_origin(self, bbox):
+    def get_origin(self):
+        return (
+            self.settings.get('xorigin'),
+            self.settings.get('yorigin')
+        )
 
-        minx, maxx, miny, maxy = bbox
+    def move_origin(self):  # TODO put somewhere central (now part of Job, Gui and Engrave)
+
         x_zero = y_zero = 0
+
+        minx, maxx, miny, maxy = self.text.get_bbox_tuple()
+        midx, midy = self.text.get_midxy()
 
         origin = self.settings.get('origin')
         if origin == 'Default':
@@ -2659,29 +2675,26 @@ class Gui(Frame):
 
         vertical, horizontal = origin.split('-')
         if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
-            if vertical is 'Top':
+
+            if vertical == 'Top':
                 y_zero = maxy
-            elif vertical is 'Mid':
-                y_zero = midy
-            elif vertical is 'Bot':
+            elif vertical == 'Mid':
+                y_zero = midy  # height / 2
+            elif vertical == 'Bot':
                 y_zero = miny
 
-            if horizontal is 'Center':
-                x_zero = midx
-            elif horizontal is 'Right':
+            if horizontal == 'Center':
+                x_zero = midx  # width / 2
+            elif horizontal == 'Right':
                 x_zero = maxx
-            elif horizontal is 'Left':
+            elif horizontal == 'Left':
                 x_zero = minx
+
         else:  # "Default"
             pass
 
         self.xzero = x_zero
         self.yzero = y_zero
-
-        # return (
-        #     self.settings.get('xorigin'),
-        #     self.settings.get('yorigin')
-        # )
 
         return (x_zero, y_zero)
 
@@ -2755,7 +2768,7 @@ class Gui(Frame):
 
     def do_it_image(self):
 
-        if len(self.image) == 0 and (not self.batch.get()):
+        if len(self.image) == 0 and self.batch.get() is False:
             self.statusbar.configure(bg='red')
             self.statusMessage.set("No Image Loaded")
             return
@@ -2872,7 +2885,7 @@ class Gui(Frame):
 
             done = self.engrave.v_carve(clean)
 
-            if done and (not self.batch.get()):
+            if done and self.batch.get() is False:
                 self.statusMessage.set('Done -- ' + self.bounding_box.get())
                 self.statusbar.configure(bg='white')
 

@@ -19,7 +19,6 @@ class VCarveSettings(object):
         # GUI callbacks
         self.entry_set = master.entry_set
         self.statusMessage = master.statusMessage
-        self.Entry_recalc_var_Callback = master.Entry_recalc_var_Callback
         self.calc_depth_limit = master.calc_depth_limit
         self.Calculate_CLEAN_Click = master.Calculate_CLEAN_Click
         self.Write_Clean_Click = master.Write_Clean_Click
@@ -27,6 +26,7 @@ class VCarveSettings(object):
         self.Recalc_RQD = master.Recalc_RQD
         self.recalculate_click = master.Recalculate_Click
         self.V_Carve_Calc_Click = master.V_Carve_Calc_Click
+        # self.calc_depth_limit = master.calc_depth_limit
 
         # GUI Engraver callback
         self.init_clean_coords = master.engrave.init_clean_coords
@@ -87,11 +87,12 @@ class VCarveSettings(object):
         self.v_clean_X = BooleanVar()
         self.v_clean_Y = BooleanVar()
 
-        self.cut_type = StringVar()
-
         self.initialise_variables()
         self.create_widgets()
         self.create_icon()
+
+        # Derived variables
+        # self.calc_depth_limit()
 
     def initialise_variables(self):
         self.bit_shape.set(self.settings.get('bit_shape'))
@@ -123,8 +124,6 @@ class VCarveSettings(object):
         self.v_clean_P.set(self.settings.get('v_clean_P'))
         self.v_clean_Y.set(self.settings.get('v_clean_Y'))
         self.v_clean_X.set(self.settings.get('v_clean_X'))
-
-        self.cut_type.set(self.settings.get('cut_type'))
 
     def Close_Current_Window_Click(self):
         self.vcarve_settings.destroy()
@@ -226,7 +225,6 @@ class VCarveSettings(object):
         self.Checkbutton_v_flop.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
         self.Checkbutton_v_flop.configure(variable=self.v_flop)
         self.v_flop.trace_variable("w", self.Entry_v_flop_Callback)
-        self.v_flop.trace_variable("w", self.Entry_recalc_var_Callback)
 
         x_radio_offset = 62 - 40
         D_Yloc = D_Yloc + 24
@@ -450,7 +448,7 @@ class VCarveSettings(object):
                                          command=self.vcarve_recalculate_click)
         self.VCARVE_Recalculate.place(x=Xbut, y=Ybut, width=130, height=30, anchor="e")
 
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             self.VCARVE_Recalculate.configure(state="normal", command=None)
         else:
             self.VCARVE_Recalculate.configure(state="disabled", command=None)
@@ -531,6 +529,7 @@ class VCarveSettings(object):
 
     def Entry_v_flop_Callback(self, varName, index, mode):
         self.settings.set('v_flop', self.v_flop.get())
+        self.Recalc_RQD()
 
     def Entry_Allowance_Check(self):
         try:

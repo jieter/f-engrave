@@ -70,6 +70,8 @@ class Engrave(object):
         self.image = image
         self.toolbit = None
 
+        self.set_origin(self.settings.get('xorigin'),
+                        self.settings.get('yorigin'))
         self.init_coords()
 
         self.accuracy = self.settings.get('accuracy')
@@ -78,12 +80,19 @@ class Engrave(object):
 
     def init_coords(self):
         # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt]) ?
+        # if self.image is None:
+        #     self.coords = []
+        # else:
+        #     self.coords = self.image.coords
+        self.refresh_coords()
+        self.v_coords = []
+        self.init_clean_coords()
+
+    def refresh_coords(self):
         if self.image is None:
             self.coords = []
         else:
             self.coords = self.image.coords
-        self.v_coords = []
-        self.init_clean_coords()
 
     def init_clean_coords(self):
         # Clean coords format: ([xnormv, ynormv, rout, loop_cnt])
@@ -98,6 +107,11 @@ class Engrave(object):
     def set_image(self, image):
         self.image = image
         self.init_coords()
+        self.move_origin()
+
+    def set_origin(self, x_origin=0, y_origin=0):
+        self.x_origin = x_origin
+        self.y_origin = y_origin
 
     def set_coords(self, coords):
         self.coords = coords
@@ -110,6 +124,43 @@ class Engrave(object):
 
     def set_status_callback(self, callback):
         self.status_callback = callback
+
+    def move_origin(self):
+
+        x_zero = y_zero = 0
+
+        image = self.image
+        minx, maxx, miny, maxy = image.get_bbox_tuple()
+        midx, midy = image.get_midxy()
+
+        origin = self.settings.get('origin')
+        if origin == 'Default':
+            origin = 'Arc-Center'
+
+        vertical, horizontal = origin.split('-')
+        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
+
+            if vertical == 'Top':
+                y_zero = maxy
+            elif vertical == 'Mid':
+                y_zero = midy  # height / 2
+            elif vertical == 'Bot':
+                y_zero = miny
+
+            if horizontal == 'Center':
+                x_zero = midx  # width / 2
+            elif horizontal == 'Right':
+                x_zero = maxx
+            elif horizontal == 'Left':
+                x_zero = minx
+
+        else:  # "Default"
+            pass
+
+        self.xzero = x_zero
+        self.yzero = y_zero
+
+        return
 
     def refresh_v_pplot(self):
         self.v_pplot = self.settings.get('v_pplot')
@@ -231,7 +282,7 @@ class Engrave(object):
             v_drv_corner = self.settings.get('v_drv_corner')
 
         if self.settings.get('input_type') == "image" and clean is False:
-            self._sort_for_v_carve(self.coords, LN_START=0)
+            self.coords = self._sort_for_v_carve(self.coords, LN_START=0)
 
         TOT_LENGTH = self.get_segments_length(i_x1, i_y1, i_x2, i_y2, clean)
         CUR_LENGTH = 0.0
@@ -348,7 +399,7 @@ class Engrave(object):
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                         if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
-                            self.plot_progress_callback(normv, "blue", rv, 0)
+                            self.plot_progress_callback(normv, "blue", rv)
 
                 theta = phi
                 x0 = x2
@@ -385,7 +436,7 @@ class Engrave(object):
                     self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                     if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
-                        self.plot_progress_callback(normv, "blue", rv, 0)
+                        self.plot_progress_callback(normv, "blue", rv)
 
                     if New_Loop == 1 and cnt == 1:
                         xpta = xpt
@@ -422,7 +473,7 @@ class Engrave(object):
                             self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                             if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
-                                self.plot_progress_callback(normv, "blue", rv, 0)
+                                self.plot_progress_callback(normv, "blue", rv)
 
                         normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean)
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
@@ -1017,9 +1068,7 @@ class Engrave(object):
                     else:
                         temp_coords.append([x1, y1, xa, ya, LN, 0])
 
-            self.coords = temp_coords
-
-        return
+        return temp_coords
 
     def _find_paths(self, check_coords_in, clean_dia, Radjust, clean_step, skip, direction):
 

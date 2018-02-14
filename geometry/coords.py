@@ -51,6 +51,18 @@ class MyImage(object):
     def get_bbox_tuple(self):
         return self.bbox.tuple()
 
+    def get_midxy(self):
+        minx, maxx, miny, maxy = self.bbox.tuple()
+        midx = (minx + maxx) / 2
+        midy = (miny + maxy) / 2
+        return midx, midy
+
+    def get_width(self):
+        return self.bbox.width()
+
+    def get_height(self):
+        return self.bbox.height()
+
     def get_max_radius(self):
 
         maxr = 0
@@ -59,6 +71,14 @@ class MyImage(object):
             maxr = max(maxr, float(XY[0] * XY[0] + XY[1] * XY[1]), float(XY[2] * XY[2] + XY[3] * XY[3]))
 
         return maxr
+
+    def transform_translate(self, xoffset, yoffset):
+        for XY in self.coords:
+            XY[0] += xoffset
+            XY[1] += yoffset
+            XY[2] += xoffset
+            XY[3] += yoffset
+        self._set_bbox()
 
     def transform_scale(self, xscale, yscale):
         for XY in self.coords:
@@ -271,7 +291,7 @@ class MyText(MyImage):
 
         super(MyText, self).transform_scale(xscale, yscale)
 
-        # TODO a more elegant way of adjusting the line max vals?
+        # adjust the line max values
         for vals in self.line_max_vals:
             vals[0] = vals[0] * xscale
             vals[1] = vals[1] * xscale

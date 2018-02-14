@@ -180,7 +180,8 @@ class Settings(object):
         'fontfile': 'normal.cxf',
 
         # options: 'engrave', 'v-carve'
-        'cut_type': CUT_TYPE_ENGRAVE,
+        # 'cut_type': CUT_TYPE_ENGRAVE,
+        'cut_type': CUT_TYPE_VCARVE,
 
         # options: 'text', 'image'
         'input_type': 'text',

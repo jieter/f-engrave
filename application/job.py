@@ -1,11 +1,9 @@
-# from geometry import BoundingBox, Zero, scale, translate, rotation
 from geometry import BoundingBox, Zero, rotation
 from readers.cxf import parse as parse_cxf
 from settings import CUT_TYPE_VCARVE
-# from util import fmessage
 
 import writers
-from geometry.coords import MyText
+from geometry.coords import MyImage, MyText
 from geometry.engrave import Engrave
 
 
@@ -31,36 +29,29 @@ class Job(object):
 
         self.load_font()
 
+        self.text = MyText()
+        self.text.set_font(self.font)
+        self.text.set_text(self.settings.get('default_text'))
+
+        self.image = MyImage()
+        # stroke_list = self.font[ord("F")].stroke_list
+        # self.image.set_coords_from_strokes(stroke_list)
+
         self._move_origin()
 
         # if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
         #     self.vcarve()
         # else:
         #     self.engrave()
-
-        self.text = MyText()
-        self.text.set_font(self.font)
-        self.text.set_text(self.settings.get('default_text'))
-
-        # self.image = MyImage()
-        # stroke_list = self.font[ord("F")].stroke_list
-        # self.image.set_coords_from_strokes(stroke_list)
-
         self.engrave = Engrave(self.settings)
 
         if self.settings.get('input_type') == "text":
             self.text.set_coords_from_strokes()
             self.engrave.set_image(self.text)
 
-        elif self.settings.get('input_type.get') == "image":
+        elif self.settings.get('input_type') == "image":
             self.image.set_coords_from_strokes()
             self.engrave.set_image(self.image)
-
-        self.coords = self.engrave.coords
-        self.clean_coords = self.engrave.clean_coords
-        self.clean_coords_sort = self.engrave.clean_coords_sort
-        self.v_coords = self.engrave.v_coords
-        self.v_clean_coords_sort = self.engrave.v_clean_coords_sort
 
         thickness = self.settings.get('line_thickness')
         if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
@@ -113,11 +104,19 @@ class Job(object):
             if self.settings.get('flip'):
                 self.image.transform_flip()
 
+        # engrave = self.engrave
+        # engrave.refresh_coords()  # TODO
+        # self.coords = engrave.coords
+        # self.clean_coords = engrave.clean_coords
+        # self.clean_coords_sort = engrave.clean_coords_sort
+        # self.v_coords = engrave.v_coords
+        # self.v_clean_coords_sort = engrave.v_clean_coords_sort
+
     def get_svg(self):
         return '\n'.join(writers.svg(self)).strip()
 
     def get_gcode(self):
-        return '\n'.join(writers.gcode(self))
+        return '\n'.join(writers.gcode(self.engrave))
 
     def get_font(self):
         filename = self.settings.get_fontfile()
@@ -239,6 +238,11 @@ class Job(object):
 
         x_zero = y_zero = 0
 
+        text = self.text
+        xmin, xmax, ymin, ymax = text.get_bbox_tuple()
+        width = text.get_width()
+        height = text.get_height()
+
         origin = self.settings.get('origin')
         if origin == 'Default':
             origin = 'Arc-Center'
@@ -247,22 +251,20 @@ class Job(object):
         if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
 
             if vertical is 'Top':
-                y_zero = self.text_bbox.ymax
+                y_zero = ymax
             elif vertical is 'Mid':
-                y_zero = self.text_bbox.height() / 2
+                y_zero = height / 2
             elif vertical is 'Bot':
-                y_zero = self.text_bbox.ymin
+                y_zero = ymin
 
             if horizontal is 'Center':
-                x_zero = self.text_bbox.width() / 2
+                x_zero = width / 2
             elif horizontal is 'Right':
-                x_zero = self.text_bbox.xmax
+                x_zero = xmax
             elif horizontal is 'Left':
-                x_zero = self.text_bbox.xmin
+                x_zero = xmin
 
-        xorigin = self.settings.get('xorigin')
-        yorigin = self.settings.get('yorigin')
-
+        xorigin, yorigin = self.get_origin()
         for i, line in enumerate(self.coords):
             self.coords[i][0] = line[0] - x_zero + xorigin
             self.coords[i][1] = line[1] - y_zero + yorigin

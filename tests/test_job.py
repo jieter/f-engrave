@@ -16,6 +16,7 @@ class JobTest(unittest.TestCase):
             f.write(job.get_svg())
 
     def test_initialize(self):
+
         Job(Settings())
 
     def _job_with_settings(self, *args):
@@ -66,3 +67,10 @@ class JobTest(unittest.TestCase):
             ('boxgap', 50)
         )
         self._save_testfiles(job, 'circle')
+
+    def test_vcarve(self):
+        job = self._job_with_settings(
+            ('default_text', 'V-Carve'),
+            ('cut_type', 'v-carve'),
+        )
+        self._save_testfiles(job, 'vcarve')

@@ -2,12 +2,13 @@ from math import sqrt, hypot, sin, radians
 from geometry import Zero, get_angle, transform
 
 
+# TODO Clean up, in v1.55 this line/curve fitting code has been replaced by the Douglas-Peucker algorithm
+
 def line_arc_fit(lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz, FLAG_arc, code,
                  R_last, x_center_last, y_center_last, FLAG_line, accuracy, seg_arc):
     """
     Line fit and arc fit (curve fit)
     """
-    # TODO make WRITE and FLAG_line booleans
 
     # print lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz
     # print FLAG_arc, code, R_last, x_center_last, y_center_last, FLAG_line, accuracy
@@ -51,7 +52,6 @@ def line_arc_fit(lastx, lasty, lastz, x1, y1, z1, nextx, nexty, nextz, FLAG_arc,
     # Arc Fitting #
     ###############
 
-    # TODO: fix arc_fit = bool(self.arc_fit.get()) == 1
     arc_fit = 1
 
     if (FLAG_line != 1 and FLAG_line_last != 1 and line_t != 0 and arc_fit):
