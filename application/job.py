@@ -25,7 +25,7 @@ class Job(object):
 
     def execute(self):
         # erase old data
-        self.segID = []
+        # self.segID = []
 
         self.load_font()
 
@@ -37,35 +37,19 @@ class Job(object):
         # stroke_list = self.font[ord("F")].stroke_list
         # self.image.set_coords_from_strokes(stroke_list)
 
-        self._move_origin()
-
-        # if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
-        #     self.vcarve()
-        # else:
-        #     self.engrave()
         self.engrave = Engrave(self.settings)
-
         if self.settings.get('input_type') == "text":
             self.text.set_coords_from_strokes()
             self.engrave.set_image(self.text)
-
         elif self.settings.get('input_type') == "image":
             self.image.set_coords_from_strokes()
             self.engrave.set_image(self.image)
 
         thickness = self.settings.get('line_thickness')
-        if self.settings.get('cut_type') is CUT_TYPE_VCARVE:
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             thickness = 0.0
-        # x_scale_in = self.settings.get('xscale')
-        # y_scale_in = self.settings.get('yscale')
-        Angle = self.settings.get('text_angle')
 
-        # TODO image calculation
-        # if self.settings.get('useIMGsize'):
-        # y_scale = y_scale_in / 100
-        # x_scale = x_scale_in * y_scale / 100
-
-        x_scale, y_scale = self.get_xy_scale()
+        x_origin, y_origin = self.get_origin()
 
         # TODO refactor code overlap (with Gui)
 
@@ -78,11 +62,13 @@ class Job(object):
             mirror = self.settings.get('mirror')
             flip = self.settings.get('flip')
             upper = self.settings.get('upper')
+            angle = self.settings.get('text_angle')
 
+            x_scale, y_scale = self.get_xy_scale()
             self.text.transform_scale(x_scale, y_scale)
             self.text.align(alignment)
             self.text.transform_on_radius(alignment, text_radius, upper)
-            self.text.transform_angle(Angle)
+            self.text.transform_angle(angle)
             if mirror:
                 self.text.transform_mirror()
             if flip:
@@ -95,21 +81,33 @@ class Job(object):
                     self.text.add_box(delta, mirror, flip)
                 # Don't create the circle coords here, a G-code circle command
                 # is generated later (when not v-carving)
+            x_zero, y_zero = self._move_origin()
+            x_offset = x_origin - x_zero
+            y_offset = y_origin - y_zero
+            self.text.transform_translate(x_offset, y_offset)
         else:
+            # TODO image calculation
+            # if self.settings.get('useIMGsize'):
+            # y_scale = y_scale_in / 100
+            # x_scale = x_scale_in * y_scale / 100
+
             # Image transformations
             self.image.transform_scale(x_scale, y_scale)
-            self.image.transform_angle(Angle)
+            self.image.transform_angle(angle)
             if self.settings.get('mirror'):
                 self.image.transform_mirror()
             if self.settings.get('flip'):
                 self.image.transform_flip()
 
-        # engrave = self.engrave
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            self.engrave.v_carve()
+
+        engrave = self.engrave
         # engrave.refresh_coords()  # TODO
-        # self.coords = engrave.coords
+        self.coords = engrave.coords
+        self.v_coords = engrave.v_coords
         # self.clean_coords = engrave.clean_coords
         # self.clean_coords_sort = engrave.clean_coords_sort
-        # self.v_coords = engrave.v_coords
         # self.v_clean_coords_sort = engrave.v_clean_coords_sort
 
     def get_svg(self):
@@ -139,6 +137,12 @@ class Job(object):
 
     def get_plot_radius(self):
 
+        x_scale, y_scale = self.get_xy_scale()
+
+        # TODO this assumes height_calculation = 'max_all'.
+        # We should look in bounding box with max_char, maybe
+        # set the string as Font parameter and set a height_calculation
+        # flag in Font
         font_line_height = self.font.line_height()
         font_line_depth = self.font.line_depth()
 
@@ -146,12 +150,6 @@ class Job(object):
         if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             thickness = 0.0
             # self.text.set_thickness(0.0)
-
-        # TODO this assumes height_calculation = 'max_all'.
-        # We should look in bounding box with max_char, maybe
-        # set the string as Font parameter and set a height_calculation
-        # flag in Font
-        x_scale, y_scale = self.get_xy_scale()
 
         # text inside or outside of the circle
         radius_in = self.settings.get('text_radius')
@@ -175,9 +173,6 @@ class Job(object):
 
     def get_xy_scale(self):
 
-        font_line_height = self.font.line_height()
-        font_line_depth = self.font.line_depth()
-
         thickness = self.settings.get('line_thickness')
         if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             thickness = 0.0
@@ -185,6 +180,8 @@ class Job(object):
         x_scale_in = self.settings.get('xscale')
         y_scale_in = self.settings.get('yscale')
 
+        font_line_height = self.font.line_height()
+        font_line_depth = self.font.line_depth()
         try:
             y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
         except:
@@ -196,7 +193,7 @@ class Job(object):
         y_scale = y_scale_in / 100
         x_scale = x_scale_in * y_scale / 100
 
-        return x_scale, y_scale
+        return (x_scale, y_scale)
 
     def _draw_box(self):
         line_thickness = self.settings.get('line_thickness')
@@ -234,7 +231,45 @@ class Job(object):
         # only for v-carving
         pass
 
+    # TODO in Job, Gui and Engrave
+
     def _move_origin(self):
+
+        x_zero = y_zero = 0
+
+        minx, maxx, miny, maxy = self.text.get_bbox_tuple()
+        midx, midy = self.text.get_midxy()
+
+        origin = self.settings.get('origin')
+        if origin == 'Default':
+            origin = 'Arc-Center'
+
+        vertical, horizontal = origin.split('-')
+        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
+
+            if vertical == 'Top':
+                y_zero = maxy
+            elif vertical == 'Mid':
+                y_zero = midy  # height / 2
+            elif vertical == 'Bot':
+                y_zero = miny
+
+            if horizontal == 'Center':
+                x_zero = midx  # width / 2
+            elif horizontal == 'Right':
+                x_zero = maxx
+            elif horizontal == 'Left':
+                x_zero = minx
+
+        else:  # "Default"
+            pass
+
+        self.xzero = x_zero
+        self.yzero = y_zero
+
+        return (x_zero, y_zero)
+
+    def _move_origin_OUD(self):
 
         x_zero = y_zero = 0
 

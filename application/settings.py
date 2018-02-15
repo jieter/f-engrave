@@ -141,6 +141,9 @@ class Settings(object):
         # engraving depth [GCODE]
         'zcut': -0.1,
 
+        # derived value
+        'max_cut': 0.0,
+
         'line_thickness': 0.25,
         'border_thickness': 0.5,
 
@@ -180,8 +183,8 @@ class Settings(object):
         'fontfile': 'normal.cxf',
 
         # options: 'engrave', 'v-carve'
-        # 'cut_type': CUT_TYPE_ENGRAVE,
-        'cut_type': CUT_TYPE_VCARVE,
+        'cut_type': CUT_TYPE_ENGRAVE,
+        # 'cut_type': CUT_TYPE_VCARVE,
 
         # options: 'text', 'image'
         'input_type': 'text',
@@ -194,7 +197,7 @@ class Settings(object):
         'v_step_corner': 200,
         'v_step_len': 0.25,
 
-        # V-carve loop accuracy
+        # v-carve loop accuracy
         'v_acc': 0.001,
         'allowance': 0.0,
 
@@ -222,7 +225,7 @@ class Settings(object):
         # diameter of the cleanup bit
         'clean_dia': 3.0,
 
-        # Clean-up step-over as percentage of the clean-up bit diameter
+        # clean-up step-over as percentage of the clean-up bit diameter
         'clean_step': 50,
         'clean_name': '_clean',
 

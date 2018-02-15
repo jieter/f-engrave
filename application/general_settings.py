@@ -204,7 +204,7 @@ class GeneralSettings(object):
         self.Checkbutton_ext_char = Checkbutton(general_settings, text="", anchor=W)
         self.Checkbutton_ext_char.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
         self.Checkbutton_ext_char.configure(variable=self.ext_char)
-        self.ext_char.trace_variable("w", self.Settings_ReLoad_Click)
+        self.ext_char.trace_variable("w", self.Entry_ext_char_Callback)
 
         D_Yloc = D_Yloc + D_dY
         self.Label_arcfit = Label(general_settings, text="Arc Fitting")
@@ -229,6 +229,7 @@ class GeneralSettings(object):
         self.Checkbutton_no_com = Checkbutton(general_settings, text="", anchor=W)
         self.Checkbutton_no_com.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
         self.Checkbutton_no_com.configure(variable=self.no_comments)
+        self.no_comments.trace_variable("w", self.Entry_no_comments_Callback)
 
         D_Yloc = D_Yloc + D_dY
         self.Label_Gpre = Label(general_settings, text="G Code Header")
@@ -395,6 +396,13 @@ class GeneralSettings(object):
 
     def Entry_Accuracy_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy')
+
+    def Entry_ext_char_Callback(self, varName, index, mode):
+        self.settings.set('ext_char', self.ext_char.get())
+        self.Settings_ReLoad_Click
+
+    def Entry_no_comments_Callback(self, varName, index, mode):
+        self.settings.set('no_comments', self.no_comments.get())
 
     def Entry_arcfit_Callback(self, varName, index, mode):
         self.settings.set('arc_fit', self.arc_fit.get())

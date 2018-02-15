@@ -15,10 +15,6 @@ class JobTest(unittest.TestCase):
         with open(basename % (filename, 'svg'), 'w') as f:
             f.write(job.get_svg())
 
-    def test_initialize(self):
-
-        Job(Settings())
-
     def _job_with_settings(self, *args):
         settings = Settings(filename='tests/files/job_test_settings.ngc')
         settings.set('default_text', 'OOF-Engrave')

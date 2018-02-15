@@ -26,7 +26,6 @@ class VCarveSettings(object):
         self.Recalc_RQD = master.Recalc_RQD
         self.recalculate_click = master.Recalculate_Click
         self.V_Carve_Calc_Click = master.V_Carve_Calc_Click
-        # self.calc_depth_limit = master.calc_depth_limit
 
         # GUI Engraver callback
         self.init_clean_coords = master.engrave.init_clean_coords
@@ -40,11 +39,13 @@ class VCarveSettings(object):
         self.vcarve_settings.title('V-Carve Settings')
         self.vcarve_settings.iconname("V-Carve Settings")
 
+        self.units = StringVar()
+        self.max_cut = StringVar()
+
         # V-Carve entries
         self.Entry_Vbitangle = Entry()
         self.Entry_Vbitdia = Entry()
         self.Entry_VDepthLimit = Entry()
-        self.Entry_InsideAngle = Entry()
         self.Entry_StepSize = Entry()
         self.Entry_Allowance = Entry()
         self.Entry_W_CLEAN = Entry()
@@ -53,8 +54,6 @@ class VCarveSettings(object):
         self.Entry_V_CLEAN = Entry()
 
         # V-Carve variables
-        self.units = self.settings.get('units')
-        # self.maxcut = self.settings.get('maxcut')
         self.bit_shape = StringVar()
         self.v_bit_angle = StringVar()
         self.v_bit_dia = StringVar()
@@ -63,7 +62,6 @@ class VCarveSettings(object):
         self.v_step_corner = StringVar()
         self.v_step_len = StringVar()
         self.allowance = StringVar()
-        self.v_check_all = StringVar()
         self.v_max_cut = StringVar()
         self.v_rough_stk = StringVar()
 
@@ -95,6 +93,9 @@ class VCarveSettings(object):
         # self.calc_depth_limit()
 
     def initialise_variables(self):
+        self.units.set(self.settings.get('units'))
+        self.max_cut.set(self.settings.get('max_cut'))
+
         self.bit_shape.set(self.settings.get('bit_shape'))
         self.v_bit_angle.set(self.settings.get('v_bit_angle'))
         self.v_bit_dia.set(self.settings.get('v_bit_dia'))
@@ -103,7 +104,6 @@ class VCarveSettings(object):
         self.v_step_corner.set(self.settings.get('v_step_corner'))
         self.v_step_len.set(self.settings.get('v_step_len'))
         self.allowance.set(self.settings.get('allowance'))
-        self.v_check_all.set(self.settings.get('v_check_all'))
         self.v_rough_stk.set(self.settings.get('v_rough_stk'))
         self.v_max_cut.set(self.settings.get('v_max_cut'))
 
@@ -200,7 +200,7 @@ class VCarveSettings(object):
         self.Label_maxcut.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
         self.Label_maxcut_u = Label(vcarve_settings, textvariable=self.units, anchor=W)
         self.Label_maxcut_u.place(x=xd_units_L, y=D_Yloc, width=w_units, height=21)
-        self.Label_maxcut_i = Label(vcarve_settings, textvariable=self.v_max_cut, anchor=W)
+        self.Label_maxcut_i = Label(vcarve_settings, textvariable=self.max_cut, anchor=W)
         self.Label_maxcut_i.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=21)
 
         D_Yloc = D_Yloc + D_dY + 5
@@ -470,7 +470,10 @@ class VCarveSettings(object):
 
     def Entry_Vbitangle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), setting='v_bit_angle')
-        self.calc_depth_limit()
+        if self.calc_depth_limit():
+            self.max_cut.set(self.settings.get('max_cut'))
+        else:
+            self.max_cut.set("error")
 
     def Entry_Vbitdia_Check(self):
         try:
@@ -484,7 +487,10 @@ class VCarveSettings(object):
 
     def Entry_Vbitdia_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), setting='v_bit_dia')
-        self.calc_depth_limit()
+        if self.calc_depth_limit():
+            self.max_cut.set(self.settings.get('max_cut'))
+        else:
+            self.max_cut.set("error")
 
     def Entry_VDepthLimit_Check(self):
         try:
@@ -498,21 +504,10 @@ class VCarveSettings(object):
 
     def Entry_VDepthLimit_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), setting='v_depth_lim')
-        self.calc_depth_limit()
-
-    def Entry_InsideAngle_Check(self):
-        try:
-            value = float(self.v_drv_corner.get())
-            if value <= 0.0 or value >= 180.0:
-                self.statusMessage.set(" Angle should be between 0 and 180 ")
-                return INV
-        except:
-            return NAN
-        return OK
-
-    def Entry_InsideAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_InsideAngle, self.Entry_InsideAngle_Check())
-        # TODO setting
+        if self.calc_depth_limit():
+            self.max_cut.set(self.settings.get('max_cut'))
+        else:
+            self.max_cut.set("error")
 
     def Entry_StepSize_Check(self):
         try:
@@ -646,8 +641,6 @@ class VCarveSettings(object):
         self.settings.set('clean_Y', self.clean_Y.get())
 
     def Entry_Bit_Shape_Check(self):
-        self.calc_depth_limit()
-
         try:
             if self.bit_shape.get() == "VBIT":
                 self.Label_Vbitangle.configure(state="normal")
@@ -726,6 +719,10 @@ class VCarveSettings(object):
     def Entry_Bit_Shape_var_Callback(self, varName, index, mode):
         self.Entry_Bit_Shape_Check()
         self.settings.set('bit_shape', self.bit_shape.get())
+        if self.calc_depth_limit():
+            self.max_cut.set(self.settings.get('max_cut'))
+        else:
+            self.max_cut.set("error")
 
     def vbit_picture(self):
         self.PHOTO = PhotoImage(format='gif',

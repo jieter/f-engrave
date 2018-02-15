@@ -44,12 +44,12 @@ class Gui(Frame):
         self.delay_calc = False
 
         self.settings = settings
-        self.engrave = Engrave(self.settings)
 
+        self.engrave = Engrave(self.settings)
         self.font = Font()
         self.text = MyText()
         self.image = MyImage()
-        self.tool = Toolbit()
+        # self.tool = Toolbit()
 
         self.bind_keys()
         self.create_widgets()
@@ -963,11 +963,13 @@ class Gui(Frame):
         self.settings.set('v_pplot', self.v_pplot.get())
         self.engrave.refresh_v_pplot()
 
-    # This method is used in Engrave
-    # TODO and the same code is part of GCode writer
+    # TODO calc_depth_limit in GCode writer too
 
     def calc_depth_limit(self):
-
+        """
+        Calculate depth limit
+        Returns True if the resulting depth limit is valid, otherwise False
+        """
         settings = self.settings
 
         try:
@@ -982,7 +984,7 @@ class Gui(Frame):
             elif bit_shape == "BALL":
                 bit_depth = -v_bit_dia / 2.0
             elif bit_shape == "FLAT":
-                bit_depth = -v_bit_dia.get / 2.0
+                bit_depth = -v_bit_dia / 2.0
             else:
                 pass
 
@@ -998,14 +1000,12 @@ class Gui(Frame):
                     depth_limit = bit_depth
 
             depth_limit = "%.3f" % depth_limit
+            settings.set('max_cut', depth_limit)
+            return True
 
         except:
-            # set to an invalid (float) value
             # depth_limit = "error"
-            depth_limit = -1
-
-        # settings.set('max_cut', depth_limit)
-        settings.set('v_max_cut', depth_limit)
+            return False
 
     def calc_r_inlay_top(self):
         half_angle = radians(self.settings.get('v_bit_angle') / 2.0)
@@ -1829,7 +1829,7 @@ class Gui(Frame):
         self.menu_View_Refresh()
 
     def menu_View_Refresh(self):
-        if self.initComplete and self.batch() is False and self.delay_calc is False:
+        if self.initComplete and self.batch.get() is False and self.delay_calc is False:
             dummy_event = Event()
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, 1)
@@ -2662,7 +2662,9 @@ class Gui(Frame):
             self.settings.get('yorigin')
         )
 
-    def move_origin(self):  # TODO put somewhere central (now part of Job, Gui and Engrave)
+    # TODO in Job, Gui and Engrave
+
+    def move_origin(self):
 
         x_zero = y_zero = 0
 
@@ -2700,24 +2702,27 @@ class Gui(Frame):
 
     def get_xy_scale(self):
 
-        font_line_height = self.font.line_height()
-        font_line_depth = self.font.line_depth()
-
         thickness = self.settings.get('line_thickness')
         if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             thickness = 0.0
 
         x_scale_in = self.settings.get('xscale')
         y_scale_in = self.settings.get('yscale')
+
+        font_line_height = self.font.line_height()
+        font_line_depth = self.font.line_depth()
         try:
             y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
         except:
             y_scale = .1
+
         if y_scale <= Zero:
             y_scale = .1
+
+        y_scale = y_scale_in / 100
         x_scale = x_scale_in * y_scale / 100
 
-        return x_scale, y_scale
+        return (x_scale, y_scale)
 
     def get_text_radius(self):
 
@@ -2739,10 +2744,11 @@ class Gui(Frame):
 
         return thickness / 2 + self.settings.get('boxgap')
 
+    # TODO Make this a MyFont method? Note that is being used in SVG and Gcode to generate textcircle
+
     def get_plot_radius(self):
 
         x_scale, y_scale = self.get_xy_scale()
-
         font_line_height = self.font.line_height()
         font_line_depth = self.font.line_depth()
 
@@ -2778,7 +2784,7 @@ class Gui(Frame):
             YScale_in = self.settings.get('yscale')
             Angle = self.settings.get('text_angle')
         except:
-            self.statusMessage.set(" Unable to create paths.  Check Settings Entry Values.")
+            self.statusMessage.set(" Unable to create pamaths.  Check Settings Entry Values.")
             self.statusbar.configure(bg='red')
             return
 

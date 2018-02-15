@@ -156,8 +156,8 @@ def engrave_gcode(job):
                 else:
                     loop = loop + 1
 
-        # depth = settings.get('max_cut')
-        depth = settings.get('v_max_cut')
+        depth = settings.get('max_cut')
+        # depth = settings.get('v_max_cut')
 
         if rough_stock > 0:
             rough_again = True
@@ -479,8 +479,8 @@ def vcarve_gcode(job):
                     z1 = -r1 / tan(half_angle)
                     nextz = -nextr / tan(half_angle)
                     if settings.get('inlay'):
-                        # inlay_depth = settings.get('max_cut')
-                        inlay_depth = settings.get('v_max_cut')
+                        inlay_depth = settings.get('max_cut')
+                        # inlay_depth = settings.get('v_max_cut')
                         z1 = z1 + inlay_depth
                         nextz = nextz + inlay_depth
 
@@ -558,12 +558,12 @@ def write_clean_up(job, bit_type="straight"):
     code = []
 
     calc_depth_limit(job)
-    # depth = settings.get('max_cut')
-    depth = settings.get('v_max_cut')
+    depth = settings.get('max_cut')
+    # depth = settings.get('v_max_cut')
     if settings.get('inlay'):
         depth = depth + settings.get('allowance')
 
-    accuracy = settings.get('accuracy')
+    # accuracy = settings.get('accuracy')
     dp, dpfeed = get_nr_of_decimals(job)
 
     if bit_type == "straight":
@@ -779,9 +779,14 @@ def calc_vbit_dia(job):
 
     return bit_dia
 
+# TODO calc_depth_limit in Gui too
+
 
 def calc_depth_limit(job):
-
+    """
+    Calculate depth limit
+    Returns True if the resulting depth limit is valid, otherwise False
+    """
     settings = job.settings
 
     try:
@@ -812,14 +817,12 @@ def calc_depth_limit(job):
                 depth_limit = bit_depth
 
         depth_limit = "%.3f" % depth_limit
+        settings.set('max_cut', depth_limit)
+        return True
 
     except:
-        # set to an invalid (float) value
         # depth_limit = "error"
-        depth_limit = -1
-
-    # settings.set('max_cut', depth_limit)
-    settings.set('v_max_cut', depth_limit)
+        return False
 
 
 def calc_r_inlay_top(job):
