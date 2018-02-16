@@ -51,18 +51,28 @@ class JobTest(unittest.TestCase):
         job = self._job_with_settings(
             ('default_text', 'plotbox\nboxgap=50'),
             ('plotbox', 'True'),
-            ('boxgap', 50)
+            ('boxgap', 50),
         )
         self._save_testfiles(job, 'box')
 
     def test_write_circle(self):
         job = self._job_with_settings(
-            ('default_text', 'plotcircle\nboxgap=50\n'),
+            ('default_text', 'plotcircle\nboxgap=5\n'),
             ('plotbox', 'True'),
             ('text_radius', '30.0'),
-            ('boxgap', 50)
+            ('boxgap', 5),
         )
         self._save_testfiles(job, 'circle')
+
+    def test_write_circle_midleft(self):
+        job = self._job_with_settings(
+            ('default_text', 'plotcircle\nboxgap=5\nmidleft\n'),
+            ('plotbox', 'True'),
+            ('text_radius', '30.0'),
+            ('boxgap', 5),
+            ('origin', 'Mid-Left'),
+        )
+        self._save_testfiles(job, 'circle_midleft')
 
     def test_vcarve(self):
         job = self._job_with_settings(

@@ -25,7 +25,7 @@ def gcode(job):
     # if len(String) > max_len:
     #     String_short = String[0:max_len] + '___'
 
-    accuracy = settings.get('accuracy')
+    # accuracy = settings.get('accuracy')
     dp, dpfeed = get_nr_of_decimals(job)
 
     safe_z = settings.get('zsafe')
@@ -33,14 +33,14 @@ def gcode(job):
     if settings.get('var_dis'):
         FORMAT = '%%.%df' % dp
         safe_val = FORMAT % safe_z
-        depth_val = FORMAT % depth
+        # depth_val = FORMAT % depth
     else:
         FORMAT = '#1 = %%.%df  ( Safe Z )' % (dp)
         code.append(FORMAT % safe_z)
         FORMAT = '#2 = %%.%df  ( Engraving depth Z )' % (dp)
         code.append(FORMAT % depth)
         safe_val = '#1'
-        depth_val = '#2'
+        # depth_val = '#2'
 
     # G90  ; Sets absolute distance mode
     code.append('G90')
@@ -68,10 +68,10 @@ def gcode(job):
     else:
         code.extend(vcarve_gcode(job))
 
+    code.append('G0 Z%s' % safe_val)  # final engraver up
+
     for line in settings.get('gcode_postamble').split('|'):
         code.append(line)
-
-    code.append('G0 Z%s' % safe_val)  # final engraver up
 
     return code
 
@@ -291,7 +291,8 @@ def engrave_gcode(job):
 
     # Make Circle
     plot_radius = settings.get('text_radius')
-    if settings.get('plotbox') and \
+    if settings.get('input_type') == 'text' and \
+            settings.get('plotbox') and \
             plot_radius != 0 and \
             settings.get('cut_type') == "engrave":  # TODO use CUT_TYPE_ENGRAVE
 
@@ -337,14 +338,14 @@ def vcarve_gcode(job):
     if settings.get('var_dis'):
         FORMAT = '%%.%df' % dp
         safe_val = FORMAT % safe_z
-        depth_val = FORMAT % depth
+        # depth_val = FORMAT % depth
     else:
         FORMAT = '#1 = %%.%df  ( Safe Z )' % dp
         code.append(FORMAT % safe_z)
         FORMAT = '#2 = %%.%df  ( Engraving depth Z )' % dp
         code.append(FORMAT % depth)
         safe_val = '#1'
-        depth_val = '#2'
+        # depth_val = '#2'
 
     # TODO add GCode object to job?
     # g_target = lambda s: sys.stdout.write(s + "\n")  # TEST
@@ -465,15 +466,15 @@ def vcarve_gcode(job):
                 loop = new_coords[v_index][3]
 
                 if (v_index + 1) < len(new_coords):
-                    nextx = new_coords[v_index + 1][0]
-                    nexty = new_coords[v_index + 1][1]
+                    # nextx = new_coords[v_index + 1][0]
+                    # nexty = new_coords[v_index + 1][1]
                     nextr = new_coords[v_index + 1][2]
-                    nextloop = new_coords[v_index + 1][3]
+                    # nextloop = new_coords[v_index + 1][3]
                 else:
-                    nextx = 0
-                    nexty = 0
+                    # nextx = 0
+                    # nexty = 0
                     nextr = 0
-                    nextloop = -99  # don't change this dummy number it is used below
+                    # nextloop = -99  # don't change this dummy number it is used below
 
                 if bit_shape == "VBIT":
                     z1 = -r1 / tan(half_angle)

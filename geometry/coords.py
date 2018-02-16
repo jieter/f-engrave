@@ -64,13 +64,10 @@ class MyImage(object):
         return self.bbox.height()
 
     def get_max_radius(self):
-
         maxr = 0
-
         for XY in self.coords:
             maxr = max(maxr, float(XY[0] * XY[0] + XY[1] * XY[1]), float(XY[2] * XY[2] + XY[3] * XY[3]))
-
-        return maxr
+        return sqrt(maxr)
 
     def transform_translate(self, xoffset, yoffset):
         for XY in self.coords:
@@ -130,18 +127,16 @@ class MyText(MyImage):
         super(MyText, self).__init__()
 
         self.font = None
-
-        # TODO handle unicode string
         self.text = u''
 
         # Keys of characters, if any, that were not found in the font set
         self.no_font_record = []
 
-        self.line_space = 1.1  # TODO use settings?
-        self.char_space = 25   # TODO settings?
-        self.word_space = 1.0  # TODO settings?
+        # TODO use settings?
+        self.line_space = 1.1
+        self.char_space = 25
+        self.word_space = 1.0
 
-        self.radius = 0.0
         self.angle = 0.0
         self.thickness = 0.25
 
@@ -157,9 +152,6 @@ class MyText(MyImage):
 
     def set_angle(self, angle):
         self.angle = angle
-
-    def set_radius(self, radius):
-        self.radius = radius
 
     def set_line_space(self, line_space):
         self.line_space = line_space

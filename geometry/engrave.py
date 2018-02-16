@@ -74,6 +74,10 @@ class Engrave(object):
                         self.settings.get('yorigin'))
         self.init_coords()
 
+        # TODO make this plot_circle_center + setter methods
+        self.xzero = 0
+        self.yzero = 0
+
         self.accuracy = self.settings.get('accuracy')
         self.v_pplot = self.settings.get('v_pplot')
         self.STOP_CALC = False
@@ -107,7 +111,7 @@ class Engrave(object):
     def set_image(self, image):
         self.image = image
         self.init_coords()
-        self.move_origin()
+        # self.move_origin()
 
     def set_origin(self, x_origin=0, y_origin=0):
         self.x_origin = x_origin
@@ -125,42 +129,42 @@ class Engrave(object):
     def set_status_callback(self, callback):
         self.status_callback = callback
 
-    def move_origin(self):
-
-        x_zero = y_zero = 0
-
-        image = self.image
-        minx, maxx, miny, maxy = image.get_bbox_tuple()
-        midx, midy = image.get_midxy()
-
-        origin = self.settings.get('origin')
-        if origin == 'Default':
-            origin = 'Arc-Center'
-
-        vertical, horizontal = origin.split('-')
-        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
-
-            if vertical == 'Top':
-                y_zero = maxy
-            elif vertical == 'Mid':
-                y_zero = midy  # height / 2
-            elif vertical == 'Bot':
-                y_zero = miny
-
-            if horizontal == 'Center':
-                x_zero = midx  # width / 2
-            elif horizontal == 'Right':
-                x_zero = maxx
-            elif horizontal == 'Left':
-                x_zero = minx
-
-        else:  # "Default"
-            pass
-
-        self.xzero = x_zero
-        self.yzero = y_zero
-
-        return
+    # def move_origin(self):
+    #
+    #     x_zero = y_zero = 0
+    #
+    #     image = self.image
+    #     minx, maxx, miny, maxy = image.get_bbox_tuple()
+    #     midx, midy = image.get_midxy()
+    #
+    #     origin = self.settings.get('origin')
+    #     if origin == 'Default':
+    #         origin = 'Arc-Center'
+    #
+    #     vertical, horizontal = origin.split('-')
+    #     if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
+    #
+    #         if vertical == 'Top':
+    #             y_zero = maxy
+    #         elif vertical == 'Mid':
+    #             y_zero = midy  # height / 2
+    #         elif vertical == 'Bot':
+    #             y_zero = miny
+    #
+    #         if horizontal == 'Center':
+    #             x_zero = midx  # width / 2
+    #         elif horizontal == 'Right':
+    #             x_zero = maxx
+    #         elif horizontal == 'Left':
+    #             x_zero = minx
+    #
+    #     else:  # "Default"
+    #         pass
+    #
+    #     self.xzero = x_zero
+    #     self.yzero = y_zero
+    #
+    #     return
 
     def refresh_v_pplot(self):
         self.v_pplot = self.settings.get('v_pplot')

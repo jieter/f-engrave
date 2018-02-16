@@ -35,7 +35,7 @@ def svg(job):
 
     minx, maxx, miny, maxy = bbox.tuple()
 
-    plot_radius = job.get_plot_radius()
+    plot_radius = job.calc_text_radius()
     if plot_radius != 0:
         x_origin, y_origin = job.get_origin()
 

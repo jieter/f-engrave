@@ -55,7 +55,7 @@ class Job(object):
 
         if self.settings.get('input_type') == "text":
 
-            text_radius = self.get_plot_radius()
+            text_radius = self.calc_text_radius()
 
             # Text transformations
             alignment = self.settings.get('justify')
@@ -135,7 +135,7 @@ class Job(object):
             self.settings.get('yorigin')
         )
 
-    def get_plot_radius(self):
+    def calc_text_radius(self):
 
         x_scale, y_scale = self.get_xy_scale()
 
@@ -212,7 +212,7 @@ class Job(object):
 
     def _transform_radius(self):
         """Transform the coordinates to a radius"""
-        radius = self.get_plot_radius()
+        radius = self.calc_text_radius()
         if radius == 0.0:
             return
 
@@ -264,47 +264,8 @@ class Job(object):
         else:  # "Default"
             pass
 
-        self.xzero = x_zero
-        self.yzero = y_zero
+        # TODO use setter method
+        self.engrave.xzero = x_zero
+        self.engrave.yzero = y_zero
 
         return (x_zero, y_zero)
-
-    def _move_origin_OUD(self):
-
-        x_zero = y_zero = 0
-
-        text = self.text
-        xmin, xmax, ymin, ymax = text.get_bbox_tuple()
-        width = text.get_width()
-        height = text.get_height()
-
-        origin = self.settings.get('origin')
-        if origin == 'Default':
-            origin = 'Arc-Center'
-
-        vertical, horizontal = origin.split('-')
-        if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
-
-            if vertical is 'Top':
-                y_zero = ymax
-            elif vertical is 'Mid':
-                y_zero = height / 2
-            elif vertical is 'Bot':
-                y_zero = ymin
-
-            if horizontal is 'Center':
-                x_zero = width / 2
-            elif horizontal is 'Right':
-                x_zero = xmax
-            elif horizontal is 'Left':
-                x_zero = xmin
-
-        xorigin, yorigin = self.get_origin()
-        for i, line in enumerate(self.coords):
-            self.coords[i][0] = line[0] - x_zero + xorigin
-            self.coords[i][1] = line[1] - y_zero + yorigin
-            self.coords[i][2] = line[2] - x_zero + xorigin
-            self.coords[i][3] = line[3] - y_zero + yorigin
-
-        self.xzero = x_zero
-        self.yzero = y_zero
