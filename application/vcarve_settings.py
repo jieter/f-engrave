@@ -665,12 +665,10 @@ class VCarveSettings(object):
         except:
             pass
 
-    # TODO same validation is part of General settings
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
         self.refresh_v_pplot()  # TODO only needed when plotting
 
-    # TODO same validation is part of General settings
     def Entry_BoxGap_Check(self):
         try:
             value = float(self.boxgap.get())
@@ -681,7 +679,6 @@ class VCarveSettings(object):
             return NAN
         return OK
 
-    # TODO same validation is part of General settings
     def Entry_BoxGap_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
         try:
@@ -696,7 +693,6 @@ class VCarveSettings(object):
         except:
             pass
 
-    # TODO same validation is part of General settings
     def Entry_Box_Callback(self, varName, index, mode):
         try:
             self.Entry_BoxGap_Callback(varName, index, mode)

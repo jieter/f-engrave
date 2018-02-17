@@ -316,7 +316,7 @@ def arc_rad(plane, P1, P2, P3):
         return rad1(x1, z1, x2, z2, x3, z3)
     if plane == 19:
         return rad1(y1, z1, y2, z2, y3, z3)
-    # TODO? return None
+    return None
 
 
 def get_pts(plane, x, y, z):
@@ -326,7 +326,7 @@ def get_pts(plane, x, y, z):
         return x, z
     if plane == 19:
         return y, z
-    # TODO? return None
+    return None
 
 
 def one_quadrant(plane, c, p1, p2, p3):

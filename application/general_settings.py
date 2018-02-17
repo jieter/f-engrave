@@ -416,7 +416,6 @@ class GeneralSettings(object):
     def Checkbutton_var_dis_Callback(self, varName, index, mode):
         self.settings.set('var_dis', self.var_dis.get())
 
-    # TODO same validation is part of V-Carve settings
     def Entry_BoxGap_Check(self):
         try:
             value = float(self.boxgap.get())
@@ -427,7 +426,6 @@ class GeneralSettings(object):
             return NAN
         return OK
 
-    # TODO same validation is part of V-Carve settings
     def Entry_BoxGap_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
         try:
@@ -442,7 +440,6 @@ class GeneralSettings(object):
         except:
             pass
 
-    # TODO same validation is part of V-Carve settings
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
         self.refresh_v_pplot()  # TODO only needed when plotting

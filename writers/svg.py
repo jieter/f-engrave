@@ -29,30 +29,15 @@ def svg(job):
 
     dpi = 100
 
-    bbox = BoundingBox()
-    for line in job.coords:
-        bbox.extend(Line(line[0:4]))
-
-    minx, maxx, miny, maxy = bbox.tuple()
-
-    plot_radius = job.calc_text_radius()
-    if plot_radius != 0:
-        x_origin, y_origin = job.get_origin()
-
-    # if radius_plot != 0:
-    #     maxx = max(maxx, origin[0] + plot_radus - job.xzero)
-    #     minx = min(minx, origin[0] - plot_radus - job.xzero)
-    #     miny = min(miny, origin[1] - plot_radus - job.yzero)
-    #     maxy = max(maxy, origin[1] + plot_radus - job.yzero)
-
-    bbox.pad(thickness / 2)
-    width_in = bbox.xmax - bbox.xmin
-    height_in = bbox.ymax - bbox.ymin
+    minx, maxx, miny, maxy = job.get_plot_bbox_tuple()
+    width_in = job.get_plot_width() + thickness / 2
+    height_in = job.get_plot_height() + thickness / 2
 
     width = width_in * dpi
     height = height_in * dpi
 
     svgcode = []
+
     svgcode.append(header_template % {
         'width_in': width_in,
         'height_in': height_in,
@@ -61,22 +46,29 @@ def svg(job):
         'height': height
     })
 
-    # make Circle
-    if settings.get('plotbox') and \
+    # Make Circle
+    plot_radius = settings.get('text_radius')
+    if settings.get('input_type') == 'text' and \
+            settings.get('plotbox') and \
             plot_radius != 0 and \
             settings.get('cut_type') == "engrave":  # TODO use CUT_TYPE_ENGRAVE
+
+        x_origin = settings.get('xorigin')
+        y_origin = settings.get('yorigin')
+        # code.append(FORMAT % (xorigin - job.xzero - plot_radius, yorigin - job.yzero))
+
         svgcode.append(circle_template % (
             (x_origin - job.xzero - minx) * dpi,
             (-y_origin + job.yzero + maxy) * dpi,
             plot_radius * dpi,
-            thickness * dpi)
-                       )
+            thickness * dpi))
 
+    # The image
     for l in job.coords:
         # translate
         line = [
-            l[0] - bbox.xmin, -l[1] + bbox.ymax,
-            l[2] - bbox.xmin, -l[3] + bbox.ymax
+            l[0] - minx, -l[1] + maxy,
+            l[2] - minx, -l[3] + maxy
         ]
         # scale
         line = map(lambda x: x * dpi, line)

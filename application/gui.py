@@ -760,7 +760,7 @@ class Gui(Frame):
 
         self.engrave.refresh_coords()  # TODO
         self.coords = self.engrave.coords
-        svgcode = svg(self)
+        svgcode = svg(self.engrave)
 
         for line in svgcode:
             self.clipboard_append(line + '\n')
@@ -1388,20 +1388,18 @@ class Gui(Frame):
             self.PLUNGE.set('%.3g' % (self.settings.get('plunge_rate') * factor))
             self.boxgap.set('%.3g' % (self.settings.get('boxgap') * factor))
 
-            # TODO use settings instead of GUI vars
+            self.settings.set('v_bit_dia', self.settings.get('v_bit_dia') * factor)
+            self.settings.set('v_depth_lim', self.settings.get('v_depth_lim') * factor)
+            self.settings.set('v_step_len', self.settings.get('v_step_len') * factor)
+            self.settings.set('allowance', self.settings.get('allowance') * factor)
+            self.settings.set('v_max_cut', self.settings.get('v_max_cut') * factor)
+            self.settings.set('v_rough_stk', self.settings.get('v_rough_stk') * factor)
+            self.settings.set('xorigin', self.settings.get('xorigin') * factor)
 
-            # self.v_bit_dia.set(  '%.3g' %(self.settings.get('v_bit_dia')  *factor) )
-            # self.v_depth_lim.set('%.3g' %(self.settings.get('v_depth_lim')*factor) )
-            # self.v_step_len.set( '%.3g' %(self.settings.get('v_step_len') *factor) )
-            # self.allowance.set(  '%.3g' %(self.settings.get('allowance')  *factor) )
-            # self.v_max_cut.set(  '%.3g' %(self.settings.get('v_max_cut')  *factor) )
-            # self.v_rough_stk.set('%.3g' %(self.settings.get('v_rough_stk')*factor) )
-            # self.xorigin.set(    '%.3g' %(self.settings.get('xorigin')    *factor) )
-
-            self.yorigin.set('%.3g' % (self.settings.get('yorigin') * factor))
-            self.accuracy.set('%.3g' % (self.settings.get('accuracy') * factor))
-            # self.clean_v.set(    '%.3g' %(self.settings.get('clean_v')    *factor) )
-            # self.clean_dia.set(  '%.3g' %(self.settings.get('clean_dia')  *factor) )
+            self.settings.set('yorigin', self.settings.get('yorigin') * factor)
+            self.settings.set('accuracy', self.settings.get('accuracy') * factor)
+            self.settings.set('clean_v', self.settings.get('clean_v') * factor)
+            self.settings.set('clean_dia', self.settings.get('clean_dia') * factor)
         except:
             pass
 
@@ -1584,10 +1582,8 @@ class Gui(Frame):
         # elif self.arc_fit.get() == "1":
         #     self.arc_fit.set("center")
 
-        # TODO update settings instead of tkinter var
         if not self.settings.get('arc_fit') in ['none', 'center', 'radius']:
             self.settings.set('arc_fit', 'center')
-            # self.arc_fit.set("center")
 
         if text_codes != []:
             try:
@@ -1745,7 +1741,7 @@ class Gui(Frame):
 
         self.engrave.refresh_coords()  # TODO
         self.coords = self.engrave.coords
-        svg_code = svg(self)
+        svg_code = svg(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
         if not os.path.isdir(init_dir):
@@ -2527,8 +2523,6 @@ class Gui(Frame):
             self.master.update_idletasks()
             self.PreviewCanvas.delete(ALL)
 
-        # self.segID = []  # TODO cleanup?
-
         if self.settings.get('input_type') == "text":
             self.engrave.set_image(self.text)
             self.do_it_text()
@@ -2633,6 +2627,8 @@ class Gui(Frame):
 
         self.plot_bbox = BoundingBox(minx + x_offset, maxx + x_offset, miny + y_offset, maxy + y_offset)
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
+
+        self.engrave.plot_bbox = self.plot_bbox
 
         if not self.batch.get():
             # Reset Status Bar and Entry Fields

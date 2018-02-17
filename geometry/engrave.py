@@ -77,6 +77,7 @@ class Engrave(object):
         # TODO make this plot_circle_center + setter methods
         self.xzero = 0
         self.yzero = 0
+        self.plot_bbox = BoundingBox()
 
         self.accuracy = self.settings.get('accuracy')
         self.v_pplot = self.settings.get('v_pplot')
@@ -129,43 +130,6 @@ class Engrave(object):
     def set_status_callback(self, callback):
         self.status_callback = callback
 
-    # def move_origin(self):
-    #
-    #     x_zero = y_zero = 0
-    #
-    #     image = self.image
-    #     minx, maxx, miny, maxy = image.get_bbox_tuple()
-    #     midx, midy = image.get_midxy()
-    #
-    #     origin = self.settings.get('origin')
-    #     if origin == 'Default':
-    #         origin = 'Arc-Center'
-    #
-    #     vertical, horizontal = origin.split('-')
-    #     if vertical in ('Top', 'Mid', 'Bot') and horizontal in ('Center', 'Right', 'Left'):
-    #
-    #         if vertical == 'Top':
-    #             y_zero = maxy
-    #         elif vertical == 'Mid':
-    #             y_zero = midy  # height / 2
-    #         elif vertical == 'Bot':
-    #             y_zero = miny
-    #
-    #         if horizontal == 'Center':
-    #             x_zero = midx  # width / 2
-    #         elif horizontal == 'Right':
-    #             x_zero = maxx
-    #         elif horizontal == 'Left':
-    #             x_zero = minx
-    #
-    #     else:  # "Default"
-    #         pass
-    #
-    #     self.xzero = x_zero
-    #     self.yzero = y_zero
-    #
-    #     return
-
     def refresh_v_pplot(self):
         self.v_pplot = self.settings.get('v_pplot')
 
@@ -189,6 +153,21 @@ class Engrave(object):
 
     def get_image_bbox_tuple(self):
         return self.image.bbox.tuple()
+
+    def get_image_width(self):
+        return self.image.get_width()
+
+    def get_image_height(self):
+        return self.image.get_height()
+
+    def get_plot_bbox_tuple(self):
+        return self.plot_bbox.tuple()
+
+    def get_plot_width(self):
+        return self.plot_bbox.width()
+
+    def get_plot_height(self):
+        return self.plot_bbox.height()
 
     def get_coords(self):
         return self.coords
@@ -268,8 +247,8 @@ class Engrave(object):
             i_y2 = 3
 
         not_b_carve = not bool(self.settings.get('bit_shape') == "BALL")
-        CHK_STRING = self.settings.get('v_check_all')
         # TODO has CHK_STRING not been set before, else add set check in settings
+        CHK_STRING = self.settings.get('v_check_all')
         if self.settings.get('input_type') != "text":
             CHK_STRING = "all"
 
@@ -318,8 +297,8 @@ class Engrave(object):
                     MIN_TOTAL = -1
 
                 if self.status_callback is not None:
-                    self.status_callback(
-                        '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL))
+                    msg = '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL)
+                    self.status_callback(msg)
 
                 if self.STOP_CALC:
                     self.STOP_CALC = False
@@ -675,6 +654,7 @@ class Engrave(object):
 
         return vbit_dia / 2
 
+    # TODO refactor
     def find_max_circle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
         """
         Routine finds the maximum radius that can be placed in the position
@@ -682,7 +662,6 @@ class Engrave(object):
         """
         rtmp = rmin
 
-        # TODO make x/yPartitionLength function parameters
         minx, maxx, miny, maxy = self.image.get_bbox_tuple()
         xIndex = int((xpt - minx) / self.xPartitionLength)
         yIndex = int((ypt - miny) / self.yPartitionLength)
@@ -1243,7 +1222,6 @@ class Engrave(object):
             if self.status_callback is not None:
                 self.status_callback('Calculating V-Bit Cleanup Cut Paths')
 
-            # TODO What is being skipped?
             skip = 1
             clean_step = 1.0
 

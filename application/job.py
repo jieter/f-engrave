@@ -14,48 +14,34 @@ class JobError(Exception):
 class Job(object):
 
     settings = None
-    coords = []
-    # clean_coords = []
-    # clean_coords_sort = []
-    # v_coords = []
-    # v_clean_coords_sort = []
 
     def __init__(self, settings):
         self.settings = settings
 
     def execute(self):
-        # erase old data
-        # self.segID = []
 
         self.load_font()
 
-        self.text = MyText()
-        self.text.set_font(self.font)
-        self.text.set_text(self.settings.get('default_text'))
-
-        self.image = MyImage()
-        # stroke_list = self.font[ord("F")].stroke_list
-        # self.image.set_coords_from_strokes(stroke_list)
-
         self.engrave = Engrave(self.settings)
+
         if self.settings.get('input_type') == "text":
+            self.text = MyText()
+
+            self.text.set_font(self.font)
+            self.text.set_word_space(self.settings.get('word_space'))
+            self.text.set_line_space(self.settings.get('line_space'))
+            self.text.set_char_space(self.settings.get('char_space'))
+            self.text.set_text(self.settings.get('default_text'))
             self.text.set_coords_from_strokes()
             self.engrave.set_image(self.text)
-        elif self.settings.get('input_type') == "image":
-            self.image.set_coords_from_strokes()
-            self.engrave.set_image(self.image)
 
-        thickness = self.settings.get('line_thickness')
-        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            thickness = 0.0
-
-        x_origin, y_origin = self.get_origin()
-
-        # TODO refactor code overlap (with Gui)
-
-        if self.settings.get('input_type') == "text":
-
-            text_radius = self.calc_text_radius()
+            font_line_height = self.font.line_height()
+            if font_line_height <= -1e10:
+                if self.settings.get('height_calculation') == "max_all":
+                    raise JobError('No Font Characters Found')
+                elif self.settings.get('height_calculation') == "max_use":
+                    raise JobError('Input Characters Were Not Found in the Current Font')
+                return
 
             # Text transformations
             alignment = self.settings.get('justify')
@@ -63,29 +49,55 @@ class Job(object):
             flip = self.settings.get('flip')
             upper = self.settings.get('upper')
             angle = self.settings.get('text_angle')
-
+            radius_in = self.settings.get('text_radius')
+            text_radius = self.calc_text_radius()
             x_scale, y_scale = self.get_xy_scale()
+
             self.text.transform_scale(x_scale, y_scale)
             self.text.align(alignment)
             self.text.transform_on_radius(alignment, text_radius, upper)
             self.text.transform_angle(angle)
+
             if mirror:
                 self.text.transform_mirror()
             if flip:
                 self.text.transform_flip()
 
-            # Engrave box or circle
+            self.plot_bbox = self.text.bbox
+            minx, maxx, miny, maxy = self.plot_bbox.tuple()
+
+            # engrave box or circle
             if self.settings.get('plotbox'):
-                if text_radius == 0:
-                    delta = thickness / 2 + self.settings.get('boxgap')
+                if radius_in == 0:
+                    delta = self.get_delta()
                     self.text.add_box(delta, mirror, flip)
-                # Don't create the circle coords here, a G-code circle command
-                # is generated later (when not v-carving)
-            x_zero, y_zero = self._move_origin()
-            x_offset = x_origin - x_zero
-            y_offset = y_origin - y_zero
+                    self.plot_bbox = self.text.bbox
+                    minx, maxx, miny, maxy = self.plot_bbox.tuple()
+                else:
+                    # Don't create the circle coords here,
+                    # a G-code circle command is generated later (when not v-carving)
+                    # For the circle to fit later on, the plot bounding box is adjusted with its radius
+                    maxr = max(radius_in, self.text.get_max_radius())
+                    thickness = self.settings.get('line_thickness')
+                    radius_plot = maxr + thickness / 2
+                    minx = miny = -radius_plot
+                    maxx = maxy = -minx
+                    self.plot_bbox = BoundingBox(minx, maxx, miny, maxy)
+
+            x_zero, y_zero = self.move_origin(self.plot_bbox)
+            x_offset = -x_zero
+            y_offset = -y_zero
             self.text.transform_translate(x_offset, y_offset)
+
+            self.plot_bbox = BoundingBox(minx + x_offset, maxx + x_offset, miny + y_offset, maxy + y_offset)
+
+            self.engrave.plot_bbox = self.plot_bbox
+
         else:
+            self.image = MyImage()
+            self.image.set_coords_from_strokes()
+            self.engrave.set_image(self.image)
+
             # TODO image calculation
             # if self.settings.get('useIMGsize'):
             # y_scale = y_scale_in / 100
@@ -102,16 +114,8 @@ class Job(object):
         if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             self.engrave.v_carve()
 
-        engrave = self.engrave
-        # engrave.refresh_coords()  # TODO
-        self.coords = engrave.coords
-        self.v_coords = engrave.v_coords
-        # self.clean_coords = engrave.clean_coords
-        # self.clean_coords_sort = engrave.clean_coords_sort
-        # self.v_clean_coords_sort = engrave.v_clean_coords_sort
-
     def get_svg(self):
-        return '\n'.join(writers.svg(self)).strip()
+        return '\n'.join(writers.svg(self.engrave)).strip()
 
     def get_gcode(self):
         return '\n'.join(writers.gcode(self.engrave))
@@ -135,6 +139,7 @@ class Job(object):
             self.settings.get('yorigin')
         )
 
+    # TODO in Job, Gui and Engrave
     def calc_text_radius(self):
 
         x_scale, y_scale = self.get_xy_scale()
@@ -146,24 +151,20 @@ class Job(object):
         font_line_height = self.font.line_height()
         font_line_depth = self.font.line_depth()
 
-        thickness = self.settings.get('line_thickness')
-        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            thickness = 0.0
-            # self.text.set_thickness(0.0)
-
         # text inside or outside of the circle
         radius_in = self.settings.get('text_radius')
         if radius_in == 0.0:
             radius = radius_in
         else:
-            delta = thickness / 2 + self.settings.get('boxgap')
+            delta = self.get_delta()
             if self.settings.get('outer'):
                 # text outside circle
                 if self.settings.get('upper'):
                     radius = radius_in + delta - y_scale * font_line_depth
                 else:
-                    radius = radius_in - delta - y_scale * font_line_height
+                    radius = -radius_in - delta - y_scale * font_line_height
             else:
+                # text inside circle
                 if self.settings.get('upper'):
                     radius = radius_in - delta - y_scale * font_line_height
                 else:
@@ -227,18 +228,23 @@ class Job(object):
             min_alpha = min(alpha1, alpha2, min_alpha)
             max_alpha = max(alpha1, alpha2, max_alpha)
 
-    def _draw_circle(self):
-        # only for v-carving
-        pass
+    # TODO in Job, Gui and Engrave
+    def get_delta(self):
+
+        thickness = self.settings.get('line_thickness')
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+
+        return thickness / 2 + self.settings.get('boxgap')
 
     # TODO in Job, Gui and Engrave
-
-    def _move_origin(self):
+    def move_origin(self, bbox):
 
         x_zero = y_zero = 0
 
-        minx, maxx, miny, maxy = self.text.get_bbox_tuple()
-        midx, midy = self.text.get_midxy()
+        minx, maxx, miny, maxy = bbox.tuple()
+        midx = (minx + maxx) / 2
+        midy = (miny + maxy) / 2
 
         origin = self.settings.get('origin')
         if origin == 'Default':
@@ -250,12 +256,12 @@ class Job(object):
             if vertical == 'Top':
                 y_zero = maxy
             elif vertical == 'Mid':
-                y_zero = midy  # height / 2
+                y_zero = midy
             elif vertical == 'Bot':
                 y_zero = miny
 
             if horizontal == 'Center':
-                x_zero = midx  # width / 2
+                x_zero = midx
             elif horizontal == 'Right':
                 x_zero = maxx
             elif horizontal == 'Left':
