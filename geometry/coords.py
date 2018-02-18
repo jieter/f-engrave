@@ -29,7 +29,8 @@ class MyImage(object):
 
         if strokes == []:
             if self.strokes == []:
-                raise ValueError, 'Image stroke list is missing'  # TODO deprecated
+                # raise ValueError, 'Image stroke list is missing'  # TODO deprecated
+                raise ValueError('Image stroke list is missing')
             else:
                 # use the most recent strokes
                 strokes = self.strokes

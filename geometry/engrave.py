@@ -193,27 +193,30 @@ class Engrave(object):
 
     def v_carve(self, clean=False):
 
-        rbit = self.calc_vbit_radius()
-        dline = self.settings.get('v_step_len')
-        clean_dia = self.settings.get('clean_dia')
-        if clean:
-            rmax = rbit + clean_dia / 2
-        else:
-            rmax = rbit
+        # TODO Extracted code, to be further refactored
+        xN, xPartitionLength, yN, yPartitionLength = self.setup_grid_partitions(clean)
 
         # TODO Extracted code, to be further refactored
-        xN, xPartitionLength, yN, yPartitionLength = self.setup_grid_partitions(dline, rmax)
-
-        # TODO Extracted code, to be further refactored
-        self.determine_active_partitions(rmax, xN, xPartitionLength, yN, yPartitionLength)
+        self.determine_active_partitions(xN, xPartitionLength, yN, yPartitionLength, clean)
 
         # Update GUI with the modified toolpath
         if self.progress_callback is not None:
             self.progress_callback()
 
-        return self.make_vcarve_toolpath(clean, dline, rbit, rmax)
+        return self.make_vcarve_toolpath(clean)
 
-    def make_vcarve_toolpath(self, clean, dline, rbit, rmax):
+    def _calc_rmax(self, rbit, clean):
+        clean_dia = self.settings.get('clean_dia')
+        if clean:
+            return (rbit + clean_dia / 2)
+        else:
+            return rbit
+
+    def make_vcarve_toolpath(self, clean):
+
+        rbit = self.calc_vbit_radius()
+        rmax = self._calc_rmax(rbit, clean)
+        dline = self.settings.get('v_step_len')
 
         # set variable for first point in loop
         xa = 9999
@@ -467,10 +470,13 @@ class Engrave(object):
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
         return done
 
-    def determine_active_partitions(self, rmax, xN, xPartitionLength, yN, yPartitionLength):
+    def determine_active_partitions(self, xN, xPartitionLength, yN, yPartitionLength, clean):
         """
         Determine active paritions for each line segment
         """
+        rbit = self.calc_vbit_radius()
+        rmax = self._calc_rmax(rbit, clean)
+
         for curr, coords in enumerate(self.coords):
 
             XY_R = self.coords[curr][:]
@@ -568,10 +574,14 @@ class Engrave(object):
 
         return
 
-    def setup_grid_partitions(self, dline, rmax):
+    def setup_grid_partitions(self, clean):
         """
         Setup Grid Partitions for the cleaning toolpath
         """
+        rbit = self.calc_vbit_radius()
+        rmax = self._calc_rmax(rbit, clean)
+        dline = self.settings.get('v_step_len')
+
         minx, maxx, miny, maxy = self.image.get_bbox_tuple()
         xLength = maxx - minx
         yLength = maxy - miny
@@ -660,8 +670,6 @@ class Engrave(object):
         Routine finds the maximum radius that can be placed in the position
         xpt,ypt without interfering with other line segments (rmin is max R LOL)
         """
-        rtmp = rmin
-
         minx, maxx, miny, maxy = self.image.get_bbox_tuple()
         xIndex = int((xpt - minx) / self.xPartitionLength)
         yIndex = int((ypt - miny) / self.yPartitionLength)

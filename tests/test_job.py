@@ -55,6 +55,24 @@ class JobTest(unittest.TestCase):
         )
         self._save_testfiles(job, 'box')
 
+    def test_write_box_inch(self):
+        job = self._job_with_settings(
+            ('units', 'in'),
+            ('default_text', 'plotbox\nboxgap=2\"'),
+            ('plotbox', 'True'),
+            ('boxgap', 2),
+            ('yscale', 2),
+            ('v_bit_dia', 0.118),
+            ('line_thickness', 0.01),
+            ('zcut', -0.00394),
+            ('clean_dia', 0.118),
+            ('feedrate', 2.36),
+            ('plunge_rate', 0.395),
+            ('zsafe', 0.197),
+            ('v_step_len', 0.01),
+        )
+        self._save_testfiles(job, 'box_inch')
+
     def test_write_circle(self):
         job = self._job_with_settings(
             ('default_text', 'plotcircle\nboxgap=5\n'),

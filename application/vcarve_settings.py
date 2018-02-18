@@ -94,28 +94,28 @@ class VCarveSettings(object):
 
     def initialise_variables(self):
         self.units.set(self.settings.get('units'))
-        self.max_cut.set(self.settings.get('max_cut'))
+        self.max_cut.set('%.3g' % self.settings.get('max_cut'))
 
         self.bit_shape.set(self.settings.get('bit_shape'))
         self.v_bit_angle.set(self.settings.get('v_bit_angle'))
-        self.v_bit_dia.set(self.settings.get('v_bit_dia'))
-        self.v_depth_lim.set(self.settings.get('v_depth_lim'))
+        self.v_bit_dia.set('%.3g' % self.settings.get('v_bit_dia'))
+        self.v_depth_lim.set('%.3g' % self.settings.get('v_depth_lim'))
         self.v_drv_corner.set(self.settings.get('v_drv_corner'))
         self.v_step_corner.set(self.settings.get('v_step_corner'))
-        self.v_step_len.set(self.settings.get('v_step_len'))
-        self.allowance.set(self.settings.get('allowance'))
-        self.v_rough_stk.set(self.settings.get('v_rough_stk'))
-        self.v_max_cut.set(self.settings.get('v_max_cut'))
+        self.v_step_len.set('%.3g' % self.settings.get('v_step_len'))
+        self.allowance.set('%.3g' % self.settings.get('allowance'))
+        self.v_rough_stk.set('%.3g' % self.settings.get('v_rough_stk'))
+        self.v_max_cut.set('%.3g' % self.settings.get('v_max_cut'))
 
         self.v_flop.set(self.settings.get('v_flop'))
         self.v_pplot.set(self.settings.get('v_pplot'))
         self.inlay.set(self.settings.get('inlay'))
         self.plotbox.set(self.settings.get('plotbox'))
-        self.boxgap.set(self.settings.get('boxgap'))
+        self.boxgap.set('%.3g' % self.settings.get('boxgap'))
 
-        self.clean_v.set(self.settings.get('clean_v'))
-        self.clean_dia.set(self.settings.get('clean_dia'))
-        self.clean_step.set(self.settings.get('clean_step'))
+        self.clean_v.set('%.3g' % self.settings.get('clean_v'))
+        self.clean_dia.set('%.3g' % self.settings.get('clean_dia'))
+        self.clean_step.set('%.3g' % self.settings.get('clean_step'))
         self.clean_name.set(self.settings.get('clean_name'))
 
         self.clean_P.set(self.settings.get('clean_P'))
@@ -716,7 +716,7 @@ class VCarveSettings(object):
         self.Entry_Bit_Shape_Check()
         self.settings.set('bit_shape', self.bit_shape.get())
         if self.calc_depth_limit():
-            self.max_cut.set(self.settings.get('max_cut'))
+            self.max_cut.set('%.3g' % self.settings.get('max_cut'))
         else:
             self.max_cut.set("error")
 

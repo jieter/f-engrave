@@ -128,9 +128,9 @@ class Settings(object):
         'v_clean_X': True,
         'v_clean_Y': False,
 
-        'yscale': 50.0,
+        'yscale': 50.8,
         'xscale': 100.0,
-        'line_space': 1.1,
+        'line_space': 1.2,
         'char_space': 25,
         'word_space': 100,
         'text_angle': 0.0,
@@ -176,7 +176,7 @@ class Settings(object):
         'plotbox': False,
 
         # Gap between box and engraving
-        'boxgap': 5.0,
+        'boxgap': 6.35,
 
         # font location and name
         'fontdir': 'fonts',
@@ -195,10 +195,10 @@ class Settings(object):
         'v_depth_lim': 0.0,
         'v_drv_corner': 135,
         'v_step_corner': 200,
-        'v_step_len': 0.25,
+        'v_step_len': 0.254,
 
         # v-carve loop accuracy
-        'v_acc': 0.001,
+        'v_acc': 0.00254,
         'allowance': 0.0,
 
         # options: 'chr', 'all'
@@ -220,13 +220,14 @@ class Settings(object):
 
         'accuracy': 0.001,
 
-        'clean_w': 2.0,
-        'clean_v': 0.05,
         # diameter of the cleanup bit
         'clean_dia': 3.0,
 
         # clean-up step-over as percentage of the clean-up bit diameter
         'clean_step': 50,
+        # Width of the clean-up search area (obsolete before or since v1.65)
+        'clean_w': 50.8,
+        'clean_v': 1.27,
         'clean_name': '_clean',
 
         # G-Code Default Preamble

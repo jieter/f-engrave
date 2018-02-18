@@ -1,4 +1,3 @@
-from geometry import BoundingBox, Line
 # TODO How to import higher level package:
 # from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE
 

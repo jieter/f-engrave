@@ -22,7 +22,8 @@ class GeneralSettings(object):
         self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
         self.write_config_file = master.write_config_file
         self.Recalc_RQD = master.Recalc_RQD
-        self.Scale_Linear_Inputs = master.Scale_Linear_Inputs
+        self.gui_Scale_Linear_Inputs = master.Scale_Linear_Inputs
+        self.gui_Entry_units_var_Callback = master.Entry_units_var_Callback
 
         # GUI Engraver callbacks
         self.refresh_v_pplot = master.engrave.refresh_v_pplot
@@ -345,9 +346,11 @@ class GeneralSettings(object):
     # Callbacks
 
     def Entry_units_var_Callback(self):
+
         if self.units.get() == 'in' and self.funits.get() == 'mm/min':
             self.Scale_Linear_Inputs(1 / 25.4)
             self.funits.set('in/min')
+
         elif self.units.get() == 'mm' and self.funits.get() == 'in/min':
             self.Scale_Linear_Inputs(25.4)
             self.funits.set('mm/min')
@@ -355,7 +358,22 @@ class GeneralSettings(object):
         self.settings.set('units', self.units.get())
         self.settings.set('feed_units', self.funits.get())
 
-        self.Recalc_RQD()
+        self.gui_Entry_units_var_Callback()
+        # self.Recalc_RQD()
+
+    def Scale_Linear_Inputs(self, factor=1.0):
+
+        self.settings.set('xorigin', self.settings.get('xorigin') * factor)
+        self.settings.set('yorigin', self.settings.get('yorigin') * factor)
+        self.settings.set('accuracy', self.settings.get('accuracy') * factor)
+        self.settings.set('boxgap', self.settings.get('boxgap') * factor)
+
+        self.xorigin.set('%.3g' % self.settings.get('xorigin'))
+        self.yorigin.set('%.3g' % self.settings.get('yorigin'))
+        self.accuracy.set('%.3g' % self.settings.get('accuracy'))
+        self.boxgap.set('%.3g' % self.settings.get('boxgap'))
+
+        self.gui_Scale_Linear_Inputs(factor)
 
     def Entry_Xoffset_Check(self):
         try:

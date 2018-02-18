@@ -13,7 +13,7 @@ from general_settings import GeneralSettings
 from geometry.coords import MyImage, MyText
 # from geometry.font import Font
 # from geometry.engrave import Engrave, Toolbit, VCarve, Straight
-from geometry.engrave import Engrave, Toolbit
+from geometry.engrave import Engrave
 
 import readers
 from readers import *
@@ -144,7 +144,6 @@ class Gui(Frame):
         self.PLUNGE = StringVar()
         self.fontfile = StringVar()
         self.H_CALC = StringVar()
-        self.boxgap = StringVar()
         self.fontdir = StringVar()
         self.cut_type = StringVar()
         self.input_type = StringVar()
@@ -644,7 +643,6 @@ class Gui(Frame):
         self.PLUNGE.set(self.settings.get('plunge_rate'))
         self.fontfile.set(self.settings.get('fontfile'))
         self.H_CALC.set(self.settings.get('height_calculation'))
-        self.boxgap.set(self.settings.get('boxgap'))
         self.fontdir.set(self.settings.get('fontdir'))
         self.cut_type.set(self.settings.get('cut_type'))
         self.input_type.set(self.settings.get('input_type'))
@@ -1377,31 +1375,40 @@ class Gui(Frame):
         self.settings.set('cut_type', self.cut_type.get())
         self.Recalc_RQD()
 
+    def Entry_units_var_Callback(self):
+        self.units.set(self.settings.get('units'))
+        if self.units.get() == 'in':
+            self.funits.set('in/min')
+        else:
+            self.funits.set('mm/min')
+        self.Recalc_RQD()
+
     def Scale_Linear_Inputs(self, factor=1.0):
-        try:
-            self.YSCALE.set('%.3g' % (self.settings.get('yscale') * factor))
-            self.TRADIUS.set('%.3g' % (self.settings.get('text_radius') * factor))
-            self.ZSAFE.set('%.3g' % (self.settings.get('zsafe') * factor))
-            self.ZCUT.set('%.3g' % (self.settings.get('zcut') * factor))
-            self.STHICK.set('%.3g' % (self.settings.get('STHICK') * factor))
-            self.FEED.set('%.3g' % (self.settings.get('feedrate') * factor))
-            self.PLUNGE.set('%.3g' % (self.settings.get('plunge_rate') * factor))
-            self.boxgap.set('%.3g' % (self.settings.get('boxgap') * factor))
+        self.settings.set('yscale', self.settings.get('yscale') * factor)
+        self.settings.set('line_thickness', self.settings.get('line_thickness') * factor)
+        self.settings.set('text_radius', self.settings.get('text_radius') * factor)
+        self.settings.set('feedrate', self.settings.get('feedrate') * factor)
+        self.settings.set('plunge_rate', self.settings.get('plunge_rate') * factor)
+        self.settings.set('zsafe', self.settings.get('zsafe') * factor)
+        self.settings.set('zcut', self.settings.get('zcut') * factor)
 
-            self.settings.set('v_bit_dia', self.settings.get('v_bit_dia') * factor)
-            self.settings.set('v_depth_lim', self.settings.get('v_depth_lim') * factor)
-            self.settings.set('v_step_len', self.settings.get('v_step_len') * factor)
-            self.settings.set('allowance', self.settings.get('allowance') * factor)
-            self.settings.set('v_max_cut', self.settings.get('v_max_cut') * factor)
-            self.settings.set('v_rough_stk', self.settings.get('v_rough_stk') * factor)
-            self.settings.set('xorigin', self.settings.get('xorigin') * factor)
+        self.YSCALE.set('%.3g' % self.settings.get('yscale'))
+        self.STHICK.set('%.3g' % self.settings.get('line_thickness'))
+        self.TRADIUS.set('%.3g' % self.settings.get('text_radius'))
+        self.FEED.set('%.3g' % self.settings.get('feedrate'))
+        self.PLUNGE.set('%.3g' % self.settings.get('plunge_rate'))
+        self.ZSAFE.set('%.3g' % self.settings.get('zsafe'))
+        self.ZCUT.set('%.3g' % self.settings.get('zcut'))
 
-            self.settings.set('yorigin', self.settings.get('yorigin') * factor)
-            self.settings.set('accuracy', self.settings.get('accuracy') * factor)
-            self.settings.set('clean_v', self.settings.get('clean_v') * factor)
-            self.settings.set('clean_dia', self.settings.get('clean_dia') * factor)
-        except:
-            pass
+        self.settings.set('v_bit_dia', self.settings.get('v_bit_dia') * factor)
+        self.settings.set('v_depth_lim', self.settings.get('v_depth_lim') * factor)
+        self.settings.set('v_max_cut', self.settings.get('v_max_cut') * factor)
+        self.settings.set('max_cut', self.settings.get('max_cut') * factor)
+        self.settings.set('v_step_len', self.settings.get('v_step_len') * factor)
+        self.settings.set('allowance', self.settings.get('allowance') * factor)
+        self.settings.set('v_rough_stk', self.settings.get('v_rough_stk') * factor)
+        self.settings.set('clean_dia', self.settings.get('clean_dia') * factor)
+        self.settings.set('clean_v', self.settings.get('clean_v') * factor)
 
     def Entry_fontdir_Callback(self, varName, index, mode):
         self.Listbox_1.delete(0, END)
@@ -1573,8 +1580,9 @@ class Gui(Frame):
                 self.input_type.set("image")
                 self.settings.set('input_type', self.input_type.get())
 
-        if boxsize != "0":
-            self.boxgap.set(float(boxsize) * self.settings.get('line_thickness'))
+        # TODO why adjust the boxgap?
+        if self.settings.get('boxsize') != "0":
+            self.settings.set('boxgap', self.settings.get('boxsize') * self.settings.get('line_thickness'))
 
         # TODO is this for backward compatibility?
         # if self.arc_fit.get() == "0":
@@ -2524,10 +2532,8 @@ class Gui(Frame):
             self.PreviewCanvas.delete(ALL)
 
         if self.settings.get('input_type') == "text":
-            self.engrave.set_image(self.text)
             self.do_it_text()
         else:
-            self.engrave.set_image(self.image)
             self.do_it_image()
 
         if not self.batch.get():
@@ -2552,6 +2558,7 @@ class Gui(Frame):
             self.text.set_text(self.Input.get(1.0, END))
 
         self.text.set_coords_from_strokes()
+        self.engrave.set_image(self.text)
 
         font_line_height = self.font.line_height()
         if font_line_height <= -1e10:
@@ -2707,6 +2714,7 @@ class Gui(Frame):
 
         # reset the image coords (to avoid corruption, e.g. from previous transformations)
         self.image.set_coords_from_strokes()
+        self.engrave.set_image(self.image)
 
         # Image transformations
         self.image.transform_scale(XScale, YScale)
@@ -2724,6 +2732,8 @@ class Gui(Frame):
 
         self.plot_bbox = self.image.bbox
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
+
+        self.engrave.plot_bbox = self.plot_bbox
 
         if not self.batch.get():
             # Reset Status Bar and Entry Fields
