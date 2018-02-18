@@ -58,7 +58,17 @@ class BitmapSettings(object):
         self.bmp_longcurve.set(self.settings.get('bmp_longcurve'))
 
     def Close_Current_Window_Click(self):
-        self.bmp_settings.destroy()
+
+        error_cnt = \
+            self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2) + \
+            self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2) + \
+            self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
+
+        if error_cnt > 0:
+            self.statusMessage.set(
+                "Entry Error Detected: Check the entry values in the Bitmap Settings window")
+        else:
+            self.bmp_settings.destroy()
 
     def create_widgets(self):
 

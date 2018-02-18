@@ -1189,14 +1189,11 @@ class Gui(Frame):
             pass
 
     def Check_All_Variables(self):
-        """
-        Check all variables set.
-        :return: the number of vars in error, 0 if all variables are Ok.
-        """
+
         if self.batch.get():
             return 0  # nothing to be done in batchmode
 
-        MAIN_error_cnt = \
+        error_cnt = \
             self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), 2) + \
             self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), 2) + \
             self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), 2) + \
@@ -1210,60 +1207,11 @@ class Gui(Frame):
             self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), 2) + \
             self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), 2)
 
-        # TODO
-        GEN_error_cnt = 0
-
-        # GEN_error_cnt= \
-        # self.entry_set(self.Entry_Xoffset,  self.Entry_Xoffset_Check() , 2) +\
-        # self.entry_set(self.Entry_Yoffset,  self.Entry_Yoffset_Check() , 2) +\
-        # self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) +\
-        # self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) +\
-        # self.entry_set(self.Entry_BoxGap,   self.Entry_BoxGap_Check()  , 2) +\
-        # self.entry_set(self.Entry_Xoffset,  self.Entry_Xoffset_Check() , 2) +\
-        # self.entry_set(self.Entry_Yoffset,  self.Entry_Yoffset_Check() , 2) +\
-        # self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) +\
-        # self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) +\
-        # self.entry_set(self.Entry_BoxGap,   self.Entry_BoxGap_Check()  , 2)
-
-        # TODO
-        VCARVE_error_cnt = 0
-
-        # VCARVE_error_cnt= \
-        # self.entry_set(self.Entry_Vbitangle,    self.Entry_Vbitangle_Check()   , 2) +\
-        # self.entry_set(self.Entry_Vbitdia,      self.Entry_Vbitdia_Check()     , 2) +\
-        # self.entry_set(self.Entry_InsideAngle,  self.Entry_InsideAngle_Check() , 2) +\
-        # self.entry_set(self.Entry_StepSize,     self.Entry_StepSize_Check()    , 2) +\
-        # self.entry_set(self.Entry_CLEAN_DIA,    self.Entry_CLEAN_DIA_Check()   , 2) +\
-        # self.entry_set(self.Entry_STEP_OVER,    self.Entry_STEP_OVER_Check()   , 2) +\
-        # self.entry_set(self.Entry_Allowance,    self.Entry_Allowance_Check()   , 2) +\
-        # self.entry_set(self.Entry_VDepthLimit,  self.Entry_VDepthLimit_Check() , 2)
-
-        # TODO
-        BMP_error_cnt = 0
-
-        # BMP_error_cnt= \
-        # self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2) +\
-        # self.entry_set(self.Entry_BMPturdsize,     self.Entry_BMPturdsize_Check()    , 2) +\
-        # self.entry_set(self.Entry_BMPalphamax,     self.Entry_BMPalphamax_Check()    , 2)
-
-        ERROR_cnt = MAIN_error_cnt + GEN_error_cnt + VCARVE_error_cnt + BMP_error_cnt
-
-        if ERROR_cnt > 0:
+        if error_cnt > 0:
             self.statusbar.configure(bg='red')
-        if BMP_error_cnt > 0:
-            self.statusMessage.set(
-                " Entry Error Detected: Check Entry Values in BMP Settings Window ")
-        if VCARVE_error_cnt > 0:
-            self.statusMessage.set(
-                " Entry Error Detected: Check Entry Values in V-Carve Settings Window ")
-        if GEN_error_cnt > 0:
-            self.statusMessage.set(
-                " Entry Error Detected: Check Entry Values in General Settings Window ")
-        if MAIN_error_cnt > 0:
-            self.statusMessage.set(
-                " Entry Error Detected: Check Entry Values in Main Window ")
+            self.statusMessage.set(" Entry Error Detected: Check Entry Values in Main Window ")
 
-        return ERROR_cnt
+        return error_cnt
 
     # TODO refactor into separate code
 

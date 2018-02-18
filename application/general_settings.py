@@ -124,7 +124,24 @@ class GeneralSettings(object):
         self.justify.set(self.settings.get('justify'))
 
     def Close_Current_Window_Click(self):
-        self.general_settings.destroy()
+
+        error_cnt = \
+            self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
+            self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
+            self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
+            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
+            self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2) + \
+            self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
+            self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
+            self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
+            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
+            self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
+
+        if error_cnt > 0:
+            self.statusMessage.set(
+                "Entry Error Detected: Check the entry values in the General Settings window")
+        else:
+            self.general_settings.destroy()
 
     def create_widgets(self):
 

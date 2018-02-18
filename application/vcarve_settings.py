@@ -126,7 +126,23 @@ class VCarveSettings(object):
         self.v_clean_X.set(self.settings.get('v_clean_X'))
 
     def Close_Current_Window_Click(self):
-        self.vcarve_settings.destroy()
+
+        error_cnt = \
+            self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), 2) + \
+            self.entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), 2) + \
+            self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), 2) + \
+            self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), 2) + \
+            self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), 2) + \
+            self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), 2) + \
+            self.entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), 2) + \
+            self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), 2) +\
+            self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), 2)
+
+        if error_cnt > 0:
+            self.statusMessage.set(
+                "Entry Error Detected: Check the entry values in the V-Carve Settings window")
+        else:
+            self.vcarve_settings.destroy()
 
     def create_widgets(self):
 
@@ -453,7 +469,7 @@ class VCarveSettings(object):
         else:
             self.VCARVE_Recalculate.configure(state="disabled", command=None)
 
-        self.VCARVE_Close = Button(vcarve_settings, text="Close", command=vcarve_settings.destroy)
+        self.VCARVE_Close = Button(vcarve_settings, text="Close", command=self.Close_Current_Window_Click)
         self.VCARVE_Close.place(x=Xbut, y=Ybut, width=130, height=30, anchor="w")
 
     # V-Carve Settings check and call-back methods
@@ -557,7 +573,8 @@ class VCarveSettings(object):
     def Entry_v_max_cut_Check(self):
         try:
             value = float(self.v_max_cut.get())
-            if value >= 0.0:
+            # max depth is only relevant for multipass
+            if float(self.v_rough_stk.get()) != 0 and value >= 0.0:
                 self.statusMessage.set(" Max Depth per Pass should be less than 0.0 ")
                 return INV
         except:
