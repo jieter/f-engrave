@@ -1413,7 +1413,7 @@ class Gui(Frame):
 
     def Entry_fontdir_Callback(self, varName, index, mode):
         self.Listbox_1.delete(0, END)
-        self.Listbox_1.configure(bg=NORmalColor)
+        self.Listbox_1.configure(bg=self.NORmalColor)
         try:
             font_files = os.listdir(self.fontdir.get())
             font_files.sort()
