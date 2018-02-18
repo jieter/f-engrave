@@ -1381,6 +1381,7 @@ class Gui(Frame):
             self.funits.set('in/min')
         else:
             self.funits.set('mm/min')
+        self.settings.set('feed_units', self.funits.get())
         self.Recalc_RQD()
 
     def Scale_Linear_Inputs(self, factor=1.0):

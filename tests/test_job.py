@@ -58,6 +58,8 @@ class JobTest(unittest.TestCase):
     def test_write_box_inch(self):
         job = self._job_with_settings(
             ('units', 'in'),
+            ('feed_units', 'in/mm'),
+            ('accuracy', 0.00254),
             ('default_text', 'plotbox\nboxgap=2\"'),
             ('plotbox', 'True'),
             ('boxgap', 2),
@@ -98,3 +100,10 @@ class JobTest(unittest.TestCase):
             ('cut_type', 'v-carve'),
         )
         self._save_testfiles(job, 'vcarve')
+
+    def test_image(self):
+        job = self._job_with_settings(
+            ('input_type', 'image'),
+            ('IMAGE_FILE', 'tests/files/ring.dxf'),
+        )
+        self._save_testfiles(job, 'image')

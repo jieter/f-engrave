@@ -2,7 +2,9 @@ from geometry import BoundingBox, Zero, rotation
 from readers.cxf import parse as parse_cxf
 from settings import CUT_TYPE_VCARVE
 
+import readers
 import writers
+
 from geometry.coords import MyImage, MyText
 from geometry.engrave import Engrave
 
@@ -94,14 +96,20 @@ class Job(object):
             self.engrave.plot_bbox = self.plot_bbox
 
         else:
-            self.image = MyImage()
+            # self.image = MyImage()
+            self.load_image()
             self.image.set_coords_from_strokes()
             self.engrave.set_image(self.image)
 
             # TODO image calculation
             # if self.settings.get('useIMGsize'):
-            # y_scale = y_scale_in / 100
-            # x_scale = x_scale_in * y_scale / 100
+
+            x_scale_in = self.settings.get('xscale')
+            y_scale_in = self.settings.get('yscale')
+            y_scale = y_scale_in / 100
+            x_scale = x_scale_in * y_scale / 100
+
+            angle = self.settings.get('text_angle')
 
             # Image transformations
             self.image.transform_scale(x_scale, y_scale)
@@ -130,8 +138,14 @@ class Job(object):
         font = self.get_font()
         if font is None or len(font) == 0:
             raise JobError('No font file loaded')
-
         self.font = font
+
+    def load_image(self):
+        self.image = MyImage()
+        self.font = readers.read_image_file(self.settings)
+        if len(self.font) > 0:
+            stroke_list = self.font[ord("F")].stroke_list
+            self.image.set_coords_from_strokes(stroke_list)
 
     def get_origin(self):
         return (
