@@ -29,7 +29,10 @@ class JobTest(unittest.TestCase):
 
     def test_text_code(self):
         job = self._job_with_settings(
-            ('fontfile', 'greekc.cxf'),
+            # ('fontfile', 'unicode.cxf'),
+            # ('fontfile', 'ttf/LucidaBright.ttf'),
+            # ('text_code', '116  101  115  116'),  # "test"
+            ('text_code', '070 045 069 110 103 114 097 118 101'),  # "F-Engrave"
             ('default_text', ''),
         )
         self._save_testfiles(job, 'text_code')
@@ -73,7 +76,7 @@ class JobTest(unittest.TestCase):
 
     def test_write_box_inch(self):
         job = self._job_with_settings(
-            ('default_text', 'plotbox\nboxgap=2mm\"'),
+            ('default_text', 'plotbox\nboxgap=2\"'),
             ('units', 'in'),
             ('feed_units', 'in/mm'),
             ('accuracy', 0.00254),

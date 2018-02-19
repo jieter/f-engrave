@@ -34,18 +34,16 @@ else:
 class Gui(Frame):
 
     def __init__(self, master, settings):
+
         Frame.__init__(self, master)
         self.w = 780
         self.h = 490
         self.master = master
-        self.x = -1
-        self.y = -1
+
         self.initComplete = False
         self.delay_calc = False
 
         self.settings = settings
-
-        self.engrave = Engrave(self.settings)
         self.font = Font()
         self.text = MyText()
         self.image = MyImage()
@@ -54,6 +52,7 @@ class Gui(Frame):
         self.bind_keys()
         self.create_widgets()
 
+        self.engrave = Engrave(self.settings)
         self.engrave.set_progress_callback(self.plot_toolpath)
         self.engrave.set_plot_progress_callback(self.plot_progress)
         self.engrave.set_status_callback(self.status_update)
@@ -84,9 +83,14 @@ class Gui(Frame):
 
     def f_engrave_init(self):
         self.master.update()
+
+        if self.settings.get('input_type') == "text":
+            self.font = readers.readFontFile(self.settings)
+        else:
+            self.load_image_file()
+
         self.initComplete = True
         self.menu_mode_change()
-        self.STOP_CALC = False
 
     def bind_keys(self):
         self.master.bind("<Configure>", self.Master_Configure)
@@ -119,7 +123,6 @@ class Gui(Frame):
         self.v_pplot = BooleanVar()
 
         self.useIMGsize = BooleanVar()
-        self.arc_fit = StringVar()
         self.YSCALE = StringVar()
         self.XSCALE = StringVar()
         self.LSPACE = StringVar()
@@ -133,11 +136,6 @@ class Gui(Frame):
         self.origin = StringVar()
         self.justify = StringVar()
         self.units = StringVar()
-
-        self.xorigin = StringVar()
-        self.yorigin = StringVar()
-        self.segarc = StringVar()
-        self.accuracy = StringVar()
 
         self.funits = StringVar()
         self.FEED = StringVar()
@@ -248,7 +246,7 @@ class Gui(Frame):
             if self.settings.get('input_type') == "text":
                 self.font = readers.readFontFile(self.settings)
             else:
-                readers.read_image_file(self.settings)
+                self.load_image_file()
 
             self.do_it()
 
@@ -623,7 +621,6 @@ class Gui(Frame):
         self.v_pplot.set(self.settings.get('v_pplot'))
 
         self.useIMGsize.set(self.settings.get('useIMGsize'))
-        self.arc_fit.set(self.settings.get('arc_fit'))
         self.YSCALE.set(self.settings.get('yscale'))
         self.XSCALE.set(self.settings.get('xscale'))
         self.LSPACE.set(self.settings.get('line_space'))
@@ -646,11 +643,6 @@ class Gui(Frame):
         self.fontdir.set(self.settings.get('fontdir'))
         self.cut_type.set(self.settings.get('cut_type'))
         self.input_type.set(self.settings.get('input_type'))
-
-        self.xorigin.set(self.settings.get('xorigin'))
-        self.yorigin.set(self.settings.get('yorigin'))
-        self.segarc.set(self.settings.get('segarc'))
-        self.accuracy.set(self.settings.get('accuracy'))
 
         self.default_text = self.settings.get('default_text')
 
@@ -846,12 +838,6 @@ class Gui(Frame):
     def Settings_ReLoad_Click(self, event, arg1="", arg2=""):
 
         win_id = self.grab_current()
-
-        if self.settings.get('input_type') == "text":
-            self.font = readers.readFontFile(self.settings)
-        else:
-            self.font = readers.read_image_file(self.settings)
-
         self.do_it()
 
         try:
@@ -950,7 +936,6 @@ class Gui(Frame):
         win_id.destroy()
 
     def Stop_Click(self, event):
-        self.STOP_CALC = True
         self.engrave.stop_calc()
 
     def v_pplot_Click(self, event):
@@ -1383,22 +1368,23 @@ class Gui(Frame):
         self.Recalc_RQD()
 
     def useIMGsize_var_Callback(self):
-        if self.settings.get('input_type') == "image":
-            readers.read_image_file()
-        try:
-            ymx = max(self.font[key].get_ymax() for key in self.font)
-            ymn = min(self.font[key].get_ymin() for key in self.font)
-            image_height = ymx - ymn
-        except:
-            if self.settings.get('units') == 'in':
-                image_height = 2
-            else:
-                image_height = 50
 
-        if self.settings.get('useIMGsize'):
+        if self.settings.get('input_type') == "image":
+            try:
+                image_height = self.image.get_height()
+            except:
+                if self.settings.get('units') == 'in':
+                    image_height = 2
+                else:
+                    image_height = 50
+
+        self.settings.set('useIMGsize', self.useIMGsize.get())
+        if self.useIMGsize.get():
             self.YSCALE.set('%.3g' % (100 * float(self.YSCALE.get()) / image_height))
         else:
-            self.YSCALE.set('%.3g' % (float(self.YSCALE.get()) / 100 * image_height))
+            self.YSCALE.set('%.3g' % ((float(self.YSCALE.get()) / 100) * image_height))
+
+        self.settings.set('yscale', self.YSCALE.get())
 
         self.menu_View_Refresh()
         self.Recalc_RQD()
@@ -1493,16 +1479,19 @@ class Gui(Frame):
         if fileselect != '' and fileselect != ():
             self.IMAGE_FILE = fileselect
             self.settings.set('IMAGE_FILE', fileselect)
-
-            # TODO future read_image_file will return a MyImage instead of a Font instance
-            self.font = readers.read_image_file(self.settings)
-            if len(self.font) > 0:
-                stroke_list = self.font[ord("F")].stroke_list
-                self.image.set_coords_from_strokes(stroke_list)
-                self.input_type.set(self.settings.get('input_type'))  # input_type may have been changed by read_image_file
-            else:
-                self.image = MyImage()
+            self.load_image_file()
             self.do_it()
+
+    def load_image_file(self):
+
+        # TODO future read_image_file will return a MyImage instead of a Font instance
+        font = readers.read_image_file(self.settings)
+        if len(font) > 0:
+            stroke_list = font[ord("F")].stroke_list
+            self.image.set_coords_from_strokes(stroke_list)
+            self.input_type.set(self.settings.get('input_type'))  # input_type may have been changed by read_image_file
+        else:
+            self.image = MyImage()
 
     def Open_G_Code_File(self, filename):
 
@@ -1559,6 +1548,7 @@ class Gui(Frame):
         self.calc_depth_limit()
 
         self.delay_calc = False
+
         if self.initComplete:
             self.NGC_FILE = filename
             self.menu_mode_change()
@@ -1794,11 +1784,6 @@ class Gui(Frame):
         self.Master_Configure(dummy_event, 1)
         self.delay_calc = False
 
-        if self.settings.get('input_type') == "text":
-            self.font = readers.readFontFile(self.settings)
-        else:
-            self.font = readers.read_image_file(self.settings)
-
         self.do_it()
 
     def menu_View_Recalculate(self):
@@ -1859,9 +1844,6 @@ class Gui(Frame):
         y = int(self.master.winfo_y())
         w = int(self.master.winfo_width())
         h = int(self.master.winfo_height())
-
-        if (self.x, self.y) == (-1, -1):
-            self.x, self.y = x, y
 
         if abs(self.w - w) > 10 or abs(self.h - h) > 10 or update == 1:
 
@@ -2283,13 +2265,6 @@ class Gui(Frame):
         cszh = int(self.PreviewCanvas.cget("height"))
         buff = 10
 
-        # if self.settings.get('input_type') == "text":
-        #     minx, maxx, miny, maxy = self.text.get_bbox_tuple()
-        #     midx, midy = self.text.get_midxy()
-        # else:
-        #     minx, maxx, miny, maxy = self.image.get_bbox_tuple()
-        #     midx, midy = self.image.get_midxy()
-
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
         midx = (minx + maxx) / 2
         midy = (miny + maxy) / 2
@@ -2311,15 +2286,18 @@ class Gui(Frame):
 
         # show shaded background with the size of the image bounding box,
         # including the circle to be plotted, if any
-        x_lft = cszw / 2 + (minx - midx) / plot_scale
-        x_rgt = cszw / 2 + (maxx - midx) / plot_scale
-        y_bot = cszh / 2 + (maxy - midy) / plot_scale
-        y_top = cszh / 2 + (miny - midy) / plot_scale
-        if self.settings.get('show_box'):
-            self.segID.append(
-                self.PreviewCanvas.create_rectangle(x_lft, y_bot, x_rgt, y_top, fill="gray80",
-                                                    outline="gray80",
-                                                    width=0))
+        # TODO ugly hack to avoid stale text box presented when no image is loaded yet
+        if (self.settings.get('input_type') == 'text' and len(self.text) > 0) or \
+                (self.settings.get('input_type') == 'image' and len(self.image) > 0):
+            x_lft = cszw / 2 + (minx - midx) / plot_scale
+            x_rgt = cszw / 2 + (maxx - midx) / plot_scale
+            y_bot = cszh / 2 + (maxy - midy) / plot_scale
+            y_top = cszh / 2 + (miny - midy) / plot_scale
+            if self.settings.get('show_box'):
+                self.segID.append(
+                    self.PreviewCanvas.create_rectangle(x_lft, y_bot, x_rgt, y_top, fill="gray80",
+                                                        outline="gray80",
+                                                        width=0))
         # plot circle
         text_radius = self.get_text_radius()
 
@@ -2826,7 +2804,6 @@ class Gui(Frame):
     def v_carve_it(self, clean=False):
 
         self.master.unbind("<Configure>")
-        self.STOP_CALC = False
 
         # step length value floor
         v_step_len = self.settings.get('v_step_len')

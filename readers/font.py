@@ -5,6 +5,8 @@ from util import fmessage, VERSION, TTF_AVAILABLE
 from . import cxf as parse_cxf
 
 
+# TODO Add Unicode support
+
 def readFontFile(settings):
     """
     Read a (.cxf, .ttf) font file

@@ -249,7 +249,8 @@ class Settings(object):
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
 
-        'default_text': 'F-Engrave'
+        'default_text': 'F-Engrave',
+        'text_code': '',
     }
 
     def __init__(self, filename=None, autoload=False):
@@ -276,8 +277,11 @@ class Settings(object):
         return str(type(self._settings[name]))[7:-2]
 
     def set(self, name, value):
-        cast = CAST_TYPES[self.type(name)]
-        self._settings[name] = cast(value)
+        if name == TEXT_CODE:
+            self._set_text_code(value)
+        else:
+            cast = CAST_TYPES[self.type(name)]
+            self._settings[name] = cast(value)
 
     def get(self, name):
         return self._settings[name]
@@ -308,13 +312,10 @@ class Settings(object):
                 if not self.has_setting(name) and name in OLD_SETTING_NAMES:
                     name = OLD_SETTING_NAMES[name]
 
-                if name == TEXT_CODE:
-                    self.text_code(line)
-                else:
-                    try:
-                        self.set(name, setting)
-                    except KeyError:
-                        print 'Setting not found:', name  # TODO
+                try:
+                    self.set(name, setting)
+                except KeyError:
+                    print 'Setting not found:', name  # TODO
 
     def to_gcode(self):
         gcode = [CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))
@@ -324,10 +325,10 @@ class Settings(object):
     def get_text_code(self):
         return self._text_code
 
-    def text_code(self, line):
+    def _set_text_code(self, line):
 
         text_code = u''
-        code_list = line[len(TEXT_CODE):-1].split()
+        code_list = line.split()
 
         for char in code_list:
             try:

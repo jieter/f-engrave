@@ -147,11 +147,18 @@ class Job(object):
             raise JobError('No font file loaded')
         self.font = font
 
+    # Read CXF or TTF
+    # def load_font(self):
+    #     font = readers.readFontFile(self.settings)
+    #     if font is None or len(font) == 0:
+    #         raise JobError('No font file loaded')
+    #     self.font = font
+
     def load_image(self):
         self.image = MyImage()
-        self.font = readers.read_image_file(self.settings)
-        if len(self.font) > 0:
-            stroke_list = self.font[ord("F")].stroke_list
+        font = readers.read_image_file(self.settings)
+        if len(font) > 0:
+            stroke_list = font[ord("F")].stroke_list
             self.image.set_coords_from_strokes(stroke_list)
 
     def get_origin(self):
