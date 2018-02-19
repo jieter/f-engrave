@@ -47,6 +47,7 @@ OLD_SETTING_NAMES = {
     'CSPACE': 'char_space',
     'LSPACE': 'line_space',
     'TANGLE': 'text_angle',
+    'TCODE': 'text_code',
     'H_CALC': 'height_calculation',
     'XSCALE': 'xscale',
     'YSCALE': 'yscale',
@@ -60,6 +61,7 @@ CONFIG_FILENAME = 'config.ngc'
 
 CONFIG_MARKER = '(fengrave_set '
 CONFIG_TEMPLATE = CONFIG_MARKER + '%20s %s )'
+TEXT_CODE = 'text_code'
 
 CUT_TYPE_ENGRAVE = 'engrave'
 CUT_TYPE_VCARVE = 'v-carve'
@@ -253,6 +255,7 @@ class Settings(object):
     def __init__(self, filename=None, autoload=False):
 
         self._settings = self._defaults.copy()
+        self._text_code = u''
 
         if filename is not None:
             self.from_configfile(filename)
@@ -305,15 +308,34 @@ class Settings(object):
                 if not self.has_setting(name) and name in OLD_SETTING_NAMES:
                     name = OLD_SETTING_NAMES[name]
 
-                try:
-                    self.set(name, setting)
-                except KeyError:
-                    print 'Setting not found:', name  # TODO
+                if name == TEXT_CODE:
+                    self.text_code(line)
+                else:
+                    try:
+                        self.set(name, setting)
+                    except KeyError:
+                        print 'Setting not found:', name  # TODO
 
     def to_gcode(self):
         gcode = [CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))
                  for key, value in self._settings.items()]
         return gcode
+
+    def get_text_code(self):
+        return self._text_code
+
+    def text_code(self, line):
+
+        text_code = u''
+        code_list = line[len(TEXT_CODE):-1].split()
+
+        for char in code_list:
+            try:
+                text_code += "%c" % unichr(int(char))
+            except:
+                text_code += "%c" % chr(int(char))
+
+        self._text_code = text_code
 
     def __str__(self):
         return 'Settings:\n' + ('\n'.join([', '.join(map(str, l)) for l in self._settings.items()]))

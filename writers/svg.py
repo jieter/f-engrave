@@ -28,9 +28,11 @@ def svg(job):
 
     dpi = 100
 
-    minx, maxx, miny, maxy = job.get_plot_bbox_tuple()
-    width_in = job.get_plot_width() + thickness / 2
-    height_in = job.get_plot_height() + thickness / 2
+    bbox = job.get_plot_bbox()
+    bbox.pad(thickness / 2)
+    minx, maxx, miny, maxy = bbox.tuple()
+    width_in = bbox.width()
+    height_in = bbox.height()
 
     width = width_in * dpi
     height = height_in * dpi

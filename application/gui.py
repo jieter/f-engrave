@@ -757,7 +757,6 @@ class Gui(Frame):
         self.clipboard_clear()
 
         self.engrave.refresh_coords()  # TODO
-        self.coords = self.engrave.coords
         svgcode = svg(self.engrave)
 
         for line in svgcode:
@@ -1508,7 +1507,6 @@ class Gui(Frame):
     def Open_G_Code_File(self, filename):
 
         self.delay_calc = True
-        boxsize = "0"
         try:
             fin = open(filename, 'r')
         except:
@@ -1697,7 +1695,6 @@ class Gui(Frame):
     def menu_File_Save_SVG_File(self):
 
         self.engrave.refresh_coords()  # TODO
-        self.coords = self.engrave.coords
         svg_code = svg(self.engrave)
 
         init_dir = os.path.dirname(self.NGC_FILE)
@@ -2582,9 +2579,8 @@ class Gui(Frame):
         self.text.transform_translate(x_offset, y_offset)
 
         self.plot_bbox = BoundingBox(minx + x_offset, maxx + x_offset, miny + y_offset, maxy + y_offset)
+        self.text.set_bbox = self.plot_bbox
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
-
-        self.engrave.plot_bbox = self.plot_bbox
 
         if not self.batch.get():
             # Reset Status Bar and Entry Fields
@@ -2679,10 +2675,8 @@ class Gui(Frame):
         y_offset = y_origin - y_zero
         self.image.transform_translate(x_offset, y_offset)
 
-        self.plot_bbox = self.image.bbox
+        self.plot_bbox = self.image.get_bbox()
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
-
-        self.engrave.plot_bbox = self.plot_bbox
 
         if not self.batch.get():
             # Reset Status Bar and Entry Fields

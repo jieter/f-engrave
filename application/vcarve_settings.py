@@ -607,6 +607,7 @@ class VCarveSettings(object):
 
     def Entry_v_rough_stk_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), setting='v_rough_stk')
+        self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut')
 
     def Entry_V_CLEAN_Check(self):
         try:

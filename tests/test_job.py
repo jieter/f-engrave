@@ -17,7 +17,7 @@ class JobTest(unittest.TestCase):
 
     def _job_with_settings(self, *args):
         settings = Settings(filename='tests/files/job_test_settings.ngc')
-        settings.set('default_text', 'OOF-Engrave')
+        # settings.set('default_text', 'OOF-Engrave')
 
         for key, value in args:
             settings.set(key, value)
@@ -27,12 +27,22 @@ class JobTest(unittest.TestCase):
 
         return job
 
+    def test_text_code(self):
+        job = self._job_with_settings(
+            ('fontfile', 'greekc.cxf'),
+            ('default_text', ''),
+        )
+        self._save_testfiles(job, 'text_code')
+
     def test_max_used(self):
         job = self._job_with_settings(('height_calculation', 'max_used'))
         self._save_testfiles(job, 'simple-max_used')
 
     def test_text_radius(self):
-        job = self._job_with_settings(('text_radius', 100))
+        job = self._job_with_settings(
+            ('default_text', 'radius=100'),
+            ('text_radius', 100),
+        )
         self._save_testfiles(job, 'radius')
 
     def test_write_max_all(self):
@@ -40,16 +50,22 @@ class JobTest(unittest.TestCase):
         self._save_testfiles(job, 'simple-max_all')
 
     def test_write_mirror(self):
-        job = self._job_with_settings(('mirror', True))
+        job = self._job_with_settings(
+            ('default_text', 'mirror'),
+            ('mirror', True),
+        )
         self._save_testfiles(job, 'mirror')
 
     def test_write_flip(self):
-        job = self._job_with_settings(('flip', True))
+        job = self._job_with_settings(
+            ('default_text', 'flip'),
+            ('flip', True),
+        )
         self._save_testfiles(job, 'flip')
 
     def test_write_box(self):
         job = self._job_with_settings(
-            ('default_text', 'plotbox\nboxgap=50'),
+            ('default_text', 'plotbox\nboxgap=50mm'),
             ('plotbox', 'True'),
             ('boxgap', 50),
         )
@@ -57,10 +73,10 @@ class JobTest(unittest.TestCase):
 
     def test_write_box_inch(self):
         job = self._job_with_settings(
+            ('default_text', 'plotbox\nboxgap=2mm\"'),
             ('units', 'in'),
             ('feed_units', 'in/mm'),
             ('accuracy', 0.00254),
-            ('default_text', 'plotbox\nboxgap=2\"'),
             ('plotbox', 'True'),
             ('boxgap', 2),
             ('yscale', 2),
@@ -77,7 +93,7 @@ class JobTest(unittest.TestCase):
 
     def test_write_circle(self):
         job = self._job_with_settings(
-            ('default_text', 'plotcircle\nboxgap=5\n'),
+            ('default_text', 'plotcircle\nboxgap=5mm\n'),
             ('plotbox', 'True'),
             ('text_radius', '30.0'),
             ('boxgap', 5),

@@ -62,6 +62,6 @@
 (fengrave_set clean_step  50 )
 (fengrave_set clean_w     50.8 )
 (fengrave_set clean_v     1.27 )
-(fengrave_set clean_paths  1,1,0,0,1,0 )
-(fengrave_set TCODE    116  101  115  116 )
+(fengrave_set clean_paths 1,1,0,0,1,0 )
+(fengrave_set TCODE       966 45 949 956 947 945 946 949 )
 ( Fontfile: courier.cxf )

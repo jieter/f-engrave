@@ -23,104 +23,111 @@ class Job(object):
     def execute(self):
 
         self.load_font()
-
         self.engrave = Engrave(self.settings)
 
         if self.settings.get('input_type') == "text":
-            self.text = MyText()
-
-            self.text.set_font(self.font)
-            self.text.set_word_space(self.settings.get('word_space'))
-            self.text.set_line_space(self.settings.get('line_space'))
-            self.text.set_char_space(self.settings.get('char_space'))
-            self.text.set_text(self.settings.get('default_text'))
-            self.text.set_coords_from_strokes()
-            self.engrave.set_image(self.text)
-
-            font_line_height = self.font.line_height()
-            if font_line_height <= -1e10:
-                if self.settings.get('height_calculation') == "max_all":
-                    raise JobError('No Font Characters Found')
-                elif self.settings.get('height_calculation') == "max_use":
-                    raise JobError('Input Characters Were Not Found in the Current Font')
-                return
-
-            # Text transformations
-            alignment = self.settings.get('justify')
-            mirror = self.settings.get('mirror')
-            flip = self.settings.get('flip')
-            upper = self.settings.get('upper')
-            angle = self.settings.get('text_angle')
-            radius_in = self.settings.get('text_radius')
-            text_radius = self.calc_text_radius()
-            x_scale, y_scale = self.get_xy_scale()
-
-            self.text.transform_scale(x_scale, y_scale)
-            self.text.align(alignment)
-            self.text.transform_on_radius(alignment, text_radius, upper)
-            self.text.transform_angle(angle)
-
-            if mirror:
-                self.text.transform_mirror()
-            if flip:
-                self.text.transform_flip()
-
-            self.plot_bbox = self.text.bbox
-            minx, maxx, miny, maxy = self.plot_bbox.tuple()
-
-            # engrave box or circle
-            if self.settings.get('plotbox'):
-                if radius_in == 0:
-                    delta = self.get_delta()
-                    self.text.add_box(delta, mirror, flip)
-                    self.plot_bbox = self.text.bbox
-                    minx, maxx, miny, maxy = self.plot_bbox.tuple()
-                else:
-                    # Don't create the circle coords here,
-                    # a G-code circle command is generated later (when not v-carving)
-                    # For the circle to fit later on, the plot bounding box is adjusted with its radius
-                    maxr = max(radius_in, self.text.get_max_radius())
-                    thickness = self.settings.get('line_thickness')
-                    radius_plot = maxr + thickness / 2
-                    minx = miny = -radius_plot
-                    maxx = maxy = -minx
-                    self.plot_bbox = BoundingBox(minx, maxx, miny, maxy)
-
-            x_zero, y_zero = self.move_origin(self.plot_bbox)
-            x_offset = -x_zero
-            y_offset = -y_zero
-            self.text.transform_translate(x_offset, y_offset)
-
-            self.plot_bbox = BoundingBox(minx + x_offset, maxx + x_offset, miny + y_offset, maxy + y_offset)
-
-            self.engrave.plot_bbox = self.plot_bbox
-
+            self.job_text()
         else:
-            # self.image = MyImage()
-            self.load_image()
-            self.image.set_coords_from_strokes()
-            self.engrave.set_image(self.image)
-
-            # TODO image calculation
-            # if self.settings.get('useIMGsize'):
-
-            x_scale_in = self.settings.get('xscale')
-            y_scale_in = self.settings.get('yscale')
-            y_scale = y_scale_in / 100
-            x_scale = x_scale_in * y_scale / 100
-
-            angle = self.settings.get('text_angle')
-
-            # Image transformations
-            self.image.transform_scale(x_scale, y_scale)
-            self.image.transform_angle(angle)
-            if self.settings.get('mirror'):
-                self.image.transform_mirror()
-            if self.settings.get('flip'):
-                self.image.transform_flip()
+            self.job_image()
 
         if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             self.engrave.v_carve()
+
+    def job_text(self):
+        self.text = MyText()
+        self.text.set_font(self.font)
+        self.text.set_word_space(self.settings.get('word_space'))
+        self.text.set_line_space(self.settings.get('line_space'))
+        self.text.set_char_space(self.settings.get('char_space'))
+
+        if len(self.settings.get('default_text')) > 0:
+            self.text.set_text(self.settings.get('default_text'))
+        else:
+            self.text.set_text(self.settings.get_text_code())
+
+        self.text.set_thickness(self.settings.get('line_thickness'))
+        self.text.set_coords_from_strokes()
+        self.engrave.set_image(self.text)
+
+        font_line_height = self.font.line_height()
+        if font_line_height <= -1e10:
+            if self.settings.get('height_calculation') == "max_all":
+                raise JobError('No Font Characters Found')
+            elif self.settings.get('height_calculation') == "max_use":
+                raise JobError('Input Characters Were Not Found in the Current Font')
+            return
+
+        # Text transformations
+        alignment = self.settings.get('justify')
+        mirror = self.settings.get('mirror')
+        flip = self.settings.get('flip')
+        upper = self.settings.get('upper')
+        angle = self.settings.get('text_angle')
+        radius_in = self.settings.get('text_radius')
+        text_radius = self.calc_text_radius()
+        x_scale, y_scale = self.get_xy_scale()
+
+        self.text.transform_scale(x_scale, y_scale)
+        self.text.align(alignment)
+        self.text.transform_on_radius(alignment, text_radius, upper)
+        self.text.transform_angle(angle)
+
+        if mirror:
+            self.text.transform_mirror()
+        if flip:
+            self.text.transform_flip()
+
+        self.plot_bbox = self.text.bbox
+        minx, maxx, miny, maxy = self.plot_bbox.tuple()
+
+        # engrave box or circle
+        if self.settings.get('plotbox'):
+            if radius_in == 0:
+                delta = self.get_delta()
+                self.text.add_box(delta, mirror, flip)
+                self.plot_bbox = self.text.bbox
+                minx, maxx, miny, maxy = self.plot_bbox.tuple()
+            else:
+                # Don't create the circle coords here,
+                # a G-code circle command is generated later (when not v-carving)
+                # For the circle to fit later on, the plot bounding box is adjusted with its radius
+                maxr = max(radius_in, self.text.get_max_radius())
+                thickness = self.settings.get('line_thickness')
+                radius_plot = maxr + thickness / 2
+                minx = miny = -radius_plot
+                maxx = maxy = -minx
+                self.plot_bbox = BoundingBox(minx, maxx, miny, maxy)
+
+        x_zero, y_zero = self.move_origin(self.plot_bbox)
+        x_offset = -x_zero
+        y_offset = -y_zero
+        self.text.transform_translate(x_offset, y_offset)
+
+        self.plot_bbox = BoundingBox(minx + x_offset, maxx + x_offset, miny + y_offset, maxy + y_offset)
+        self.text.bbox = self.plot_bbox
+
+    def job_image(self):
+        # self.image = MyImage()
+        self.load_image()
+        self.engrave.set_image(self.image)
+
+        # TODO image calculation
+        # if self.settings.get('useIMGsize'):
+
+        x_scale_in = self.settings.get('xscale')
+        y_scale_in = self.settings.get('yscale')
+        y_scale = y_scale_in / 100
+        x_scale = x_scale_in * y_scale / 100
+
+        angle = self.settings.get('text_angle')
+
+        # Image transformations
+        self.image.transform_scale(x_scale, y_scale)
+        self.image.transform_angle(angle)
+        if self.settings.get('mirror'):
+            self.image.transform_mirror()
+        if self.settings.get('flip'):
+            self.image.transform_flip()
 
     def get_svg(self):
         return '\n'.join(writers.svg(self.engrave)).strip()

@@ -77,7 +77,6 @@ class Engrave(object):
         # TODO make this plot_circle_center + setter methods
         self.xzero = 0
         self.yzero = 0
-        self.plot_bbox = BoundingBox()
 
         self.accuracy = self.settings.get('accuracy')
         self.v_pplot = self.settings.get('v_pplot')
@@ -160,14 +159,8 @@ class Engrave(object):
     def get_image_height(self):
         return self.image.get_height()
 
-    def get_plot_bbox_tuple(self):
-        return self.plot_bbox.tuple()
-
-    def get_plot_width(self):
-        return self.plot_bbox.width()
-
-    def get_plot_height(self):
-        return self.plot_bbox.height()
+    def get_plot_bbox(self):
+        return self.image.bbox
 
     def get_coords(self):
         return self.coords
@@ -493,7 +486,7 @@ class Engrave(object):
             coded_index = []
 
             # find the local coordinates of the line segment ends
-            minx, maxx, miny, maxy = self.image.get_bbox_tuple()
+            minx, maxx, miny, maxy = self.image.get_bbox().tuple()
             x1_G = XY_R[0] - minx
             y1_G = XY_R[1] - miny
             x2_G = XY_R[2] - minx
@@ -582,7 +575,7 @@ class Engrave(object):
         rmax = self._calc_rmax(rbit, clean)
         dline = self.settings.get('v_step_len')
 
-        minx, maxx, miny, maxy = self.image.get_bbox_tuple()
+        minx, maxx, miny, maxy = self.image.get_bbox().tuple()
         xLength = maxx - minx
         yLength = maxy - miny
 
@@ -670,7 +663,7 @@ class Engrave(object):
         Routine finds the maximum radius that can be placed in the position
         xpt,ypt without interfering with other line segments (rmin is max R LOL)
         """
-        minx, maxx, miny, maxy = self.image.get_bbox_tuple()
+        minx, maxx, miny, maxy = self.image.get_bbox().tuple()
         xIndex = int((xpt - minx) / self.xPartitionLength)
         yIndex = int((ypt - miny) / self.yPartitionLength)
 

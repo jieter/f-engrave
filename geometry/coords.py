@@ -49,8 +49,8 @@ class MyImage(object):
     def get_coords(self):
         return self.coords
 
-    def get_bbox_tuple(self):
-        return self.bbox.tuple()
+    def get_bbox(self):
+        return self.bbox
 
     def get_midxy(self):
         minx, maxx, miny, maxy = self.bbox.tuple()
@@ -105,6 +105,9 @@ class MyImage(object):
                 XY[2], XY[3], A2 = rotation(XY[2], XY[3], angle, 0)
         self._set_bbox()
 
+    def set_bbox(self, bbox):
+        self.bbox = bbox
+
     def _set_bbox(self):
 
         xmin = ymin = 1e10
@@ -137,7 +140,6 @@ class MyText(MyImage):
         self.line_space = 1.1
         self.char_space = 25
         self.word_space = 1.0
-
         self.angle = 0.0
         self.thickness = 0.25
 
@@ -151,9 +153,6 @@ class MyText(MyImage):
     def set_text(self, text):
         self.text = text
 
-    def set_angle(self, angle):
-        self.angle = angle
-
     def set_line_space(self, line_space):
         self.line_space = line_space
 
@@ -162,6 +161,9 @@ class MyText(MyImage):
 
     def set_word_space(self, word_space):
         self.word_space = word_space
+
+    def set_angle(self, angle):
+        self.angle = angle
 
     def set_thickness(self, thickness):
         self.thickness = thickness
@@ -255,7 +257,7 @@ class MyText(MyImage):
             line_miny.append(max_vals[2])
             line_maxy.append(max_vals[3])
 
-        minx, maxx, miny, maxy = self.get_bbox_tuple()
+        minx, maxx, miny, maxy = self.bbox.tuple()
 
         if alignment == "Left":
             pass
@@ -327,7 +329,7 @@ class MyText(MyImage):
         """
         Add box outline
         """
-        minx, maxx, miny, maxy = self.get_bbox_tuple()
+        minx, maxx, miny, maxy = self.bbox.tuple()
 
         if mirror ^ flip:
             self.coords.append([minx - delta, miny - delta, minx - delta, maxy + delta, 0, 0])
