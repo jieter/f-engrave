@@ -72,6 +72,10 @@ class Gui(Frame):
         self.engrave.set_plot_progress_callback(self.plot_progress)
         self.engrave.set_status_callback(self.status_update)
 
+        # callbacks (wherein this Gui/App acts as the Controller)
+        self.Ctrl_Entry_units_var_Callback = None
+        self.Ctrl_Scale_Linear_Inputs = None
+
     def general_settings_window(self):
         self.general_settings_window = GeneralSettings(self, self.settings)
 
@@ -120,12 +124,10 @@ class Gui(Frame):
         self.master.bind('<F3>', self.KEY_F3)
         self.master.bind('<F4>', self.KEY_F4)
         self.master.bind('<F5>', self.KEY_F5)  # self.Recalculate_Click)
-        # self.master.bind('<Control-Up>', self.Listbox_Key_Up)
-        # self.master.bind('<Control-Down>', self.Listbox_Key_Down)
         self.master.bind('<Prior>', self.KEY_ZOOM_IN)  # Page Up
         self.master.bind('<Next>', self.KEY_ZOOM_OUT)  # Page Down
         self.master.bind('<Control-g>', self.KEY_CTRL_G)
-        self.master.bind('<Control-s>', self.KEY_CTRL_S)
+        self.master.bind('<Control-s>', self.KEY_CTRL_S)  # Save
 
     def create_widgets(self):
         self.batch = BooleanVar()
@@ -356,7 +358,7 @@ class Gui(Frame):
         scrollbar = Scrollbar(self.input_frame, orient=VERTICAL)
 
         self.Input_Label = Label(self.input_frame, text="Input Text:", anchor=W)
-        self.Input_Label.pack()
+        self.Input_Label.pack(side=TOP, anchor=W)
 
         self.input = Text(self.input_frame, width="40", height="6", yscrollcommand=scrollbar.set, bg='white')
         self.input.insert(END, self.default_text)
@@ -705,7 +707,7 @@ class Gui(Frame):
 
         return error_cnt
 
-    # TODO refactor into a separate object?
+    # TODO refactor this into a separate object?
 
     def V_Carve_Calc_Click(self):
         if self.Check_All_Variables() > 0:
@@ -804,42 +806,6 @@ class Gui(Frame):
             return True  # stop
         else:
             return False
-
-    def Entry_units_var_Callback(self):
-        self.units.set(self.settings.get('units'))
-        if self.units.get() == 'in':
-            self.funits.set('in/min')
-        else:
-            self.funits.set('mm/min')
-        self.settings.set('feed_units', self.funits.get())
-        self.Recalc_RQD()
-
-    def Scale_Linear_Inputs(self, factor=1.0):
-        self.settings.set('yscale', self.settings.get('yscale') * factor)
-        self.settings.set('line_thickness', self.settings.get('line_thickness') * factor)
-        self.settings.set('text_radius', self.settings.get('text_radius') * factor)
-        self.settings.set('feedrate', self.settings.get('feedrate') * factor)
-        self.settings.set('plunge_rate', self.settings.get('plunge_rate') * factor)
-        self.settings.set('zsafe', self.settings.get('zsafe') * factor)
-        self.settings.set('zcut', self.settings.get('zcut') * factor)
-
-        self.YSCALE.set('%.3g' % self.settings.get('yscale'))
-        self.STHICK.set('%.3g' % self.settings.get('line_thickness'))
-        self.TRADIUS.set('%.3g' % self.settings.get('text_radius'))
-        self.FEED.set('%.3g' % self.settings.get('feedrate'))
-        self.PLUNGE.set('%.3g' % self.settings.get('plunge_rate'))
-        self.ZSAFE.set('%.3g' % self.settings.get('zsafe'))
-        self.ZCUT.set('%.3g' % self.settings.get('zcut'))
-
-        self.settings.set('v_bit_dia', self.settings.get('v_bit_dia') * factor)
-        self.settings.set('v_depth_lim', self.settings.get('v_depth_lim') * factor)
-        self.settings.set('v_max_cut', self.settings.get('v_max_cut') * factor)
-        self.settings.set('max_cut', self.settings.get('max_cut') * factor)
-        self.settings.set('v_step_len', self.settings.get('v_step_len') * factor)
-        self.settings.set('allowance', self.settings.get('allowance') * factor)
-        self.settings.set('v_rough_stk', self.settings.get('v_rough_stk') * factor)
-        self.settings.set('clean_dia', self.settings.get('clean_dia') * factor)
-        self.settings.set('clean_v', self.settings.get('clean_v') * factor)
 
     def menu_File_Open_G_Code_File(self):
         init_dir = os.path.dirname(self.NGC_FILE)
@@ -1274,9 +1240,21 @@ class Gui(Frame):
 
         # main window callbacks
         self.Fontdir_Click = self.mainwindow_text_right.Fontdir_Click
+        self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
+        self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
 
         self.mainwindow_text_left.master_configure()
         self.mainwindow_text_right.master_configure()
+
+    # callbacks (wherein this Gui/App is the Controller)
+
+    def Ctrl_Entry_units_var_Callback_Text(self):
+        self.mainwindow_text_left.Entry_units_var_Callback()
+        self.mainwindow_text_right.Entry_units_var_Callback()
+
+    def Ctrl_Scale_Linear_Inputs_Text(self, factor):
+        self.mainwindow_text_left.Scale_Linear_Inputs(factor)
+        self.mainwindow_text_right.Scale_Linear_Inputs(factor)
 
     def Master_Configure_image(self):
         self.PreviewCanvas.grid_forget()
@@ -1287,8 +1265,10 @@ class Gui(Frame):
         self.PreviewCanvas.grid(row=0, rowspan=2, column=1, columnspan=2, sticky=N + E + S + W)
         self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, sticky=W + E + N + S)
 
-        # no main window callback
+        # main window callbacks
         self.Fontdir_Click = None
+        self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.Entry_units_var_Callback
+        self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.Scale_Linear_Inputs
 
         self.mainwindow_image_left.master_configure()
 

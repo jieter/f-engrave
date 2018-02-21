@@ -54,7 +54,6 @@ class MainWindowTextLeft(Frame):
         self.justify = StringVar()
         self.units = StringVar()
 
-        # TODO clean up
         self.funits = StringVar()
         self.FEED = StringVar()
         self.PLUNGE = StringVar()
@@ -74,10 +73,6 @@ class MainWindowTextLeft(Frame):
 
     def height(self):
         return self.h
-
-    # def bind_keys(self):
-    #     self.gui.bind('<Control-g>', self.KEY_CTRL_G)
-    #     self.gui.bind('<Control-s>', self.KEY_CTRL_S)
 
     def create_widgets(self):
         self.create_widget_text_font_properties()
@@ -390,6 +385,30 @@ class MainWindowTextLeft(Frame):
             self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), 2)
 
         return error_cnt
+
+    def Scale_Linear_Inputs(self, factor=1.0):
+        # self.settings.set('yscale', self.settings.get('yscale') * factor)
+        # self.settings.set('line_thickness', self.settings.get('line_thickness') * factor)
+        # self.settings.set('text_radius', self.settings.get('text_radius') * factor)
+        # self.settings.set('feedrate', self.settings.get('feedrate') * factor)
+        # self.settings.set('plunge_rate', self.settings.get('plunge_rate') * factor)
+        # self.settings.set('zsafe', self.settings.get('zsafe') * factor)
+        # self.settings.set('zcut', self.settings.get('zcut') * factor)
+
+        self.YSCALE.set('%.3g' % self.settings.get('yscale'))
+        self.STHICK.set('%.3g' % self.settings.get('line_thickness'))
+        self.TRADIUS.set('%.3g' % self.settings.get('text_radius'))
+
+    # Text callbacks
+
+    def Entry_units_var_Callback(self):
+        self.units.set(self.settings.get('units'))
+        if self.units.get() == 'in':
+            self.funits.set('in/min')
+        else:
+            self.funits.set('mm/min')
+        self.settings.set('feed_units', self.funits.get())
+        self.Recalc_RQD()
 
     def Entry_Yscale_Check(self):
         try:
@@ -731,8 +750,6 @@ class MainWindowTextRight(Frame):
         self.Label_fontfile.place(x=x_label_R, y=self.h - 165, width=w_label + 75, height=21)
         self.Checkbutton_fontdex.place(x=x_label_R, y=self.h - 145, width=185, height=23)
 
-        # TODO move recalc button to the left column
-
         # Buttons
 
         Ybut = self.h - 60
@@ -783,7 +800,27 @@ class MainWindowTextRight(Frame):
 
         return error_cnt
 
+    def Scale_Linear_Inputs(self, factor=1.0):
+        # self.settings.set('feedrate', self.settings.get('feedrate') * factor)
+        # self.settings.set('plunge_rate', self.settings.get('plunge_rate') * factor)
+        # self.settings.set('zsafe', self.settings.get('zsafe') * factor)
+        # self.settings.set('zcut', self.settings.get('zcut') * factor)
+
+        self.FEED.set('%.3g' % self.settings.get('feedrate'))
+        self.PLUNGE.set('%.3g' % self.settings.get('plunge_rate'))
+        self.ZSAFE.set('%.3g' % self.settings.get('zsafe'))
+        self.ZCUT.set('%.3g' % self.settings.get('zcut'))
+
     # G-Code properties callbacks
+
+    def Entry_units_var_Callback(self):
+        self.units.set(self.settings.get('units'))
+        if self.units.get() == 'in':
+            self.funits.set('in/min')
+        else:
+            self.funits.set('mm/min')
+        self.settings.set('feed_units', self.funits.get())
+        self.Recalc_RQD()
 
     def Entry_Feed_Check(self):
         try:
@@ -955,7 +992,7 @@ class MainWindowImageLeft(Frame):
         self.fontdex = BooleanVar()
         self.v_pplot = BooleanVar()
 
-        self.useIMGsize = BooleanVar()  # TODO image
+        self.useIMGsize = BooleanVar()
         self.YSCALE = StringVar()
         self.XSCALE = StringVar()
         self.LSPACE = StringVar()
@@ -1313,7 +1350,31 @@ class MainWindowImageLeft(Frame):
             self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), 2)
         return error_cnt
 
+    def Scale_Linear_Inputs(self, factor=1.0):
+        # self.settings.set('yscale', self.settings.get('yscale') * factor)
+        # self.settings.set('line_thickness', self.settings.get('line_thickness') * factor)
+        # self.settings.set('feedrate', self.settings.get('feedrate') * factor)
+        # self.settings.set('plunge_rate', self.settings.get('plunge_rate') * factor)
+        # self.settings.set('zsafe', self.settings.get('zsafe') * factor)
+        # self.settings.set('zcut', self.settings.get('zcut') * factor)
+
+        self.YSCALE.set('%.3g' % self.settings.get('yscale'))
+        self.STHICK.set('%.3g' % self.settings.get('line_thickness'))
+        self.FEED.set('%.3g' % self.settings.get('feedrate'))
+        self.PLUNGE.set('%.3g' % self.settings.get('plunge_rate'))
+        self.ZSAFE.set('%.3g' % self.settings.get('zsafe'))
+        self.ZCUT.set('%.3g' % self.settings.get('zcut'))
+
     # Image properties callbacks
+
+    def Entry_units_var_Callback(self):
+        self.units.set(self.settings.get('units'))
+        if self.units.get() == 'in':
+            self.funits.set('in/min')
+        else:
+            self.funits.set('mm/min')
+        self.settings.set('feed_units', self.funits.get())
+        self.Recalc_RQD()
 
     def useIMGsize_var_Callback(self):
 

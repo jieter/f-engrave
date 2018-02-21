@@ -22,8 +22,9 @@ class GeneralSettings(object):
         self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
         self.write_config_file = master.write_config_file
         self.Recalc_RQD = master.Recalc_RQD
-        self.gui_Scale_Linear_Inputs = master.Scale_Linear_Inputs
-        self.gui_Entry_units_var_Callback = master.Entry_units_var_Callback
+
+        self.Ctrl_Scale_Linear_Inputs = master.Ctrl_Scale_Linear_Inputs
+        self.Ctrl_Entry_units_var_Callback = master.Ctrl_Entry_units_var_Callback
 
         # GUI Engraver callbacks
         self.refresh_v_pplot = master.engrave.refresh_v_pplot
@@ -67,20 +68,7 @@ class GeneralSettings(object):
         self.plotbox = BooleanVar()
         self.boxgap = StringVar()
         self.v_pplot = BooleanVar()
-        self.input_type = StringVar()
-
-        self.YSCALE = StringVar()
-        self.XSCALE = StringVar()
-        self.LSPACE = StringVar()
-        self.CSPACE = StringVar()
-        self.WSPACE = StringVar()
-        self.TANGLE = StringVar()
-        self.TRADIUS = StringVar()
-        self.ZSAFE = StringVar()
-        self.ZCUT = StringVar()
-        self.STHICK = StringVar()
-        self.origin = StringVar()
-        self.justify = StringVar()
+        # self.input_type = StringVar()
 
         self.initialise_variables()
         self.create_widgets()
@@ -109,20 +97,7 @@ class GeneralSettings(object):
         self.plotbox.set(self.settings.get('plotbox'))
         self.boxgap.set(self.settings.get('boxgap'))
         self.v_pplot.set(self.settings.get('v_pplot'))
-        self.input_type.set(self.settings.get('input_type'))
-
-        self.YSCALE.set(self.settings.get('yscale'))
-        self.XSCALE.set(self.settings.get('xscale'))
-        self.LSPACE.set(self.settings.get('line_space'))
-        self.CSPACE.set(self.settings.get('char_space'))
-        self.WSPACE.set(self.settings.get('word_space'))
-        self.TANGLE.set(self.settings.get('text_angle'))
-        self.TRADIUS.set(self.settings.get('text_radius'))
-        self.ZSAFE.set(self.settings.get('zsafe'))
-        self.ZCUT.set(self.settings.get('zcut'))
-        self.STHICK.set(self.settings.get('line_thickness'))
-        self.origin.set(self.settings.get('origin'))
-        self.justify.set(self.settings.get('justify'))
+        # self.input_type.set(self.settings.get('input_type'))
 
     def Close_Current_Window_Click(self):
 
@@ -300,7 +275,7 @@ class GeneralSettings(object):
         self.Radio_Hcalc_ALL.place(x=w_label + x_radio_offset + 90, y=D_Yloc, width=90, height=23)
         self.Radio_Hcalc_ALL.configure(variable=self.H_CALC)
 
-        if self.input_type.get() != "text":
+        if self.settings.get('input_type') == "image":
             self.Entry_Fontdir.configure(state="disabled")
             self.Fontdir.configure(state="disabled")
             self.Radio_Hcalc_ALL.configure(state="disabled")
@@ -361,6 +336,38 @@ class GeneralSettings(object):
         self.GEN_Close = Button(general_settings, text="Close", command=self.Close_Current_Window_Click)
         self.GEN_Close.place(x=Xbut + 65, y=Ybut, width=130, height=30, anchor="w")
 
+    def Scale_Linear_Inputs(self, factor=1.0):
+        # All settings are scaled here, the values in the individual frames are refreshed (w the settings here scaled)
+        self.settings.set('xorigin', self.settings.get('xorigin') * factor)
+        self.settings.set('yorigin', self.settings.get('yorigin') * factor)
+        self.settings.set('accuracy', self.settings.get('accuracy') * factor)
+        self.settings.set('boxgap', self.settings.get('boxgap') * factor)
+
+        self.settings.set('yscale', self.settings.get('yscale') * factor)
+        self.settings.set('line_thickness', self.settings.get('line_thickness') * factor)
+        self.settings.set('text_radius', self.settings.get('text_radius') * factor)
+        self.settings.set('feedrate', self.settings.get('feedrate') * factor)
+        self.settings.set('plunge_rate', self.settings.get('plunge_rate') * factor)
+        self.settings.set('zsafe', self.settings.get('zsafe') * factor)
+        self.settings.set('zcut', self.settings.get('zcut') * factor)
+
+        self.settings.set('v_bit_dia', self.settings.get('v_bit_dia') * factor)
+        self.settings.set('v_depth_lim', self.settings.get('v_depth_lim') * factor)
+        self.settings.set('v_max_cut', self.settings.get('v_max_cut') * factor)
+        self.settings.set('max_cut', self.settings.get('max_cut') * factor)
+        self.settings.set('v_step_len', self.settings.get('v_step_len') * factor)
+        self.settings.set('allowance', self.settings.get('allowance') * factor)
+        self.settings.set('v_rough_stk', self.settings.get('v_rough_stk') * factor)
+        self.settings.set('clean_dia', self.settings.get('clean_dia') * factor)
+        self.settings.set('clean_v', self.settings.get('clean_v') * factor)
+
+        self.xorigin.set('%.3g' % self.settings.get('xorigin'))
+        self.yorigin.set('%.3g' % self.settings.get('yorigin'))
+        self.accuracy.set('%.3g' % self.settings.get('accuracy'))
+        self.boxgap.set('%.3g' % self.settings.get('boxgap'))
+
+        self.Ctrl_Scale_Linear_Inputs(factor)
+
     # Callbacks
 
     def Entry_units_var_Callback(self):
@@ -376,22 +383,8 @@ class GeneralSettings(object):
         self.settings.set('units', self.units.get())
         self.settings.set('feed_units', self.funits.get())
 
-        self.gui_Entry_units_var_Callback()
-        # self.Recalc_RQD()
-
-    def Scale_Linear_Inputs(self, factor=1.0):
-
-        self.settings.set('xorigin', self.settings.get('xorigin') * factor)
-        self.settings.set('yorigin', self.settings.get('yorigin') * factor)
-        self.settings.set('accuracy', self.settings.get('accuracy') * factor)
-        self.settings.set('boxgap', self.settings.get('boxgap') * factor)
-
-        self.xorigin.set('%.3g' % self.settings.get('xorigin'))
-        self.yorigin.set('%.3g' % self.settings.get('yorigin'))
-        self.accuracy.set('%.3g' % self.settings.get('accuracy'))
-        self.boxgap.set('%.3g' % self.settings.get('boxgap'))
-
-        self.gui_Scale_Linear_Inputs(factor)
+        self.Ctrl_Entry_units_var_Callback()
+        self.Recalc_RQD()
 
     def Entry_Xoffset_Check(self):
         try:
