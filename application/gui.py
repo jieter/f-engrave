@@ -52,12 +52,9 @@ class Gui(Frame):
 
         # the main window consists of three rows and three columns
         self.grid()
-        self.master.rowconfigure(0, weight=1)
         self.master.columnconfigure(1, weight=1, minsize=400)
-        self.master.rowconfigure(0, minsize=400)
+        self.master.rowconfigure(0, weight=1, minsize=400)
         self.master.rowconfigure(2, minsize=20)
-        # self.master.columnconfigure(0, minsize=250)
-        # self.master.columnconfigure(2, minsize=250)
 
         self.mainwindow_image_left = MainWindowImageLeft(master, self, self.settings)
         self.mainwindow_text_left = MainWindowTextLeft(master, self, self.settings)
@@ -95,8 +92,8 @@ class Gui(Frame):
         """
         Engrave progress callback
         """
-        cszw = int(self.PreviewCanvas.cget("width"))
-        cszh = int(self.PreviewCanvas.cget("height"))
+        cszw = int(self.PreviewCanvas.winfo_width())
+        cszh = int(self.PreviewCanvas.winfo_height())
 
         midx, midy = self.engrave.image.get_midxy()
 
@@ -337,9 +334,6 @@ class Gui(Frame):
         self.master.config(menu=self.menuBar)
 
     def create_previewcanvas(self):
-        # self.PreviewCanvas = Canvas(self.master,
-        #                             width=350,
-        #                             height=350, background="grey")
         self.PreviewCanvas = Canvas(self.master, background="grey")
 
         self.PreviewCanvas.bind("<Button-4>", self._mouseZoomIn)
@@ -376,7 +370,7 @@ class Gui(Frame):
                                textvariable=self.statusMessage,
                                bd=1, relief=SUNKEN)
         self.statusMessage.set("Welcome to F-Engrave")
-        self.statusbar.grid(row=2, column=0, columnspan=3, sticky=W + E + N + S)
+        self.statusbar.grid(row=2, column=0, columnspan=3, sticky=NSEW)
 
     def initialise_settings(self):
         """
@@ -688,6 +682,10 @@ class Gui(Frame):
 
     def Entry_cut_type_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
+        self.Ctrl_set_mainwindow_cut_type()
+
+    def Ctrl_set_menu_cut_type(self):
+        self.cut_type.set(self.settings.get('cut_type'))
 
     def Check_All_Variables(self):
 
@@ -964,7 +962,7 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        if self.engrave.number_of_v_coords() == 0 and self.cut_type.get() == CUT_TYPE_VCARVE:
+        if self.engrave.number_of_v_coords() == 0 and self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             mess = "V-carve path data does not exist.  "
             mess = mess + "Only settings will be saved.\n\n"
             mess = mess + "To generate V-Carve path data Click on the"
@@ -1205,8 +1203,6 @@ class Gui(Frame):
         if self.batch.get():
             return
 
-        # x = int(self.master.winfo_x())
-        # y = int(self.master.winfo_y())
         w = int(self.master.winfo_width())
         h = int(self.master.winfo_height())
 
@@ -1215,7 +1211,7 @@ class Gui(Frame):
             self.w = w
             self.h = h
 
-            # if self.cut_type.get() == CUT_TYPE_VCARVE:
+            # if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             #     self.V_Carve_Calc.configure(state="normal", command=None)
             # else:
             #     self.V_Carve_Calc.configure(state="disabled", command=None)
@@ -1232,21 +1228,22 @@ class Gui(Frame):
         self.input_frame.grid_forget()
         self.mainwindow_image_left.grid_forget()
 
-        self.PreviewCanvas.grid(row=0, column=1, sticky=W + E + N + S)
-        self.input_frame.grid(row=1, column=1, sticky=W + E + N + S)
+        self.PreviewCanvas.grid(row=0, column=1, sticky=NSEW)
+        self.input_frame.grid(row=1, column=1, sticky=NSEW)
 
-        self.mainwindow_text_left.grid(row=0, rowspan=2, column=0, sticky=W + E + N + S)
-        self.mainwindow_text_right.grid(row=0, rowspan=2, column=2, sticky=W + E + N + S)
+        self.mainwindow_text_left.grid(row=0, rowspan=2, column=0, sticky=NSEW)
+        self.mainwindow_text_right.grid(row=0, rowspan=2, column=2, sticky=NSEW)
 
         # main window callbacks
         self.Fontdir_Click = self.mainwindow_text_right.Fontdir_Click
         self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
         self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
+        self.Ctrl_set_mainwindow_cut_type = self.mainwindow_text_right.set_cut_type
 
         self.mainwindow_text_left.master_configure()
         self.mainwindow_text_right.master_configure()
 
-    # callbacks (wherein this Gui/App is the Controller)
+    # callbacks (this Gui/App is the Controller)
 
     def Ctrl_Entry_units_var_Callback_Text(self):
         self.mainwindow_text_left.Entry_units_var_Callback()
@@ -1262,13 +1259,14 @@ class Gui(Frame):
         self.mainwindow_text_left.grid_forget()
         self.mainwindow_text_right.grid_forget()
 
-        self.PreviewCanvas.grid(row=0, rowspan=2, column=1, columnspan=2, sticky=N + E + S + W)
-        self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, sticky=W + E + N + S)
+        self.PreviewCanvas.grid(row=0, rowspan=2, column=1, columnspan=2, sticky=NSEW)
+        self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, sticky=NSEW)
 
         # main window callbacks
         self.Fontdir_Click = None
         self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.Entry_units_var_Callback
         self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.Scale_Linear_Inputs
+        self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
 
         self.mainwindow_image_left.master_configure()
 
@@ -1329,15 +1327,15 @@ class Gui(Frame):
         self.segID = []
 
         # origin
-        cszw = int(self.PreviewCanvas.cget("width"))
-        cszh = int(self.PreviewCanvas.cget("height"))
+        cszw = int(self.PreviewCanvas.winfo_width())
+        cszh = int(self.PreviewCanvas.winfo_height())
         buff = 10
 
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
         midx = (minx + maxx) / 2
         midy = (miny + maxy) / 2
 
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             thickness = 0.0
         else:
             thickness = self.settings.get('line_thickness')
@@ -1416,7 +1414,7 @@ class Gui(Frame):
         axis_y2 = cszh / 2 - (y_origin - midy + axis_length) / plot_scale
 
         # V-carve Plotting Stuff
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             r_inlay_top = self.calc_r_inlay_top()
 
             for XY in self.engrave.v_coords:
@@ -1457,7 +1455,7 @@ class Gui(Frame):
                 old = new
 
         # Plot cleanup path
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
 
             loop_old = -1
             for line in self.engrave.clean_coords_sort:
@@ -1511,7 +1509,7 @@ class Gui(Frame):
 
         # TODO mainwindow
         # if not self.batch.get():
-        #     if self.cut_type.get() == CUT_TYPE_VCARVE:
+        #     if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
         #         self.V_Carve_Calc.configure(state="normal", command=None)
         #     else:
         #         self.V_Carve_Calc.configure(state="disabled", command=None)
@@ -1897,8 +1895,8 @@ class Gui(Frame):
 
     def ZOOM(self, z_inc):
         all = self.PreviewCanvas.find_all()
-        x = int(self.PreviewCanvas.cget("width")) / 2.0
-        y = int(self.PreviewCanvas.cget("height")) / 2.0
+        x = int(self.PreviewCanvas.winfo_width()) / 2.0
+        y = int(self.PreviewCanvas.winfo_height()) / 2.0
         for i in all:
             self.PreviewCanvas.scale(i, x, y, z_inc, z_inc)
             w = self.PreviewCanvas.itemcget(i, "width")
@@ -1912,13 +1910,13 @@ class Gui(Frame):
         self.menu_View_Zoom_out()
 
     def menu_View_Zoom_in(self):
-        x = int(self.PreviewCanvas.cget("width")) / 2.0
-        y = int(self.PreviewCanvas.cget("height")) / 2.0
+        x = int(self.PreviewCanvas.winfo_width()) / 2.0
+        y = int(self.PreviewCanvas.winfo_height()) / 2.0
         self.ZOOM_ITEMS(x, y, 2.0)
 
     def menu_View_Zoom_out(self):
-        x = int(self.PreviewCanvas.cget("width")) / 2.0
-        y = int(self.PreviewCanvas.cget("height")) / 2.0
+        x = int(self.PreviewCanvas.winfo_width()) / 2.0
+        y = int(self.PreviewCanvas.winfo_height()) / 2.0
         self.ZOOM_ITEMS(x, y, 0.5)
 
     def _mouseZoomIn(self, event):

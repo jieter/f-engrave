@@ -245,7 +245,7 @@ class MainWindowTextLeft(Frame):
         self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
 
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             self.Entry_Sthick.configure(state="disabled")
             self.Label_Sthick.configure(state="disabled")
             self.Label_Sthick_u.configure(state="disabled")
@@ -560,6 +560,8 @@ class MainWindowTextRight(Frame):
         self.readFontFile = gui.readFontFile
         self.do_it = gui.do_it
 
+        self.Ctrl_set_menu_cut_type = gui.Ctrl_set_menu_cut_type
+
         # Variables
         self.fontdex = BooleanVar()
         self.v_pplot = BooleanVar()
@@ -696,6 +698,9 @@ class MainWindowTextRight(Frame):
 
         self.cut_type.trace_variable("w", self.Entry_cut_type_Callback)
 
+    def set_cut_type(self):
+        self.cut_type.set(self.settings.get('cut_type'))
+
     def master_configure(self):
         # configure right column
         w_label = 90
@@ -705,6 +710,9 @@ class MainWindowTextRight(Frame):
         x_label_R = 10
         x_entry_R = x_label_R + w_label + 10
         x_units_R = x_entry_R + w_entry + 5
+
+        # cut_type may have been changed since the last configuration
+        self.set_cut_type()
 
         # G-Code properties
 
@@ -870,6 +878,7 @@ class MainWindowTextRight(Frame):
 
     def Entry_cut_type_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
+        self.Ctrl_set_menu_cut_type()
         self.Recalc_RQD()
 
     # Font properties callbacks
@@ -977,11 +986,10 @@ class MainWindowImageLeft(Frame):
         self.entry_set = gui.entry_set
         self.Recalculate_Click = gui.Recalculate_Click
         self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
-        # self.recalculate_RQD_Nocalc = gui.recalculate_RQD_Nocalc
         self.V_Carve_Calc_Click = gui.V_Carve_Calc_Click
         self.Recalc_RQD = gui.Recalc_RQD
         self.menu_View_Refresh = gui.menu_View_Refresh
-        # self.do_it = gui.do_it
+        self.Ctrl_set_menu_cut_type = gui.Ctrl_set_menu_cut_type
 
         # Variables
         self.flip = BooleanVar()
@@ -1018,7 +1026,6 @@ class MainWindowImageLeft(Frame):
 
         self.initialise_variables()
         self.create_widgets()
-        # self.bind_keys()
         self.master_configure
 
     def width(self):
@@ -1210,6 +1217,9 @@ class MainWindowImageLeft(Frame):
         self.NGC_FILE = (self.settings.get('NGC_FILE'))
         self.IMAGE_FILE = (self.settings.get('IMAGE_FILE'))
 
+    def set_cut_type(self):
+        self.cut_type.set(self.settings.get('cut_type'))
+
     def master_configure(self):
         w_label = 90
         w_entry = 60
@@ -1218,6 +1228,9 @@ class MainWindowImageLeft(Frame):
         x_label_L = 10
         x_entry_L = x_label_L + w_label + 10
         x_units_L = x_entry_L + w_entry + 5
+
+        # cut_type may have been changed since the last configuration
+        self.set_cut_type()
 
         # Image properties
 
@@ -1243,7 +1256,8 @@ class MainWindowImageLeft(Frame):
         self.Label_Sthick.place(x=x_label_L, y=Yloc, width=w_label, height=21)
         self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
+
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             self.Entry_Sthick.configure(state="disabled")
             self.Label_Sthick.configure(state="disabled")
             self.Label_Sthick_u.configure(state="disabled")
@@ -1512,4 +1526,5 @@ class MainWindowImageLeft(Frame):
 
     def Entry_cut_type_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
+        self.Ctrl_set_menu_cut_type()
         self.Recalc_RQD()
