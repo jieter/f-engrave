@@ -28,6 +28,7 @@ class BitmapSettings(object):
 
         # Bitmap settings window
         self.bmp_settings = Toplevel(width=525, height=250)
+
         # Use grab_set to prevent user input in the main window during calculations
         self.bmp_settings.grab_set()
         self.bmp_settings.resizable(0, 0)

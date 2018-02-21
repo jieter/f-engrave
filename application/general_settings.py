@@ -30,6 +30,7 @@ class GeneralSettings(object):
 
         # General settings window
         self.general_settings = Toplevel(width=600, height=500)
+
         # Use grab_set to prevent user input in the main window during calculations
         self.general_settings.grab_set()
         self.general_settings.resizable(0, 0)

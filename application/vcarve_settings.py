@@ -33,6 +33,7 @@ class VCarveSettings(object):
 
         # V-Carve settings window
         self.vcarve_settings = Toplevel(width=580, height=690)
+
         # Use grab_set to prevent user input in the main window during calculations
         self.vcarve_settings.grab_set()
         self.vcarve_settings.resizable(0, 0)
@@ -88,9 +89,6 @@ class VCarveSettings(object):
         self.initialise_variables()
         self.create_widgets()
         self.create_icon()
-
-        # Derived variables
-        # self.calc_depth_limit()
 
     def initialise_variables(self):
         self.units.set(self.settings.get('units'))
