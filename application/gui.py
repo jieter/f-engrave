@@ -134,35 +134,11 @@ class Gui(Frame):
         self.show_axis = BooleanVar()
         self.show_box = BooleanVar()
 
-        self.flip = BooleanVar()
-        self.mirror = BooleanVar()
-        self.outer = BooleanVar()
-        self.upper = BooleanVar()
-
         self.fontdex = BooleanVar()
         self.v_pplot = BooleanVar()
 
-        self.useIMGsize = BooleanVar()
-        self.YSCALE = StringVar()
-        self.XSCALE = StringVar()
-        self.LSPACE = StringVar()
-        self.CSPACE = StringVar()
-        self.WSPACE = StringVar()
-        self.TANGLE = StringVar()
-        self.TRADIUS = StringVar()
-        self.ZSAFE = StringVar()
-        self.ZCUT = StringVar()
-        self.STHICK = StringVar()
-        self.origin = StringVar()
-        self.justify = StringVar()
-        self.units = StringVar()
+        # self.useIMGsize = BooleanVar()
 
-        self.funits = StringVar()
-        self.FEED = StringVar()
-        self.PLUNGE = StringVar()
-        self.fontfile = StringVar()
-        self.H_CALC = StringVar()
-        self.fontdir = StringVar()
         self.cut_type = StringVar()
         self.input_type = StringVar()
 
@@ -341,6 +317,7 @@ class Gui(Frame):
         top_Settings.add_separator()
         top_Settings.add_radiobutton(label="Engrave Mode", variable=self.cut_type, value="engrave")
         top_Settings.add_radiobutton(label="V-Carve Mode", variable=self.cut_type, value="v-carve")
+        self.cut_type.trace_variable("w", self.Entry_cut_type_Callback)
 
         top_Settings.add_separator()
         top_Settings.add_radiobutton(label="Text Mode (CXF/TTF)", variable=self.input_type, value="text",
@@ -409,38 +386,11 @@ class Gui(Frame):
         self.show_box.set(self.settings.get('show_box'))
         self.show_thick.set(self.settings.get('show_thick'))
 
-        self.flip.set(self.settings.get('flip'))
-        self.mirror.set(self.settings.get('mirror'))
-        self.outer.set(self.settings.get('outer'))
-        self.upper.set(self.settings.get('upper'))
-
         self.fontdex.set(self.settings.get('fontdex'))
         self.v_pplot.set(self.settings.get('v_pplot'))
 
-        self.useIMGsize.set(self.settings.get('useIMGsize'))
-        self.YSCALE.set(self.settings.get('yscale'))
-        self.XSCALE.set(self.settings.get('xscale'))
-        self.LSPACE.set(self.settings.get('line_space'))
-        self.CSPACE.set(self.settings.get('char_space'))
-        self.WSPACE.set(self.settings.get('word_space'))
-        self.TANGLE.set(self.settings.get('text_angle'))
-        self.TRADIUS.set(self.settings.get('text_radius'))
-        self.ZSAFE.set(self.settings.get('zsafe'))
-        self.ZCUT.set(self.settings.get('zcut'))
-        self.STHICK.set(self.settings.get('line_thickness'))
-        self.origin.set(self.settings.get('origin'))
-
-        self.justify.set(self.settings.get('justify'))
-        self.units.set(self.settings.get('units'))
-        self.funits.set(self.settings.get('feed_units'))
-        self.FEED.set(self.settings.get('feedrate'))
-        self.PLUNGE.set(self.settings.get('plunge_rate'))
-        self.fontfile.set(self.settings.get('fontfile'))
-        self.H_CALC.set(self.settings.get('height_calculation'))
-        self.fontdir.set(self.settings.get('fontdir'))
         self.cut_type.set(self.settings.get('cut_type'))
         self.input_type.set(self.settings.get('input_type'))
-
         self.default_text = self.settings.get('default_text')
 
         self.HOME_DIR = (self.settings.get('HOME_DIR'))
@@ -734,6 +684,9 @@ class Gui(Frame):
     def Entry_show_thick_Callback(self, varName, index, mode):
         self.settings.set('show_thick', self.show_thick.get())
 
+    def Entry_cut_type_Callback(self, varName, index, mode):
+        self.settings.set('cut_type', self.cut_type.get())
+
     def Check_All_Variables(self):
 
         if self.batch.get():
@@ -752,7 +705,7 @@ class Gui(Frame):
 
         return error_cnt
 
-    # TODO refactor into separate code
+    # TODO refactor into a separate object?
 
     def V_Carve_Calc_Click(self):
         if self.Check_All_Variables() > 0:
@@ -851,21 +804,6 @@ class Gui(Frame):
             return True  # stop
         else:
             return False
-
-    # def Entry_input_callback(self, event):
-    #     string = self.Input.get(1.0, END)
-    #     self.settings.set('default_text', string)
-    #     self.recalculate_RQD_Nocalc(event)
-
-    def Entry_recalc_var_Callback(self, varName, index, mode):
-        self.settings.set('origin', self.origin.get())
-        self.settings.set('justify', self.justify.get())
-        self.settings.set('flip', self.flip.get())
-        self.settings.set('mirror', self.mirror.get())
-        self.settings.set('outer', self.outer.get())
-        self.settings.set('upper', self.upper.get())
-        self.settings.set('cut_type', self.cut_type.get())
-        self.Recalc_RQD()
 
     def Entry_units_var_Callback(self):
         self.units.set(self.settings.get('units'))

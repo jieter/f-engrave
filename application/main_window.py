@@ -26,7 +26,6 @@ class MainWindowTextLeft(Frame):
         self.Recalculate_Click = gui.Recalculate_Click
         self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
         self.recalculate_RQD_Nocalc = gui.recalculate_RQD_Nocalc
-        self.Entry_recalc_var_Callback = gui.Entry_recalc_var_Callback
         self.V_Carve_Calc_Click = gui.V_Carve_Calc_Click
         self.Recalc_RQD = gui.Recalc_RQD
         self.menu_View_Refresh = gui.menu_View_Refresh
@@ -41,7 +40,6 @@ class MainWindowTextLeft(Frame):
         self.fontdex = BooleanVar()
         self.v_pplot = BooleanVar()
 
-        self.useIMGsize = BooleanVar()  # TODO image
         self.YSCALE = StringVar()
         self.XSCALE = StringVar()
         self.LSPACE = StringVar()
@@ -174,7 +172,7 @@ class MainWindowTextLeft(Frame):
                                              "Right", command=self.Recalculate_RQD_Click)
         self.Label_Justify_ToolTip = ToolTip(self.Label_Justify,
                                              text='Justify determins how to align multiple lines of text. Left side, Right side or Centered.')
-        self.justify.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.justify.trace_variable("w", self.Entry_justify_Callback)
 
         self.Label_Origin = Label(self, text="Origin", anchor=CENTER)
         self.Origin_OptionMenu = OptionMenu(self, self.origin, "Top-Left", "Top-Center", "Top-Right", "Mid-Left",
@@ -182,19 +180,19 @@ class MainWindowTextLeft(Frame):
                                             command=self.Recalculate_RQD_Click)
         self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
                                             text='Origin determins where the X and Y zero position is located relative to the engraving.')
-        self.origin.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.origin.trace_variable("w", self.Entry_origin_Callback)
 
         self.Label_flip = Label(self, text="Flip Text")
         self.Checkbutton_flip = Checkbutton(self, text=" ", anchor=W)
         self.Checkbutton_flip.configure(variable=self.flip)
-        self.flip.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.flip.trace_variable("w", self.Entry_flip_Callback)
         self.Label_flip_ToolTip = ToolTip(self.Label_flip,
                                           text='Selecting Flip Text mirrors the text about a horizontal line.')
 
         self.Label_mirror = Label(self, text="Mirror Text")
         self.Checkbutton_mirror = Checkbutton(self, text=" ", anchor=W)
         self.Checkbutton_mirror.configure(variable=self.mirror)
-        self.mirror.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.mirror.trace_variable("w", self.Entry_mirror_Callback)
         self.Label_mirror_ToolTip = ToolTip(self.Label_mirror,
                                             text='Selecting Mirror Text mirrors the text about a vertical line.')
 
@@ -214,7 +212,7 @@ class MainWindowTextLeft(Frame):
         self.Label_outer = Label(self, text="Outside circle")
         self.Checkbutton_outer = Checkbutton(self, text=" ", anchor=W)
         self.Checkbutton_outer.configure(variable=self.outer)
-        self.outer.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.outer.trace_variable("w", self.Entry_outer_Callback)
         self.Label_outer_ToolTip = ToolTip(self.Label_outer,
                                            text='Select whether the text is placed so that is falls on the inside of \
                                            the circle radius or the outside of the circle radius.')
@@ -222,7 +220,7 @@ class MainWindowTextLeft(Frame):
         self.Label_upper = Label(self, text="Top of Circle")
         self.Checkbutton_upper = Checkbutton(self, text=" ", anchor=W)
         self.Checkbutton_upper.configure(variable=self.upper)
-        self.upper.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.upper.trace_variable("w", self.Entry_upper_Callback)
         self.Label_upper_ToolTip = ToolTip(self.Label_upper,
                                            text='Select whether the text is placed on the top of the circle of on the bottom of the circle  \
                                            (i.e. concave down or concave up).')
@@ -497,26 +495,28 @@ class MainWindowTextLeft(Frame):
     def Entry_Tradius_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), setting='text_radius')
 
-    def useIMGsize_var_Callback(self):
+    def Entry_justify_Callback(self, varName, index, mode):
+        self.settings.set('justify', self.justify.get())
+        self.Recalc_RQD()
 
-        if self.settings.get('input_type') == "image":
-            try:
-                image_height = self.image.get_height()
-            except:
-                if self.settings.get('units') == 'in':
-                    image_height = 2
-                else:
-                    image_height = 50
+    def Entry_origin_Callback(self, varName, index, mode):
+        self.settings.set('origin', self.origin.get())
+        self.Recalc_RQD()
 
-        self.settings.set('useIMGsize', self.useIMGsize.get())
-        if self.useIMGsize.get():
-            self.YSCALE.set('%.3g' % (100 * float(self.YSCALE.get()) / image_height))
-        else:
-            self.YSCALE.set('%.3g' % ((float(self.YSCALE.get()) / 100) * image_height))
+    def Entry_flip_Callback(self, varName, index, mode):
+        self.settings.set('flip', self.flip.get())
+        self.Recalc_RQD()
 
-        self.settings.set('yscale', self.YSCALE.get())
+    def Entry_mirror_Callback(self, varName, index, mode):
+        self.settings.set('mirror', self.mirror.get())
+        self.Recalc_RQD()
 
-        self.menu_View_Refresh()
+    def Entry_outer_Callback(self, varName, index, mode):
+        self.settings.set('outer', self.outer.get())
+        self.Recalc_RQD()
+
+    def Entry_upper_Callback(self, varName, index, mode):
+        self.settings.set('upper', self.upper.get())
         self.Recalc_RQD()
 
 
@@ -535,7 +535,6 @@ class MainWindowTextRight(Frame):
         self.Recalculate_Click = gui.Recalculate_Click
         self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
         self.recalculate_RQD_Nocalc = gui.recalculate_RQD_Nocalc
-        self.Entry_recalc_var_Callback = gui.Entry_recalc_var_Callback
         self.V_Carve_Calc_Click = gui.V_Carve_Calc_Click
         self.Recalc_RQD = gui.Recalc_RQD
         self.menu_View_Refresh = gui.menu_View_Refresh
@@ -630,7 +629,7 @@ class MainWindowTextRight(Frame):
 
     def create_widgets_font(self):
         self.Checkbutton_fontdex = Checkbutton(self, text="Show All Font Characters", anchor=W)
-        self.fontdex.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.fontdex.trace_variable("w", self.Entry_fontdex_Callback)
         self.Checkbutton_fontdex.configure(variable=self.fontdex)
         self.Label_fontfile = Label(self, textvariable=self.current_input_file, anchor=W, foreground='grey50')
 
@@ -833,10 +832,14 @@ class MainWindowTextRight(Frame):
         self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
 
     def Entry_cut_type_Callback(self, varName, index, mode):
-        self.settings.set('cut_type', self.cut_type)
-        self.Entry_recalc_var_Callback
+        self.settings.set('cut_type', self.cut_type.get())
+        self.Recalc_RQD()
 
     # Font properties callbacks
+
+    def Entry_fontdex_Callback(self, varName, index, mode):
+        self.settings.set('fontdex', self.fontdex.get())
+        self.Recalc_RQD()
 
     def Fontdir_Click(self, event):
         win_id = self.grab_current()
@@ -937,12 +940,11 @@ class MainWindowImageLeft(Frame):
         self.entry_set = gui.entry_set
         self.Recalculate_Click = gui.Recalculate_Click
         self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
-        self.recalculate_RQD_Nocalc = gui.recalculate_RQD_Nocalc
-        self.Entry_recalc_var_Callback = gui.Entry_recalc_var_Callback
+        # self.recalculate_RQD_Nocalc = gui.recalculate_RQD_Nocalc
         self.V_Carve_Calc_Click = gui.V_Carve_Calc_Click
         self.Recalc_RQD = gui.Recalc_RQD
         self.menu_View_Refresh = gui.menu_View_Refresh
-        self.do_it = gui.do_it
+        # self.do_it = gui.do_it
 
         # Variables
         self.flip = BooleanVar()
@@ -1001,12 +1003,12 @@ class MainWindowImageLeft(Frame):
         self.Recalculate = Button(self, text="Recalculate")
         self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
 
-        self.V_Carve_Calc = Button(self.master,text="Calc V-Carve", command=self.V_Carve_Calc_Click)
-        self.Radio_Cut_E = Radiobutton(self.master,text="Engrave", value="engrave", anchor=W)
-        self.Radio_Cut_E.configure(variable=self.cut_type )
-        self.Radio_Cut_V = Radiobutton(self.master,text="V-Carve", value="v-carve", anchor=W)
-        self.Radio_Cut_V.configure(variable=self.cut_type )
-        self.cut_type.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.V_Carve_Calc = Button(self.master, text="Calc V-Carve", command=self.V_Carve_Calc_Click)
+        self.Radio_Cut_E = Radiobutton(self.master, text="Engrave", value="engrave", anchor=W)
+        self.Radio_Cut_E.configure(variable=self.cut_type)
+        self.Radio_Cut_V = Radiobutton(self.master, text="V-Carve", value="v-carve", anchor=W)
+        self.Radio_Cut_V.configure(variable=self.cut_type)
+        self.cut_type.trace_variable("w", self.Entry_cut_type_Callback)
 
     def create_widgets_image_properties(self):
         self.Label_image_prop = Label(self, text="Image Properties:", anchor=W)
@@ -1067,19 +1069,19 @@ class MainWindowImageLeft(Frame):
                                             command=self.Recalculate_RQD_Click)
         self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
                                             text='Origin determins where the X and Y zero position is located relative to the engraving.')
-        self.origin.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.origin.trace_variable("w", self.Entry_origin_Callback)
 
         self.Label_flip = Label(self, text="Flip Image")
         self.Checkbutton_flip = Checkbutton(self, text=" ", anchor=W)
         self.Checkbutton_flip.configure(variable=self.flip)
-        self.flip.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.flip.trace_variable("w", self.Entry_flip_Callback)
         self.Label_flip_ToolTip = ToolTip(self.Label_flip,
                                           text='Selecting Flip Image mirrors the design about a horizontal line.')
 
         self.Label_mirror = Label(self, text="Mirror Image")
         self.Checkbutton_mirror = Checkbutton(self, text=" ", anchor=W)
         self.Checkbutton_mirror.configure(variable=self.mirror)
-        self.mirror.trace_variable("w", self.Entry_recalc_var_Callback)
+        self.mirror.trace_variable("w", self.Entry_mirror_Callback)
         self.Label_mirror_ToolTip = ToolTip(self.Label_mirror,
                                             text='Selecting Mirror Image mirrors the design about a vertical line.')
 
@@ -1089,8 +1091,8 @@ class MainWindowImageLeft(Frame):
         # TODO current file property
         # the current font file
         current_input_file = self.settings.get('fontfile')
-        self.Label_fontfile = Label(self.master,textvariable=current_input_file, anchor=W,\
-                                        foreground='grey50')
+        self.Label_fontfile = Label(self.master, textvariable=current_input_file, anchor=W,
+                                    foreground='grey50')
 
         self.Label_Feed = Label(self, text="Feed Rate")
         self.Label_Feed_u = Label(self, textvariable=self.funits, anchor=W)
@@ -1313,6 +1315,28 @@ class MainWindowImageLeft(Frame):
 
     # Image properties callbacks
 
+    def useIMGsize_var_Callback(self):
+
+        if self.settings.get('input_type') == "image":
+            try:
+                image_height = self.image.get_height()
+            except:
+                if self.settings.get('units') == 'in':
+                    image_height = 2
+                else:
+                    image_height = 50
+
+        self.settings.set('useIMGsize', self.useIMGsize.get())
+        if self.useIMGsize.get():
+            self.YSCALE.set('%.3g' % (100 * float(self.YSCALE.get()) / image_height))
+        else:
+            self.YSCALE.set('%.3g' % ((float(self.YSCALE.get()) / 100) * image_height))
+
+        self.settings.set('yscale', self.YSCALE.get())
+
+        self.menu_View_Refresh()
+        self.Recalc_RQD()
+
     def Entry_Yscale_Check(self):
         try:
             value = float(self.YSCALE.get())
@@ -1365,26 +1389,16 @@ class MainWindowImageLeft(Frame):
     def Entry_Tangle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), setting='text_angle')
 
-    def useIMGsize_var_Callback(self):
+    def Entry_origin_Callback(self, varName, index, mode):
+        self.settings.set('origin', self.origin.get())
+        self.Recalc_RQD()
 
-        if self.settings.get('input_type') == "image":
-            try:
-                image_height = self.image.get_height()
-            except:
-                if self.settings.get('units') == 'in':
-                    image_height = 2
-                else:
-                    image_height = 50
+    def Entry_flip_Callback(self, varName, index, mode):
+        self.settings.set('flip', self.flip.get())
+        self.Recalc_RQD()
 
-        self.settings.set('useIMGsize', self.useIMGsize.get())
-        if self.useIMGsize.get():
-            self.YSCALE.set('%.3g' % (100 * float(self.YSCALE.get()) / image_height))
-        else:
-            self.YSCALE.set('%.3g' % ((float(self.YSCALE.get()) / 100) * image_height))
-
-        self.settings.set('yscale', self.YSCALE.get())
-
-        self.menu_View_Refresh()
+    def Entry_mirror_Callback(self, varName, index, mode):
+        self.settings.set('mirror', self.mirror.get())
         self.Recalc_RQD()
 
     # G-Code properties callbacks
@@ -1434,3 +1448,7 @@ class MainWindowImageLeft(Frame):
 
     def Entry_Zcut_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
+
+    def Entry_cut_type_Callback(self, varName, index, mode):
+        self.settings.set('cut_type', self.cut_type.get())
+        self.Recalc_RQD()
