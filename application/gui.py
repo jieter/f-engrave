@@ -1239,8 +1239,8 @@ class Gui(Frame):
         self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
         self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
 
-        # self.mainwindow_text_left.master_configure()
-        # self.mainwindow_text_right.master_configure()
+        self.mainwindow_text_left.master_configure()
+        self.mainwindow_text_right.master_configure()
 
     # callbacks (this Gui/App is the Controller)
 
@@ -1271,7 +1271,7 @@ class Gui(Frame):
         self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.Entry_units_var_Callback
         self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.Scale_Linear_Inputs
 
-        # self.mainwindow_image_left.master_configure()
+        self.mainwindow_image_left.master_configure()
 
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):
         XX1, YY1 = old

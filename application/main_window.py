@@ -1282,15 +1282,6 @@ class MainWindowImageLeft(Frame):
         self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
 
-        # if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-        #     self.Entry_Sthick.configure(state="disabled")
-        #     self.Label_Sthick.configure(state="disabled")
-        #     self.Label_Sthick_u.configure(state="disabled")
-        # else:
-        #     self.Entry_Sthick.configure(state="normal")
-        #     self.Label_Sthick.configure(state="normal")
-        #     self.Label_Sthick_u.configure(state="normal")
-
         Yloc = Yloc + 24
         self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
         self.Label_Xscale_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
@@ -1347,15 +1338,6 @@ class MainWindowImageLeft(Frame):
         self.Label_Zcut.place(x=x_label_L, y=Yloc, width=w_label, height=21)
         self.Label_Zcut_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Zcut.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
-
-        # if self.cut_type.get() != "engrave":
-        #     self.Entry_Zcut.configure(state="disabled")
-        #     self.Label_Zcut.configure(state="disabled")
-        #     self.Label_Zcut_u.configure(state="disabled")
-        # else:
-        #     self.Entry_Zcut.configure(state="normal")
-        #     self.Label_Zcut.configure(state="normal")
-        #     self.Label_Zcut_u.configure(state="normal")
 
         Yloc = Yloc + 24 + 12
         self.separator3.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
