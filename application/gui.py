@@ -1652,15 +1652,6 @@ class Gui(Frame):
             self.statusMessage.set("No Image Loaded")
             return
 
-        try:
-            XScale_in = self.settings.get('xscale')
-            YScale_in = self.settings.get('yscale')
-            Angle = self.settings.get('text_angle')
-        except:
-            self.statusMessage.set(" Unable to create pamaths.  Check Settings Entry Values.")
-            self.statusbar.configure(bg='red')
-            return
-
         font_line_height = self.font.line_height()
         if font_line_height <= -1e10:
 
@@ -1680,21 +1671,24 @@ class Gui(Frame):
                 else:
                     fmessage("(" + error_text + ")")
 
-        # TODO image calculation
-        # if self.useIMGsize.get():
-        YScale = YScale_in / 100
-        XScale = XScale_in * YScale / 100
-
         # reset the image coords (to avoid corruption, e.g. from previous transformations)
         self.image.set_coords_from_strokes()
         self.engrave.set_image(self.image)
 
         # Image transformations
-        self.image.transform_scale(XScale, YScale)
-        self.image.transform_angle(Angle)
-        if self.settings.get('mirror'):
+        mirror = self.settings.get('mirror')
+        flip = self.settings.get('flip')
+        angle = self.settings.get('text_angle')
+        # TODO image calculation
+        # if self.useIMGsize.get():
+        y_scale = self.settings.get('yscale') / 100
+        x_scale = self.settings.get('xscale') * y_scale / 100
+
+        self.image.transform_scale(x_scale, y_scale)
+        self.image.transform_angle(angle)
+        if mirror:
             self.image.transform_mirror()
-        if self.settings.get('flip'):
+        if flip:
             self.image.transform_flip()
 
         x_origin, y_origin = self.get_origin()
@@ -1705,6 +1699,13 @@ class Gui(Frame):
 
         self.plot_bbox = self.image.get_bbox()
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
+        # engrave box or circle
+
+        if self.settings.get('plotbox'):
+            delta = self.get_delta()
+            self.image.add_box(delta, mirror, flip)
+            self.plot_bbox = self.image.bbox
+            minx, maxx, miny, maxy = self.plot_bbox.tuple()
 
         if not self.batch.get():
             self.bounding_box.set("Bounding Box (WxH) = " +

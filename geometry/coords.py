@@ -121,6 +121,24 @@ class MyImage(object):
 
         self.bbox = BoundingBox(xmin, xmax, ymin, ymax)
 
+    def add_box(self, delta, mirror, flip):
+        """
+        Add box outline
+        """
+        minx, maxx, miny, maxy = self.bbox.tuple()
+
+        if mirror ^ flip:
+            self.coords.append([minx - delta, miny - delta, minx - delta, maxy + delta, 0, 0])
+            self.coords.append([minx - delta, maxy + delta, maxx + delta, maxy + delta, 0, 0])
+            self.coords.append([maxx + delta, maxy + delta, maxx + delta, miny - delta, 0, 0])
+            self.coords.append([maxx + delta, miny - delta, minx - delta, miny - delta, 0, 0])
+        else:
+            self.coords.append([minx - delta, miny - delta, maxx + delta, miny - delta, 0, 0])
+            self.coords.append([maxx + delta, miny - delta, maxx + delta, maxy + delta, 0, 0])
+            self.coords.append([maxx + delta, maxy + delta, minx - delta, maxy + delta, 0, 0])
+            self.coords.append([minx - delta, maxy + delta, minx - delta, miny - delta, 0, 0])
+
+        self._set_bbox()
 
 class MyText(MyImage):
     """
@@ -324,22 +342,3 @@ class MyText(MyImage):
                         XY[2], XY[3] = transform(XY[2], XY[3], mina)
 
             self._set_bbox()
-
-    def add_box(self, delta, mirror, flip):
-        """
-        Add box outline
-        """
-        minx, maxx, miny, maxy = self.bbox.tuple()
-
-        if mirror ^ flip:
-            self.coords.append([minx - delta, miny - delta, minx - delta, maxy + delta, 0, 0])
-            self.coords.append([minx - delta, maxy + delta, maxx + delta, maxy + delta, 0, 0])
-            self.coords.append([maxx + delta, maxy + delta, maxx + delta, miny - delta, 0, 0])
-            self.coords.append([maxx + delta, miny - delta, minx - delta, miny - delta, 0, 0])
-        else:
-            self.coords.append([minx - delta, miny - delta, maxx + delta, miny - delta, 0, 0])
-            self.coords.append([maxx + delta, miny - delta, maxx + delta, maxy + delta, 0, 0])
-            self.coords.append([maxx + delta, maxy + delta, minx - delta, maxy + delta, 0, 0])
-            self.coords.append([minx - delta, maxy + delta, minx - delta, miny - delta, 0, 0])
-
-        self._set_bbox()

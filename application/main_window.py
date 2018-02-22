@@ -60,12 +60,6 @@ class MainWindowTextLeft(Frame):
         # self.bind_keys()
         self.master_configure()
 
-    def width(self):
-        return self.w
-
-    def height(self):
-        return self.h
-
     def create_widgets(self):
 
         self.create_widget_text_font_properties()
@@ -596,12 +590,6 @@ class MainWindowTextRight(Frame):
         self.bind_keys()
         self.master_configure()
 
-    def width(self):
-        return self.w
-
-    def height(self):
-        return self.h
-
     def create_widgets(self):
         self.create_widgets_gcode_properties()
         self.create_widgets_font()
@@ -1039,12 +1027,6 @@ class MainWindowImageLeft(Frame):
         self.initialise_variables()
         self.create_widgets()
         self.master_configure()
-
-    def width(self):
-        return self.w
-
-    def height(self):
-        return self.h
 
     def create_widgets(self):
         self.create_widgets_image_properties()
