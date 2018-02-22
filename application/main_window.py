@@ -333,7 +333,6 @@ class MainWindowTextLeft(Frame):
         self.Recalculate.place(x=12, y=Ybut, width=95, height=30)
 
     def configure_cut_type(self):
-
         if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.Entry_Sthick.configure(state="disabled")
             self.Label_Sthick.configure(state="disabled")
@@ -342,15 +341,6 @@ class MainWindowTextLeft(Frame):
             self.Entry_Sthick.configure(state="normal")
             self.Label_Sthick.configure(state="normal")
             self.Label_Sthick_u.configure(state="normal")
-
-        # if self.cut_type.get() == CUT_TYPE_VCARVE:
-        #     self.Entry_Zcut.configure(state="disabled")
-        #     self.Label_Zcut.configure(state="disabled")
-        #     self.Label_Zcut_u.configure(state="disabled")
-        # else:
-        #     self.Entry_Zcut.configure(state="normal")
-        #     self.Label_Zcut.configure(state="normal")
-        #     self.Label_Zcut_u.configure(state="normal")
 
     def initialise_variables(self):
         """
@@ -775,12 +765,15 @@ class MainWindowTextRight(Frame):
         self.configure_cut_type()
 
     def configure_cut_type(self):
-
         if self.cut_type.get() == CUT_TYPE_VCARVE:
+            self.V_Carve_Calc.configure(state="normal", command=None)
+
             self.Entry_Zcut.configure(state="disabled")
             self.Label_Zcut.configure(state="disabled")
             self.Label_Zcut_u.configure(state="disabled")
         else:
+            self.V_Carve_Calc.configure(state="disabled", command=None)
+
             self.Entry_Zcut.configure(state="normal")
             self.Label_Zcut.configure(state="normal")
             self.Label_Zcut_u.configure(state="normal")
@@ -1359,21 +1352,23 @@ class MainWindowImageLeft(Frame):
         self.Radio_Cut_V.place(x=x_label_L + x_offset, y=Ybut, width=w_label, height=23)
 
     def configure_cut_type(self):
-
         if self.cut_type.get() == CUT_TYPE_VCARVE:
+            self.V_Carve_Calc.configure(state="normal", command=None)
+
             self.Entry_Sthick.configure(state="disabled")
             self.Label_Sthick.configure(state="disabled")
             self.Label_Sthick_u.configure(state="disabled")
-        else:
-            self.Entry_Sthick.configure(state="normal")
-            self.Label_Sthick.configure(state="normal")
-            self.Label_Sthick_u.configure(state="normal")
 
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.Entry_Zcut.configure(state="disabled")
             self.Label_Zcut.configure(state="disabled")
             self.Label_Zcut_u.configure(state="disabled")
         else:
+            self.V_Carve_Calc.configure(state="disabled", command=None)
+
+            self.Entry_Sthick.configure(state="normal")
+            self.Label_Sthick.configure(state="normal")
+            self.Label_Sthick_u.configure(state="normal")
+
             self.Entry_Zcut.configure(state="normal")
             self.Label_Zcut.configure(state="normal")
             self.Label_Zcut_u.configure(state="normal")

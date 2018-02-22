@@ -1510,20 +1510,14 @@ class Gui(Frame):
 
         self.menu_View_Refresh()
 
-        # TODO mainwindow
-        # if not self.batch.get():
-        #     if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-        #         self.V_Carve_Calc.configure(state="normal", command=None)
-        #     else:
-        #         self.V_Carve_Calc.configure(state="disabled", command=None)
-        #     if self.Check_All_Variables() > 0:
-        #         return
-        #
-        # if not self.batch.get():
-        #     self.statusbar.configure(bg='yellow')
-        #     self.statusMessage.set(" Calculating.........")
-        #     self.master.update_idletasks()
-        #     self.PreviewCanvas.delete(ALL)
+        if self.Check_All_Variables() > 0:
+            return
+
+        if not self.batch.get():
+            self.statusbar.configure(bg='yellow')
+            self.statusMessage.set(" Calculating.........")
+            self.master.update_idletasks()
+            self.PreviewCanvas.delete(ALL)
 
         if self.settings.get('input_type') == "text":
             self.do_it_text()
