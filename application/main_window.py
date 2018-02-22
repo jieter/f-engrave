@@ -53,20 +53,12 @@ class MainWindowTextLeft(Frame):
         self.origin = StringVar()
         self.justify = StringVar()
         self.units = StringVar()
-
-        self.funits = StringVar()
-        self.FEED = StringVar()
-        self.PLUNGE = StringVar()
-        self.fontfile = StringVar()
-        self.H_CALC = StringVar()
-        self.fontdir = StringVar()
-        self.cut_type = StringVar()
-        self.input_type = StringVar()
+        self.cut_type = StringVar()  # not used for display
 
         self.initialise_variables()
         self.create_widgets()
         # self.bind_keys()
-        self.master_configure
+        self.master_configure()
 
     def width(self):
         return self.w
@@ -75,6 +67,7 @@ class MainWindowTextLeft(Frame):
         return self.h
 
     def create_widgets(self):
+
         self.create_widget_text_font_properties()
         self.create_widget_text_position()
         self.create_widget_text_on_circle()
@@ -86,6 +79,9 @@ class MainWindowTextLeft(Frame):
         # Buttons
         self.Recalculate = Button(self, text="Recalculate")
         self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
+
+        # cut_type is traced only (to adjust widgets that depend on it)
+        self.cut_type.trace_variable("w", self.Entry_cut_type_Callback)
 
     def create_widget_text_font_properties(self):
         self.Label_font_prop = Label(self, text="Text Font Properties:", anchor=W)
@@ -220,6 +216,9 @@ class MainWindowTextLeft(Frame):
                                            text='Select whether the text is placed on the top of the circle of on the bottom of the circle  \
                                            (i.e. concave down or concave up).')
 
+    def set_cut_type(self):
+        self.cut_type.set(self.settings.get('cut_type'))
+
     def master_configure(self):
         w_label = 90
         w_entry = 60
@@ -228,6 +227,9 @@ class MainWindowTextLeft(Frame):
         x_label_L = 10
         x_entry_L = x_label_L + w_label + 10
         x_units_L = x_entry_L + w_entry + 5
+
+        # cut_type may have been changed since the last configuration
+        self.set_cut_type()
 
         # Text font properties
 
@@ -245,14 +247,14 @@ class MainWindowTextLeft(Frame):
         self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
 
-        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            self.Entry_Sthick.configure(state="disabled")
-            self.Label_Sthick.configure(state="disabled")
-            self.Label_Sthick_u.configure(state="disabled")
-        else:
-            self.Entry_Sthick.configure(state="normal")
-            self.Label_Sthick.configure(state="normal")
-            self.Label_Sthick_u.configure(state="normal")
+        # if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+        #     self.Entry_Sthick.configure(state="disabled")
+        #     self.Label_Sthick.configure(state="disabled")
+        #     self.Label_Sthick_u.configure(state="disabled")
+        # else:
+        #     self.Entry_Sthick.configure(state="normal")
+        #     self.Label_Sthick.configure(state="normal")
+        #     self.Label_Sthick_u.configure(state="normal")
 
         Yloc = Yloc + 24
         self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
@@ -330,6 +332,26 @@ class MainWindowTextLeft(Frame):
         Ybut = self.h - 20
         self.Recalculate.place(x=12, y=Ybut, width=95, height=30)
 
+    def configure_cut_type(self):
+
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
+            self.Entry_Sthick.configure(state="disabled")
+            self.Label_Sthick.configure(state="disabled")
+            self.Label_Sthick_u.configure(state="disabled")
+        else:
+            self.Entry_Sthick.configure(state="normal")
+            self.Label_Sthick.configure(state="normal")
+            self.Label_Sthick_u.configure(state="normal")
+
+        # if self.cut_type.get() == CUT_TYPE_VCARVE:
+        #     self.Entry_Zcut.configure(state="disabled")
+        #     self.Label_Zcut.configure(state="disabled")
+        #     self.Label_Zcut_u.configure(state="disabled")
+        # else:
+        #     self.Entry_Zcut.configure(state="normal")
+        #     self.Label_Zcut.configure(state="normal")
+        #     self.Label_Zcut_u.configure(state="normal")
+
     def initialise_variables(self):
         """
         Initialise the TK widgets with the values from settings
@@ -357,20 +379,6 @@ class MainWindowTextLeft(Frame):
 
         self.justify.set(self.settings.get('justify'))
         self.units.set(self.settings.get('units'))
-        self.funits.set(self.settings.get('feed_units'))
-        self.FEED.set(self.settings.get('feedrate'))
-        self.PLUNGE.set(self.settings.get('plunge_rate'))
-        self.fontfile.set(self.settings.get('fontfile'))
-        self.H_CALC.set(self.settings.get('height_calculation'))
-        self.fontdir.set(self.settings.get('fontdir'))
-        self.cut_type.set(self.settings.get('cut_type'))
-        self.input_type.set(self.settings.get('input_type'))
-
-        self.default_text = self.settings.get('default_text')
-
-        self.HOME_DIR = (self.settings.get('HOME_DIR'))
-        self.NGC_FILE = (self.settings.get('NGC_FILE'))
-        self.IMAGE_FILE = (self.settings.get('IMAGE_FILE'))
 
     def Check_All_Variables(self):
 
@@ -403,11 +411,6 @@ class MainWindowTextLeft(Frame):
 
     def Entry_units_var_Callback(self):
         self.units.set(self.settings.get('units'))
-        if self.units.get() == 'in':
-            self.funits.set('in/min')
-        else:
-            self.funits.set('mm/min')
-        self.settings.set('feed_units', self.funits.get())
         self.Recalc_RQD()
 
     def Entry_Yscale_Check(self):
@@ -538,6 +541,11 @@ class MainWindowTextLeft(Frame):
         self.settings.set('upper', self.upper.get())
         self.Recalc_RQD()
 
+    # G-Code callback
+
+    def Entry_cut_type_Callback(self, varName, index, mode):
+        self.configure_cut_type()
+
 
 class MainWindowTextRight(Frame):
 
@@ -655,11 +663,10 @@ class MainWindowTextRight(Frame):
         self.Label_fontfile = Label(self, textvariable=self.current_input_file, anchor=W, foreground='grey50')
 
         self.Label_List_Box = Label(self, text="Font Files:", foreground="#101010", anchor=W)
-        lbframe = Frame(self)
 
-        self.Listbox_1_frame = lbframe
-        scrollbar = Scrollbar(lbframe, orient=VERTICAL)
-        self.Listbox_1 = Listbox(lbframe, selectmode="single", yscrollcommand=scrollbar.set)
+        self.Listbox_1_frame = Frame(self)
+        scrollbar = Scrollbar(self.Listbox_1_frame, orient=VERTICAL)
+        self.Listbox_1 = Listbox(self.Listbox_1_frame, selectmode="single", yscrollcommand=scrollbar.set)
         scrollbar.config(command=self.Listbox_1.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
         self.Listbox_1.pack(side=LEFT, fill=BOTH, expand=1)
@@ -699,7 +706,9 @@ class MainWindowTextRight(Frame):
         self.cut_type.trace_variable("w", self.Entry_cut_type_Callback)
 
     def set_cut_type(self):
-        self.cut_type.set(self.settings.get('cut_type'))
+        # only when changed (to avoid recursion due to trace_variable callback)
+        if self.cut_type.get() != self.settings.get('cut_type'):
+            self.cut_type.set(self.settings.get('cut_type'))
 
     def master_configure(self):
         # configure right column
@@ -739,14 +748,14 @@ class MainWindowTextRight(Frame):
         self.Label_Zcut_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
         self.Entry_Zcut.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
 
-        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            self.Entry_Zcut.configure(state="disabled")
-            self.Label_Zcut.configure(state="disabled")
-            self.Label_Zcut_u.configure(state="disabled")
-        else:
-            self.Entry_Zcut.configure(state="normal")
-            self.Label_Zcut.configure(state="normal")
-            self.Label_Zcut_u.configure(state="normal")
+        # if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+        #     self.Entry_Zcut.configure(state="disabled")
+        #     self.Label_Zcut.configure(state="disabled")
+        #     self.Label_Zcut_u.configure(state="disabled")
+        # else:
+        #     self.Entry_Zcut.configure(state="normal")
+        #     self.Label_Zcut.configure(state="normal")
+        #     self.Label_Zcut_u.configure(state="normal")
 
         # Font file
 
@@ -766,6 +775,19 @@ class MainWindowTextRight(Frame):
         self.Radio_Cut_E.place(x=x_label_R, y=Ybut, width=185, height=23)
         Ybut = self.h - 85
         self.Radio_Cut_V.place(x=x_label_R, y=Ybut, width=185, height=23)
+
+        self.configure_cut_type()
+
+    def configure_cut_type(self):
+
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
+            self.Entry_Zcut.configure(state="disabled")
+            self.Label_Zcut.configure(state="disabled")
+            self.Label_Zcut_u.configure(state="disabled")
+        else:
+            self.Entry_Zcut.configure(state="normal")
+            self.Label_Zcut.configure(state="normal")
+            self.Label_Zcut_u.configure(state="normal")
 
     def initialise_variables(self):
         """
@@ -878,6 +900,7 @@ class MainWindowTextRight(Frame):
 
     def Entry_cut_type_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
+        self.configure_cut_type()
         self.Ctrl_set_menu_cut_type()
         self.Recalc_RQD()
 
@@ -1026,7 +1049,7 @@ class MainWindowImageLeft(Frame):
 
         self.initialise_variables()
         self.create_widgets()
-        self.master_configure
+        self.master_configure()
 
     def width(self):
         return self.w
@@ -1218,7 +1241,9 @@ class MainWindowImageLeft(Frame):
         self.IMAGE_FILE = (self.settings.get('IMAGE_FILE'))
 
     def set_cut_type(self):
-        self.cut_type.set(self.settings.get('cut_type'))
+        # only when changed (to avoid recursion due to trace_variable callback)
+        if self.cut_type.get() != self.settings.get('cut_type'):
+            self.cut_type.set(self.settings.get('cut_type'))
 
     def master_configure(self):
         w_label = 90
@@ -1257,14 +1282,14 @@ class MainWindowImageLeft(Frame):
         self.Label_Sthick_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Sthick.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
 
-        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            self.Entry_Sthick.configure(state="disabled")
-            self.Label_Sthick.configure(state="disabled")
-            self.Label_Sthick_u.configure(state="disabled")
-        else:
-            self.Entry_Sthick.configure(state="normal")
-            self.Label_Sthick.configure(state="normal")
-            self.Label_Sthick_u.configure(state="normal")
+        # if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+        #     self.Entry_Sthick.configure(state="disabled")
+        #     self.Label_Sthick.configure(state="disabled")
+        #     self.Label_Sthick_u.configure(state="disabled")
+        # else:
+        #     self.Entry_Sthick.configure(state="normal")
+        #     self.Label_Sthick.configure(state="normal")
+        #     self.Label_Sthick_u.configure(state="normal")
 
         Yloc = Yloc + 24
         self.Label_Xscale.place(x=x_label_L, y=Yloc, width=w_label, height=21)
@@ -1323,19 +1348,21 @@ class MainWindowImageLeft(Frame):
         self.Label_Zcut_u.place(x=x_units_L, y=Yloc, width=w_units, height=21)
         self.Entry_Zcut.place(x=x_entry_L, y=Yloc, width=w_entry, height=23)
 
-        if self.cut_type.get() != "engrave":
-            self.Entry_Zcut.configure(state="disabled")
-            self.Label_Zcut.configure(state="disabled")
-            self.Label_Zcut_u.configure(state="disabled")
-        else:
-            self.Entry_Zcut.configure(state="normal")
-            self.Label_Zcut.configure(state="normal")
-            self.Label_Zcut_u.configure(state="normal")
+        # if self.cut_type.get() != "engrave":
+        #     self.Entry_Zcut.configure(state="disabled")
+        #     self.Label_Zcut.configure(state="disabled")
+        #     self.Label_Zcut_u.configure(state="disabled")
+        # else:
+        #     self.Entry_Zcut.configure(state="normal")
+        #     self.Label_Zcut.configure(state="normal")
+        #     self.Label_Zcut_u.configure(state="normal")
 
         Yloc = Yloc + 24 + 12
         self.separator3.place(x=x_label_L, y=Yloc, width=w_label + 75 + 40, height=2)
         Yloc = Yloc + 6
         self.Label_fontfile.place(x=x_label_L, y=Yloc, width=w_label + 75, height=21)
+
+        self.configure_cut_type()
 
         # Buttons
 
@@ -1349,8 +1376,29 @@ class MainWindowImageLeft(Frame):
 
         Ybut = self.h - 105
         self.Radio_Cut_E.place(x=x_label_L + x_offset, y=Ybut, width=w_label, height=23)
+
         Ybut = self.h - 85
         self.Radio_Cut_V.place(x=x_label_L + x_offset, y=Ybut, width=w_label, height=23)
+
+    def configure_cut_type(self):
+
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
+            self.Entry_Sthick.configure(state="disabled")
+            self.Label_Sthick.configure(state="disabled")
+            self.Label_Sthick_u.configure(state="disabled")
+        else:
+            self.Entry_Sthick.configure(state="normal")
+            self.Label_Sthick.configure(state="normal")
+            self.Label_Sthick_u.configure(state="normal")
+
+        if self.cut_type.get() == CUT_TYPE_VCARVE:
+            self.Entry_Zcut.configure(state="disabled")
+            self.Label_Zcut.configure(state="disabled")
+            self.Label_Zcut_u.configure(state="disabled")
+        else:
+            self.Entry_Zcut.configure(state="normal")
+            self.Label_Zcut.configure(state="normal")
+            self.Label_Zcut_u.configure(state="normal")
 
     def Check_All_Variables(self):
         error_cnt = \
@@ -1526,5 +1574,6 @@ class MainWindowImageLeft(Frame):
 
     def Entry_cut_type_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
+        self.configure_cut_type()
         self.Ctrl_set_menu_cut_type()
         self.Recalc_RQD()

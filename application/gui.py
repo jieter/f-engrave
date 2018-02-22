@@ -70,8 +70,13 @@ class Gui(Frame):
         self.engrave.set_status_callback(self.status_update)
 
         # callbacks (wherein this Gui/App acts as the Controller)
-        self.Ctrl_Entry_units_var_Callback = None
-        self.Ctrl_Scale_Linear_Inputs = None
+        self.Fontdir_Click = lambda *_, **__: None
+        self.Ctrl_Entry_units_var_Callback = lambda *_, **__: None
+        self.Ctrl_Scale_Linear_Inputs = lambda *_, **__: None
+        self.Ctrl_set_mainwindow_cut_type = lambda *_, **__: None
+
+        # main window callbacks
+        # lambda *_, **__: None
 
     def general_settings_window(self):
         self.general_settings_window = GeneralSettings(self, self.settings)
@@ -135,8 +140,6 @@ class Gui(Frame):
 
         self.fontdex = BooleanVar()
         self.v_pplot = BooleanVar()
-
-        # self.useIMGsize = BooleanVar()
 
         self.cut_type = StringVar()
         self.input_type = StringVar()
@@ -685,7 +688,9 @@ class Gui(Frame):
         self.Ctrl_set_mainwindow_cut_type()
 
     def Ctrl_set_menu_cut_type(self):
-        self.cut_type.set(self.settings.get('cut_type'))
+        # only when changed (to avoid recursion due to trace_variable callback)
+        if self.cut_type.get() != self.settings.get('cut_type'):
+            self.cut_type.set(self.settings.get('cut_type'))
 
     def Check_All_Variables(self):
 
@@ -1205,17 +1210,13 @@ class Gui(Frame):
 
         w = int(self.master.winfo_width())
         h = int(self.master.winfo_height())
-
         if abs(self.w - w) > 10 or abs(self.h - h) > 10 or update:
-
             self.w = w
             self.h = h
-
             # if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             #     self.V_Carve_Calc.configure(state="normal", command=None)
             # else:
             #     self.V_Carve_Calc.configure(state="disabled", command=None)
-
             if self.settings.get('input_type') == "text":
                 self.Master_Configure_text()
             else:
@@ -1226,24 +1227,26 @@ class Gui(Frame):
     def Master_Configure_text(self):
         self.PreviewCanvas.grid_forget()
         self.input_frame.grid_forget()
-        self.mainwindow_image_left.grid_forget()
 
         self.PreviewCanvas.grid(row=0, column=1, sticky=NSEW)
         self.input_frame.grid(row=1, column=1, sticky=NSEW)
-
         self.mainwindow_text_left.grid(row=0, rowspan=2, column=0, sticky=NSEW)
         self.mainwindow_text_right.grid(row=0, rowspan=2, column=2, sticky=NSEW)
 
         # main window callbacks
         self.Fontdir_Click = self.mainwindow_text_right.Fontdir_Click
+        self.Ctrl_set_mainwindow_cut_type = self.Ctrl_set_cut_type_Text
         self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
         self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
-        self.Ctrl_set_mainwindow_cut_type = self.mainwindow_text_right.set_cut_type
 
-        self.mainwindow_text_left.master_configure()
-        self.mainwindow_text_right.master_configure()
+        # self.mainwindow_text_left.master_configure()
+        # self.mainwindow_text_right.master_configure()
 
     # callbacks (this Gui/App is the Controller)
+
+    def Ctrl_set_cut_type_Text(self):
+        self.mainwindow_text_left.set_cut_type()
+        self.mainwindow_text_right.set_cut_type()
 
     def Ctrl_Entry_units_var_Callback_Text(self):
         self.mainwindow_text_left.Entry_units_var_Callback()
@@ -1263,12 +1266,12 @@ class Gui(Frame):
         self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, sticky=NSEW)
 
         # main window callbacks
-        self.Fontdir_Click = None
+        self.Fontdir_Click = lambda *_, **__: None
+        self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
         self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.Entry_units_var_Callback
         self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.Scale_Linear_Inputs
-        self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
 
-        self.mainwindow_image_left.master_configure()
+        # self.mainwindow_image_left.master_configure()
 
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):
         XX1, YY1 = old
