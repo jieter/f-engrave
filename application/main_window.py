@@ -666,6 +666,7 @@ class MainWindowTextRight(Frame):
 
         self.Listbox_1_frame = Frame(self)
         scrollbar = Scrollbar(self.Listbox_1_frame, orient=VERTICAL)
+
         self.Listbox_1 = Listbox(self.Listbox_1_frame, selectmode="single", yscrollcommand=scrollbar.set)
         scrollbar.config(command=self.Listbox_1.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
@@ -748,32 +749,27 @@ class MainWindowTextRight(Frame):
         self.Label_Zcut_u.place(x=x_units_R, y=Yloc, width=w_units, height=21)
         self.Entry_Zcut.place(x=x_entry_R, y=Yloc, width=w_entry, height=23)
 
-        # if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-        #     self.Entry_Zcut.configure(state="disabled")
-        #     self.Label_Zcut.configure(state="disabled")
-        #     self.Label_Zcut_u.configure(state="disabled")
-        # else:
-        #     self.Entry_Zcut.configure(state="normal")
-        #     self.Label_Zcut.configure(state="normal")
-        #     self.Label_Zcut_u.configure(state="normal")
-
         # Font file
 
         Yloc = Yloc + 24 + 6
         self.Label_List_Box.place(x=x_label_R + 0, y=Yloc, width=113, height=22)
 
+        # get the height of the grid this widget is in
+        # h = self.winfo_height()
+        h = self.master.winfo_height()
+
         Yloc = Yloc + 24
-        self.Listbox_1_frame.place(x=x_label_R + 0, y=Yloc, width=160 + 25, height=self.h - 324)
-        self.Label_fontfile.place(x=x_label_R, y=self.h - 165, width=w_label + 75, height=21)
-        self.Checkbutton_fontdex.place(x=x_label_R, y=self.h - 145, width=185, height=23)
+        self.Listbox_1_frame.place(x=x_label_R + 0, y=Yloc, width=160 + 25, height=h - 324)
+        self.Label_fontfile.place(x=x_label_R, y=h - 165, width=w_label + 75, height=21)
+        self.Checkbutton_fontdex.place(x=x_label_R, y=h - 145, width=185, height=23)
 
         # Buttons
 
-        Ybut = self.h - 60
+        Ybut = h - 60
         self.V_Carve_Calc.place(x=x_label_R, y=Ybut, width=100, height=30)
-        Ybut = self.h - 105
+        Ybut = h - 105
         self.Radio_Cut_E.place(x=x_label_R, y=Ybut, width=185, height=23)
-        Ybut = self.h - 85
+        Ybut = h - 85
         self.Radio_Cut_V.place(x=x_label_R, y=Ybut, width=185, height=23)
 
         self.configure_cut_type()

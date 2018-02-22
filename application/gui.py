@@ -1142,7 +1142,7 @@ class Gui(Frame):
         if self.initComplete and self.batch.get() is False and self.delay_calc is False:
             dummy_event = Event()
             dummy_event.widget = self.master
-            self.Master_Configure(dummy_event, 1)
+            self.Master_Configure(dummy_event, True)
 
     def menu_mode_change_Callback(self, varName, index, mode):
         self.menu_View_Refresh()
