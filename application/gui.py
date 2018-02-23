@@ -1228,10 +1228,10 @@ class Gui(Frame):
         self.PreviewCanvas.grid_forget()
         self.input_frame.grid_forget()
 
-        self.PreviewCanvas.grid(row=0, column=1, sticky=NSEW)
-        self.input_frame.grid(row=1, column=1, sticky=NSEW)
-        self.mainwindow_text_left.grid(row=0, rowspan=2, column=0, sticky=NSEW)
-        self.mainwindow_text_right.grid(row=0, rowspan=2, column=2, sticky=NSEW)
+        self.PreviewCanvas.grid(row=0, column=1, pady=10, sticky=NSEW)
+        self.input_frame.grid(row=1, column=1, pady=10, sticky=NSEW)
+        self.mainwindow_text_left.grid(row=0, rowspan=2, column=0, padx=10, pady=10, sticky=NSEW)
+        self.mainwindow_text_right.grid(row=0, rowspan=2, column=2, padx=10, pady=10, sticky=NSEW)
 
         # main window callbacks
         self.Ctrl_set_mainwindow_cut_type = self.Ctrl_set_cut_type_Text
@@ -1243,17 +1243,22 @@ class Gui(Frame):
 
     # callbacks (wherein this Gui/App is the Controller)
 
+    # TODO both Text and Image are updated (so the values are correct too after a mode_change)
+
     def Ctrl_set_cut_type_Text(self):
         self.mainwindow_text_left.set_cut_type()
         self.mainwindow_text_right.set_cut_type()
+        self.mainwindow_image_left.set_cut_type()
 
     def Ctrl_Entry_units_var_Callback_Text(self):
         self.mainwindow_text_left.entry_units_var_callback()
         self.mainwindow_text_right.entry_units_var_callback()
+        self.mainwindow_image_left.entry_units_var_callback()
 
     def Ctrl_Scale_Linear_Inputs_Text(self, factor):
         self.mainwindow_text_left.scale_linear_inputs(factor)
         self.mainwindow_text_right.scale_linear_inputs(factor)
+        self.mainwindow_image_left.scale_linear_inputs(factor)
 
     def Master_Configure_image(self):
         self.PreviewCanvas.grid_forget()
@@ -1261,14 +1266,16 @@ class Gui(Frame):
         self.mainwindow_text_left.grid_forget()
         self.mainwindow_text_right.grid_forget()
 
-        self.PreviewCanvas.grid(row=0, rowspan=2, column=1, columnspan=2, sticky=NSEW)
-        self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, sticky=NSEW)
+        self.PreviewCanvas.grid(row=0, rowspan=2, column=1, columnspan=2, padx=10, pady=10, sticky=NSEW)
+        self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, pady=10, sticky=NSEW)
 
         # main window callbacks
-        self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
-        self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.entry_units_var_callback
-        self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.scale_linear_inputs
-
+        # self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
+        # self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.entry_units_var_callback
+        # self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.scale_linear_inputs
+        self.Ctrl_set_mainwindow_cut_type = self.Ctrl_set_cut_type_Text
+        self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
+        self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
         self.mainwindow_image_left.configure()
 
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):

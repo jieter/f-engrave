@@ -173,7 +173,7 @@ class TextFontProperties(MainWindowWidget):
 
         # Text font properties
 
-        self.Label_font_prop.pack(side=TOP, anchor=W)
+        self.Label_font_prop.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Yscale.pack(side=LEFT, anchor=W)
         self.Label_Yscale_pct.pack_forget()
@@ -634,7 +634,7 @@ class GCodeProperties(MainWindowWidget):
                                           text='Depth of the engraving cut. This setting has no effect when the v-carve option is selected.')
 
     def configure(self):
-        self.Label_gcode_opt.pack(side=TOP, anchor=W)
+        self.Label_gcode_opt.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Feed.pack(side=LEFT)
         self.Label_Feed_u.pack(side=RIGHT)
@@ -774,7 +774,7 @@ class FontFiles(MainWindowWidget):
         w_entry = self.w_entry
         w_units = self.w_units
 
-        self.Checkbutton_fontdex = Checkbutton(self, text="Show All Font Characters", width=w_label, anchor=W)
+        self.Checkbutton_fontdex = Checkbutton(self, text="Show All Font Characters", width=20, anchor=W)
         self.fontdex.trace_variable("w", self.Entry_fontdex_Callback)
         self.Checkbutton_fontdex.configure(variable=self.fontdex)
         self.Label_fontfile = Label(self, textvariable=self.current_input_file, anchor=W, foreground='grey50')
@@ -821,7 +821,7 @@ class FontFiles(MainWindowWidget):
         # self.Listbox_1.bind('<Control-Down>', self.Listbox_Key_Down)
 
     def configure(self):
-        self.Label_List_Box.pack()
+        self.Label_List_Box.pack(anchor=W, padx=10)
         self.Listbox_1_frame.pack(fill=Y, expand=1)
         self.Label_fontfile.pack()
         self.Checkbutton_fontdex.pack(side=LEFT)
@@ -967,7 +967,7 @@ class ImageProperties(MainWindowWidget):
                                             text='Scaling factor for the image width.')
 
     def configure(self):
-        self.Label_image_prop.pack(side=TOP, anchor=W)
+        self.Label_image_prop.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Yscale.pack(side=LEFT, anchor=W)
         if self.settings.get('useIMGsize'):
@@ -1155,7 +1155,7 @@ class ImagePosition(TextPosition):
                                             text='Selecting Mirror Image mirrors the design about a vertical line.')
 
     def configure(self):
-        self.Label_pos_orient.pack(side=TOP, anchor=W)
+        self.Label_pos_orient.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Tangle.pack(side=LEFT)
         self.Label_Tangle_u.pack(side=RIGHT)
@@ -1412,7 +1412,7 @@ class MainWindowImageLeft(Frame):
             self.cut_type.set(self.settings.get('cut_type'))
 
     def configure(self):
-        self.image_properties.pack(side=TOP, anchor=W)
+        self.image_properties.pack(side=TOP, padx=10, anchor=W)
 
         self.separator1.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
         self.image_position.pack(side=TOP, anchor=W)
