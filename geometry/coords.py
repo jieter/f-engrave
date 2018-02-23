@@ -140,6 +140,7 @@ class MyImage(object):
 
         self._set_bbox()
 
+
 class MyText(MyImage):
     """
     Manage the loops, derived from a textfile, as coordinate list.

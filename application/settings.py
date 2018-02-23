@@ -190,6 +190,7 @@ class Settings(object):
 
         # options: 'text', 'image'
         'input_type': 'text',
+        # 'input_type': 'image',
 
         # v-cutter parameters
         'v_bit_angle': 60,

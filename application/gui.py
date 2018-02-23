@@ -56,10 +56,6 @@ class Gui(Frame):
         self.master.rowconfigure(0, weight=1, minsize=400)
         self.master.rowconfigure(2, minsize=20)
 
-        self.mainwindow_image_left = MainWindowImageLeft(master, self, self.settings)
-        self.mainwindow_text_left = MainWindowTextLeft(master, self, self.settings)
-        self.mainwindow_text_right = MainWindowTextRight(master, self, self.settings)
-
         self.bind_keys()
         self.create_widgets()
 
@@ -263,6 +259,10 @@ class Gui(Frame):
         self.create_previewcanvas()
         self.create_input()
         self.create_statusbar()
+
+        self.mainwindow_image_left = MainWindowImageLeft(self.master, self, self.settings)
+        self.mainwindow_text_left = MainWindowTextLeft(self.master, self, self.settings)
+        self.mainwindow_text_right = MainWindowTextRight(self.master, self, self.settings)
 
         # Make Menu Bar
         self.menuBar = Menu(self.master, relief="raised", bd=2)
@@ -699,10 +699,10 @@ class Gui(Frame):
 
         # TODO rid the text/image dependency
         if self.settings.get('input_type') == 'text':
-            error_cnt = self.mainwindow_text_left.Check_All_Variables() + \
-                        self.mainwindow_text_right.Check_All_Variables()
+            error_cnt = self.mainwindow_text_left.check_all_variables() + \
+                        self.mainwindow_text_right.check_all_variables()
         else:
-            error_cnt = self.mainwindow_image_left.Check_All_Variables()
+            error_cnt = self.mainwindow_image_left.check_all_variables()
 
         if error_cnt > 0:
             self.statusbar.configure(bg='red')
@@ -859,7 +859,7 @@ class Gui(Frame):
 
         # TODO future read_image_file will return a MyImage instead of a Font instance
         font = readers.read_image_file(self.settings)
-        if len(font) > 0:
+        if font is not None and len(font) > 0:
             stroke_list = font[ord("F")].stroke_list
             self.image.set_coords_from_strokes(stroke_list)
             self.input_type.set(self.settings.get('input_type'))  # input_type may have been changed by read_image_file
@@ -1234,27 +1234,26 @@ class Gui(Frame):
         self.mainwindow_text_right.grid(row=0, rowspan=2, column=2, sticky=NSEW)
 
         # main window callbacks
-        self.Fontdir_Click = self.mainwindow_text_right.Fontdir_Click
         self.Ctrl_set_mainwindow_cut_type = self.Ctrl_set_cut_type_Text
         self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
         self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
 
-        self.mainwindow_text_left.master_configure()
-        self.mainwindow_text_right.master_configure()
+        self.mainwindow_text_left.configure()
+        self.mainwindow_text_right.configure()
 
-    # callbacks (this Gui/App is the Controller)
+    # callbacks (wherein this Gui/App is the Controller)
 
     def Ctrl_set_cut_type_Text(self):
         self.mainwindow_text_left.set_cut_type()
         self.mainwindow_text_right.set_cut_type()
 
     def Ctrl_Entry_units_var_Callback_Text(self):
-        self.mainwindow_text_left.Entry_units_var_Callback()
-        self.mainwindow_text_right.Entry_units_var_Callback()
+        self.mainwindow_text_left.entry_units_var_callback()
+        self.mainwindow_text_right.entry_units_var_callback()
 
     def Ctrl_Scale_Linear_Inputs_Text(self, factor):
-        self.mainwindow_text_left.Scale_Linear_Inputs(factor)
-        self.mainwindow_text_right.Scale_Linear_Inputs(factor)
+        self.mainwindow_text_left.scale_linear_inputs(factor)
+        self.mainwindow_text_right.scale_linear_inputs(factor)
 
     def Master_Configure_image(self):
         self.PreviewCanvas.grid_forget()
@@ -1266,12 +1265,11 @@ class Gui(Frame):
         self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, sticky=NSEW)
 
         # main window callbacks
-        self.Fontdir_Click = lambda *_, **__: None
         self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
-        self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.Entry_units_var_Callback
-        self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.Scale_Linear_Inputs
+        self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.entry_units_var_callback
+        self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.scale_linear_inputs
 
-        self.mainwindow_image_left.master_configure()
+        self.mainwindow_image_left.configure()
 
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):
         XX1, YY1 = old

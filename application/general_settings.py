@@ -16,15 +16,15 @@ class GeneralSettings(object):
         # GUI callbacks
         self.entry_set = master.entry_set
         self.statusMessage = master.statusMessage
-        self.Fontdir_Click = master.Fontdir_Click
+        # self.Fontdir_Click = master.Fontdir_Click
         self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
         self.Recalculate_Click = master.Recalculate_Click
         self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
         self.write_config_file = master.write_config_file
         self.Recalc_RQD = master.Recalc_RQD
 
-        self.Ctrl_Scale_Linear_Inputs = master.Ctrl_Scale_Linear_Inputs
         self.Ctrl_Entry_units_var_Callback = master.Ctrl_Entry_units_var_Callback
+        self.Ctrl_Scale_Linear_Inputs = master.Ctrl_Scale_Linear_Inputs
 
         # GUI Engraver callbacks
         self.refresh_v_pplot = master.engrave.refresh_v_pplot
@@ -480,6 +480,18 @@ class GeneralSettings(object):
             pass
         self.settings.set('plotbox', self.plotbox.get())
         self.Recalc_RQD()
+
+    def Fontdir_Click(self, event):
+        win_id = self.grab_current()
+        newfontdir = askdirectory(mustexist=1, initialdir=self.fontdir.get())
+        if newfontdir != "" and newfontdir != ():
+            self.fontdir.set(newfontdir.encode("utf-8"))
+            self.settings.set('fontdir', self.fontdir.get())
+        try:
+            win_id.withdraw()
+            win_id.deiconify()
+        except:
+            pass
 
     def create_icon(self):
         try:
