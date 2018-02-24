@@ -30,7 +30,6 @@ class MainWindowWidget(Frame):
         self.cut_type = StringVar()
 
         # Gui callbacks
-        # TODO make this class vars (remove self.) too?
         self.entry_set = gui.entry_set
         self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
         self.recalculate_RQD_Nocalc = gui.recalculate_RQD_Nocalc
@@ -229,15 +228,15 @@ class TextFontProperties(MainWindowWidget):
         self.CSPACE.set(self.settings.get('char_space'))
         self.WSPACE.set(self.settings.get('word_space'))
 
-    def check_all_variables(self):
+    def check_all_variables(self, new):
 
         error_cnt = \
-            self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), 2) + \
-            self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), 2) + \
-            self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), 2) + \
-            self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), 2) + \
-            self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), 2) + \
-            self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), 2)
+            self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
+            self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
+            self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new) + \
+            self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), new) + \
+            self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), new) + \
+            self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), new)
 
         return error_cnt
 
@@ -423,9 +422,9 @@ class TextPosition(MainWindowWidget):
         self.flip.set(self.settings.get('flip'))
         self.mirror.set(self.settings.get('mirror'))
 
-    def check_all_variables(self):
+    def check_all_variables(self, new):
         error_cnt = \
-            self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), 2)
+            self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), new)
         return error_cnt
 
     # Text Position and Orientation callbacks
@@ -538,9 +537,9 @@ class TextOnCircle(MainWindowWidget):
         self.outer.set(self.settings.get('outer'))
         self.upper.set(self.settings.get('upper'))
 
-    def check_all_variables(self):
+    def check_all_variables(self, new):
         error_cnt = \
-            self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), 2)
+            self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
@@ -683,11 +682,11 @@ class GCodeProperties(MainWindowWidget):
         self.ZSAFE.set(self.settings.get('zsafe'))
         self.ZCUT.set(self.settings.get('zcut'))
 
-    def check_all_variables(self):
-        error_cnt = self.entry_set(self.Entry_Feed, self.Entry_Feed_Check(), 2) + \
-            self.entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), 2) + \
-            self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), 2) + \
-            self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), 2)
+    def check_all_variables(self, new):
+        error_cnt = self.entry_set(self.Entry_Feed, self.Entry_Feed_Check(), new) + \
+            self.entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), new) + \
+            self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), new) + \
+            self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
@@ -1017,11 +1016,11 @@ class ImageProperties(MainWindowWidget):
         self.XSCALE.set(self.settings.get('xscale'))
         self.STHICK.set(self.settings.get('line_thickness'))
 
-    def check_all_variables(self):
+    def check_all_variables(self, new):
         error_cnt = \
-            self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), 2) + \
-            self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), 2) + \
-            self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), 2)
+            self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
+            self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
+            self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self):
@@ -1245,11 +1244,11 @@ class MainWindowTextLeft(Frame):
         self.set_menu_cut_type()
         self.Recalc_RQD()
 
-    def check_all_variables(self):
+    def check_all_variables(self, new):
         error_cnt = \
-            self.text_font_properties.check_all_variables() + \
-            self.text_position.check_all_variables() + \
-            self.text_on_circle.check_all_variables()
+            self.text_font_properties.check_all_variables(new) + \
+            self.text_position.check_all_variables(new) + \
+            self.text_on_circle.check_all_variables(new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
@@ -1336,10 +1335,11 @@ class MainWindowTextRight(Frame):
         else:
             self.V_Carve_Calc.configure(state="disabled", command=None)
 
-    def check_all_variables(self):
+    def check_all_variables(self, new):
         error_cnt = \
-            self.gcode_properties.check_all_variables()
-        # self.font_files.check_all_variables()
+            self.gcode_properties.check_all_variables(new)
+        # self.font_files.check_all_variables(new)
+
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
@@ -1437,11 +1437,11 @@ class MainWindowImageLeft(Frame):
         else:
             self.V_Carve_Calc.configure(state="disabled", command=None)
 
-    def check_all_variables(self):
+    def check_all_variables(self, new):
         error_cnt = \
-            self.image_properties.check_all_variables() + \
-            self.image_position.check_all_variables() + \
-            self.gcode_properties.check_all_variables()
+            self.image_properties.check_all_variables(new) + \
+            self.image_position.check_all_variables(new) + \
+            self.gcode_properties.check_all_variables(new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):

@@ -398,49 +398,44 @@ class Gui(Frame):
 
     def entry_set(self, val, check_flag=0, new=0, setting=None):
 
+        retval = 0
+
         if check_flag == OK and new == 0:
-            try:
-                self.statusbar.configure(bg='yellow')
-                val.configure(bg='yellow')
-                self.statusMessage.set(" Recalculation required.")
-            except:
-                pass
+            self.statusbar.configure(bg='yellow')
+            val.configure(bg='yellow')
+            self.statusMessage.set(" Recalculation required.")
+
         elif check_flag == NAN:
-            try:
-                val.configure(bg='red')
-                self.statusbar.configure(bg='red')
-                self.statusMessage.set(" Value should be a number. ")
-            except:
-                pass
+            val.configure(bg='red')
+            self.statusbar.configure(bg='red')
+            self.statusMessage.set(" Value should be a number. ")
+
         elif check_flag == INV:
-            try:
-                self.statusbar.configure(bg='red')
-                val.configure(bg='red')
-            except:
-                pass
+            self.statusbar.configure(bg='red')
+            val.configure(bg='red')
+
         elif (check_flag == OK or check_flag == NOR) and new == 1:
-            try:
-                self.statusbar.configure(bg='white')
-                self.statusMessage.set(self.bounding_box.get())
-                val.configure(bg='white')
-            except:
-                pass
+            self.statusbar.configure(bg='white')
+            self.statusMessage.set(self.bounding_box.get())
+            val.configure(bg='white')
+
         elif check_flag == NOR and new == 0:
-            try:
-                self.statusbar.configure(bg='white')
-                self.statusMessage.set(self.bounding_box.get())
-                val.configure(bg='white')
-            except:
-                pass
+            self.statusbar.configure(bg='white')
+            self.statusMessage.set(self.bounding_box.get())
+            val.configure(bg='white')
+
         elif (check_flag == OK or check_flag == NOR) and new == 2:
-                return 0
+            pass
+
+        else:
+            retval = 1
 
         if (setting is not None) and \
                 (check_flag == OK or check_flag == NOR) and \
                 new == 0:
             self.settings.set(setting, val.get())
 
-        return 1
+        return retval
 
     def write_config_file(self, event):
 
@@ -692,17 +687,17 @@ class Gui(Frame):
         if self.cut_type.get() != self.settings.get('cut_type'):
             self.cut_type.set(self.settings.get('cut_type'))
 
-    def Check_All_Variables(self):
+    def Check_All_Variables(self, new=2):
 
         if self.batch.get():
             return 0  # nothing to be done in batchmode
 
         # TODO rid the text/image dependency
         if self.settings.get('input_type') == 'text':
-            error_cnt = self.mainwindow_text_left.check_all_variables() + \
-                        self.mainwindow_text_right.check_all_variables()
+            error_cnt = self.mainwindow_text_left.check_all_variables(new) + \
+                        self.mainwindow_text_right.check_all_variables(new)
         else:
-            error_cnt = self.mainwindow_image_left.check_all_variables()
+            error_cnt = self.mainwindow_image_left.check_all_variables(new)
 
         if error_cnt > 0:
             self.statusbar.configure(bg='red')
@@ -1630,8 +1625,11 @@ class Gui(Frame):
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
 
         if not self.batch.get():
+
             self.input.configure(bg='white')
             # self.statusbar.configure(bg='white')
+            self.Check_All_Variables(new=1)
+
             self.bounding_box.set("Bounding Box (WxH) = " +
                                   "%.3g" % (maxx - minx) +
                                   " %s " % self.settings.get('units') +
@@ -1713,6 +1711,9 @@ class Gui(Frame):
             minx, maxx, miny, maxy = self.plot_bbox.tuple()
 
         if not self.batch.get():
+            self.input.configure(bg='white')
+            self.Check_All_Variables(new=1)
+
             self.bounding_box.set("Bounding Box (WxH) = " +
                                   "%.3g" % (maxx - minx) +
                                   " %s " % self.settings.get('units') +
