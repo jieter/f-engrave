@@ -1240,6 +1240,9 @@ class Gui(Frame):
 
     # TODO both Text and Image are updated (so the values are correct too after a mode_change)
 
+    def Ctrl_get_image_height(self):
+        return self.image.get_height()
+
     def Ctrl_set_cut_type_Text(self):
         self.mainwindow_text_left.set_cut_type()
         self.mainwindow_text_right.set_cut_type()

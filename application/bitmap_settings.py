@@ -75,79 +75,80 @@ class BitmapSettings(object):
 
         bmp_settings = self.bmp_settings
 
-        D_Yloc = 12
-        D_dY = 24
+        w_label = 15
+        w_tip = 40
+        w_entry = 5
 
-        xd_label_L = 12
-        w_label = 100
-        w_entry = 60
-        # w_units = 35
-        xd_entry_L = xd_label_L + w_label + 10
-        # xd_units_L = xd_entry_L+w_entry+5
-
-        D_Yloc = D_Yloc + D_dY
-        self.Label_BMPturnpol = Label(bmp_settings, text="Turn Policy")
-        self.Label_BMPturnpol.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-
-        self.BMPturnpol_OptionMenu = OptionMenu(bmp_settings, self.bmp_turnpol,
+        self.turnpol_frame = Frame(bmp_settings)
+        self.Label_BMPturnpol = Label(self.turnpol_frame, text="Turn Policy", width=w_label)
+        self.Label_BMPturnpol.pack(side=LEFT, anchor=W)
+        self.BMPturnpol_OptionMenu = OptionMenu(self.turnpol_frame, self.bmp_turnpol,
                                                 "black", "white", "right", "left",
                                                 "minority", "majority", "random")
-        self.BMPturnpol_OptionMenu.place(x=xd_entry_L, y=D_Yloc, width=w_entry + 40, height=23)
+        self.BMPturnpol_OptionMenu.pack(side=RIGHT)
         self.bmp_turnpol.trace_variable("w", self.Entry_BMPTurnpol_Callback)
 
-        D_Yloc = D_Yloc + D_dY
-        self.Label_BMPturdsize = Label(bmp_settings, text="Turd Size")
-        self.Label_BMPturdsize.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_BMPturdsize = Entry(bmp_settings, width="15")
-        self.Entry_BMPturdsize.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
+        self.turdsize_frame = Frame(bmp_settings)
+        self.Label_BMPturdsize = Label(self.turdsize_frame, text="Turd Size", width=w_label)
+        self.Label_BMPturdsize.pack(side=LEFT, anchor=W)
+        self.Entry_BMPturdsize = Entry(self.turdsize_frame, width=w_entry)
+        self.Entry_BMPturdsize.pack(side=LEFT, anchor=W)
         self.Entry_BMPturdsize.configure(textvariable=self.bmp_turdsize)
         self.bmp_turdsize.trace_variable("w", self.Entry_BMPturdsize_Callback)
-        self.Label_BMPturdsize2 = Label(bmp_settings, text="Suppress speckles of up to this pixel size")
-        self.Label_BMPturdsize2.place(x=xd_entry_L + w_entry * 1.5, y=D_Yloc, width=300, height=21)
+        self.Label_BMPturdsize2 = Label(self.turdsize_frame, text="Suppress speckles of up to this pixel size", width=w_tip)
+        self.Label_BMPturdsize2.pack(side=RIGHT)
         self.entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2)
 
-        D_Yloc = D_Yloc + D_dY + 5
-        self.Label_BMPalphamax = Label(bmp_settings, text="Alpha Max")
-        self.Label_BMPalphamax.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_BMPalphamax = Entry(bmp_settings, width="15")
-        self.Entry_BMPalphamax.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
+        self.alphamax_frame = Frame(bmp_settings)
+        self.Label_BMPalphamax = Label(self.alphamax_frame, text="Alpha Max", width=w_label)
+        self.Label_BMPalphamax.pack(side=LEFT, anchor=W)
+        self.Entry_BMPalphamax = Entry(self.alphamax_frame, width=w_entry)
+        self.Entry_BMPalphamax.pack(side=LEFT, anchor=W)
         self.Entry_BMPalphamax.configure(textvariable=self.bmp_alphamax)
         self.bmp_alphamax.trace_variable("w", self.Entry_BMPalphamax_Callback)
-        self.Label_BMPalphamax2 = Label(bmp_settings, text="0.0 = sharp corners, 1.33 = smoothed corners")
-        self.Label_BMPalphamax2.place(x=xd_entry_L + w_entry * 1.5, y=D_Yloc, width=300, height=21)
+        self.Label_BMPalphamax2 = Label(self.alphamax_frame, text="0.0 = sharp corners, 1.33 = smoothed corners", width=w_tip)
+        self.Label_BMPalphamax2.pack(side=RIGHT)
         self.entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
 
-        D_Yloc = D_Yloc + D_dY
-        self.Label_BMP_longcurve = Label(bmp_settings, text="Long Curve")
-        self.Label_BMP_longcurve.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Checkbutton_BMP_longcurve = Checkbutton(bmp_settings, text="", anchor=W)
-        self.Checkbutton_BMP_longcurve.place(x=xd_entry_L, y=D_Yloc, width=75, height=23)
+        self.longcurve_frame = Frame(bmp_settings)
+        self.Label_BMP_longcurve = Label(self.longcurve_frame, text="Long Curve", width=w_label)
+        self.Label_BMP_longcurve.pack(side=LEFT, anchor=W)
+        self.Checkbutton_BMP_longcurve = Checkbutton(self.longcurve_frame, text="", anchor=W)
+        self.Checkbutton_BMP_longcurve.pack(side=LEFT, anchor=W)
         self.Checkbutton_BMP_longcurve.configure(variable=self.bmp_longcurve)
-        self.Label_BMP_longcurve2 = Label(bmp_settings, text="Enable Curve Optimization")
-        self.Label_BMP_longcurve2.place(x=xd_entry_L + w_entry * 1.5, y=D_Yloc, width=300, height=21)
+        self.Label_BMP_longcurve2 = Label(self.longcurve_frame, text="Enable Curve Optimization", width=w_tip)
+        self.Label_BMP_longcurve2.pack(side=RIGHT)
         self.bmp_longcurve.trace_variable("w", self.Entry_BMPLongcurve_Callback)
 
-        D_Yloc = D_Yloc + D_dY
-        self.Label_BMPoptTolerance = Label(bmp_settings, text="Opt Tolerance")
-        self.Label_BMPoptTolerance.place(x=xd_label_L, y=D_Yloc, width=w_label, height=21)
-        self.Entry_BMPoptTolerance = Entry(bmp_settings, width="15")
-        self.Entry_BMPoptTolerance.place(x=xd_entry_L, y=D_Yloc, width=w_entry, height=23)
+        self.tolerance_frame = Frame(bmp_settings)
+        self.Label_BMPoptTolerance = Label(self.tolerance_frame, text="Opt Tolerance", width=w_label)
+        self.Label_BMPoptTolerance.pack(side=LEFT, anchor=W)
+        self.Entry_BMPoptTolerance = Entry(self.tolerance_frame, width=w_entry)
+        self.Entry_BMPoptTolerance.pack(side=LEFT, anchor=W)
         self.Entry_BMPoptTolerance.configure(textvariable=self.bmp_opttolerance)
         self.bmp_opttolerance.trace_variable("w", self.Entry_BMPoptTolerance_Callback)
-        self.Label_BMPoptTolerance2 = Label(bmp_settings, text="Curve Optimization Tolerance")
-        self.Label_BMPoptTolerance2.place(x=xd_entry_L + w_entry * 1.5, y=D_Yloc, width=300, height=21)
+        self.Label_BMPoptTolerance2 = Label(self.tolerance_frame, text="Curve Optimization Tolerance", width=w_tip)
+        self.Label_BMPoptTolerance2.pack(side=RIGHT)
         self.entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2)
 
-        bmp_settings.update_idletasks()
-        Ybut = int(bmp_settings.winfo_height()) - 30
-        Xbut = int(bmp_settings.winfo_width() / 2)
-
-        self.PBM_Reload = Button(bmp_settings, text="Re-Load Image")
-        self.PBM_Reload.place(x=Xbut, y=Ybut, width=130, height=30, anchor="e")
+        self.button_frame = Frame(bmp_settings)
+        self.PBM_Reload = Button(self.button_frame, text="Re-Load Image")
         self.PBM_Reload.bind("<ButtonRelease-1>", self.Settings_ReLoad_Click)
+        self.PBM_Reload.pack(side=LEFT)
 
-        self.PBM_Close = Button(bmp_settings, text="Close", command=self.Close_Current_Window_Click)
-        self.PBM_Close.place(x=Xbut, y=Ybut, width=130, height=30, anchor="w")
+        self.PBM_Close = Button(self.button_frame, text="Close", command=self.Close_Current_Window_Click)
+        self.PBM_Close.pack(side=RIGHT)
+
+        pady = 5
+
+        self.turnpol_frame.pack(side=TOP, anchor=W, pady=pady)
+        self.turdsize_frame.pack(side=TOP, anchor=W, pady=pady)
+        self.alphamax_frame.pack(side=TOP, anchor=W, pady=pady)
+        self.longcurve_frame.pack(side=TOP, anchor=W, pady=pady)
+        self.tolerance_frame.pack(side=TOP, anchor=W, pady=pady)
+        self.button_frame.pack(side=BOTTOM, anchor=CENTER, pady=pady * 2)
+
+        bmp_settings.update_idletasks()
 
     # Bitmap check and callback methods
 

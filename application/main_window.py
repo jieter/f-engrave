@@ -918,6 +918,8 @@ class ImageProperties(MainWindowWidget):
         self.WSPACE = StringVar()
         self.STHICK = StringVar()
 
+        self.Ctrl_get_image_height = gui.Ctrl_get_image_height
+
         self.initialise_variables()
         self.create_widgets()
         self.configure()
@@ -1033,7 +1035,7 @@ class ImageProperties(MainWindowWidget):
 
         if self.settings.get('input_type') == "image":
             try:
-                image_height = self.image.get_height()
+                image_height = self.Ctrl_get_image_height()
             except:
                 if self.settings.get('units') == 'in':
                     image_height = 2
