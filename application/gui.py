@@ -1464,8 +1464,8 @@ class Gui(Frame):
         if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
 
             loop_old = -1
-            for line in self.engrave.clean_coords_sort:
-                new = (line[0], line[1])
+            for XY in self.engrave.clean_coords_sort:
+                new = (XY[0], XY[1])
                 r = XY[2]
                 loop = XY[3]
                 color = "brown"
@@ -1475,8 +1475,8 @@ class Gui(Frame):
                 old = new
 
             loop_old = -1
-            for line in self.engrave.clean_coords_sort:
-                new = (line[0], line[1])
+            for XY in self.engrave.clean_coords_sort:
+                new = (XY[0], XY[1])
                 loop = XY[3]
                 color = "white"
                 # check and see if we need to move to a new discontinuous start point
@@ -1486,8 +1486,8 @@ class Gui(Frame):
                 old = new
 
             loop_old = -1
-            for line in self.engrave.v_clean_coords_sort:
-                new = (line[0], line[1])
+            for XY in self.engrave.v_clean_coords_sort:
+                new = (XY[0], XY[1])
                 loop = XY[3]
                 color = "yellow"
                 if loop == loop_old:
