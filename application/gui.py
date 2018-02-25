@@ -56,7 +56,6 @@ class Gui(Frame):
         self.master.rowconfigure(0, weight=1, minsize=400)
         self.master.rowconfigure(2, minsize=20)
 
-        self.bind_keys()
         self.create_widgets()
 
         self.engrave = Engrave(self.settings)
@@ -113,6 +112,7 @@ class Gui(Frame):
 
         self.initComplete = True
         self.menu_mode_change()
+        self.bind_keys()
 
     def bind_keys(self):
         self.master.bind("<Configure>", self.Master_Configure)
@@ -260,9 +260,9 @@ class Gui(Frame):
         self.create_input()
         self.create_statusbar()
 
-        self.mainwindow_image_left = MainWindowImageLeft(self.master, self, self.settings)
-        self.mainwindow_text_left = MainWindowTextLeft(self.master, self, self.settings)
-        self.mainwindow_text_right = MainWindowTextRight(self.master, self, self.settings)
+        self.mainwindow_image_left = None
+        self.mainwindow_text_left = None
+        self.mainwindow_text_right = None
 
         # Make Menu Bar
         self.menuBar = Menu(self.master, relief="raised", bd=2)
@@ -489,7 +489,7 @@ class Gui(Frame):
     def CopyClipboard_SVG(self):
         self.clipboard_clear()
 
-        self.engrave.refresh_coords()  # TODO
+        # self.engrave.refresh_coords()  # TODO
         svgcode = svg(self.engrave)
 
         for line in svgcode:
@@ -692,13 +692,7 @@ class Gui(Frame):
         if self.batch.get():
             return 0  # nothing to be done in batchmode
 
-        # TODO rid the text/image dependency
-        if self.settings.get('input_type') == 'text':
-            error_cnt = self.mainwindow_text_left.check_all_variables(new) + \
-                        self.mainwindow_text_right.check_all_variables(new)
-        else:
-            error_cnt = self.mainwindow_image_left.check_all_variables(new)
-
+        error_cnt = self.Ctrl_check_all_variables(new)
         if error_cnt > 0:
             self.statusbar.configure(bg='red')
             self.statusMessage.set(" Entry Error Detected: Check Entry Values in Main Window ")
@@ -1126,29 +1120,28 @@ class Gui(Frame):
         if message_ask_ok_cancel("Exit", "Exiting F-Engrave...."):
             self.Quit_Click(None)
 
-    def menu_View_Refresh_Callback(self, varName, index, mode):
-        self.menu_View_Refresh()
-
     def menu_View_Refresh(self):
         if self.initComplete and self.batch.get() is False and self.delay_calc is False:
             dummy_event = Event()
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, True)
 
-    def menu_mode_change_Callback(self, varName, index, mode):
-        self.menu_View_Refresh()
-
     def menu_mode_change(self):
-
-        # TODO input
         self.settings.set('input_type', self.input_type.get())
 
         self.delay_calc = True
+
+        if self.input_type.get() == 'text':
+            self.mainwindow_text_left = MainWindowTextLeft(self.master, self, self.settings)
+            self.mainwindow_text_right = MainWindowTextRight(self.master, self, self.settings)
+        else:
+            self.mainwindow_image_left = MainWindowImageLeft(self.master, self, self.settings)
+
         dummy_event = Event()
         dummy_event.widget = self.master
         self.Master_Configure(dummy_event, True)
-        self.delay_calc = False
 
+        self.delay_calc = False
         self.do_it()
 
     def menu_View_Recalculate(self):
@@ -1201,17 +1194,20 @@ class Gui(Frame):
 
         w = int(self.master.winfo_width())
         h = int(self.master.winfo_height())
-        if abs(self.w - w) > 10 or abs(self.h - h) > 10 or update:
+        if abs(self.w - w) > 10 or abs(self.h - h) > 10 or update is True:
             self.w = w
             self.h = h
-            # if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            #     self.V_Carve_Calc.configure(state="normal", command=None)
-            # else:
-            #     self.V_Carve_Calc.configure(state="disabled", command=None)
-            if self.settings.get('input_type') == "text":
+
+            # TODO get rid of window instance test
+            if self.settings.get('input_type') == "text" and \
+                    self.mainwindow_text_left is not None:
                 self.Master_Configure_text()
-            else:
+
+            elif self.mainwindow_image_left is not None:
                 self.Master_Configure_image()
+
+            else:
+                pass
 
             self.plot_toolpath()
 
@@ -1221,6 +1217,7 @@ class Gui(Frame):
 
         self.PreviewCanvas.grid(row=0, column=1, pady=10, sticky=NSEW)
         self.input_frame.grid(row=1, column=1, pady=10, sticky=NSEW)
+
         self.mainwindow_text_left.grid(row=0, rowspan=2, column=0, padx=10, pady=10, sticky=NSEW)
         self.mainwindow_text_right.grid(row=0, rowspan=2, column=2, padx=10, pady=10, sticky=NSEW)
 
@@ -1229,30 +1226,32 @@ class Gui(Frame):
         self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
         self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
         self.Ctrl_Fontdir_Click = self.mainwindow_text_right.fontdir_click
+        self.Ctrl_check_all_variables = self.Ctrl_check_all_variables_text
 
         self.mainwindow_text_left.configure()
-        self.mainwindow_text_right.configure()
+        self.mainwindow_text_right.master_configure()
 
     # callbacks (wherein this Gui/App is the Controller)
 
     def Ctrl_get_image_height(self):
         return self.image.get_height()
 
-    # TODO both Text and Image are updated (so the values are correct too after a mode_change)
+    def Ctrl_check_all_variables_text(self, new):
+        error_cnt = self.mainwindow_text_left.check_all_variables(new) + \
+                    self.mainwindow_text_right.check_all_variables(new)
+        return error_cnt
+
     def Ctrl_set_cut_type_Text(self):
         self.mainwindow_text_left.set_cut_type()
         self.mainwindow_text_right.set_cut_type()
-        self.mainwindow_image_left.set_cut_type()
 
     def Ctrl_Entry_units_var_Callback_Text(self):
         self.mainwindow_text_left.entry_units_var_callback()
         self.mainwindow_text_right.entry_units_var_callback()
-        self.mainwindow_image_left.entry_units_var_callback()
 
     def Ctrl_Scale_Linear_Inputs_Text(self, factor):
         self.mainwindow_text_left.scale_linear_inputs(factor)
         self.mainwindow_text_right.scale_linear_inputs(factor)
-        self.mainwindow_image_left.scale_linear_inputs(factor)
 
     def Master_Configure_image(self):
         self.PreviewCanvas.grid_forget()
@@ -1264,15 +1263,13 @@ class Gui(Frame):
         self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, pady=10, sticky=NSEW)
 
         # main window callbacks
-        # self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
-        # self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.entry_units_var_callback
-        # self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.scale_linear_inputs
-        self.Ctrl_set_mainwindow_cut_type = self.Ctrl_set_cut_type_Text
-        self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
-        self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
+        self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
+        self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.entry_units_var_callback
+        self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.scale_linear_inputs
+        self.Ctrl_check_all_variables = self.mainwindow_image_left.check_all_variables
         self.Ctrl_Fontdir_Click = lambda *_, **__: None
 
-        self.mainwindow_image_left.configure()
+        self.mainwindow_image_left.master_configure()
 
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):
         XX1, YY1 = old
@@ -1286,10 +1283,6 @@ class Gui(Frame):
         else:
             thick = radius * 2 / self.plot_scale
         self.segID.append(self.PreviewCanvas.create_line(x1, y1, x2, y2, fill=color, capstyle="round", width=thick))
-
-    # TODO simplify circle drawing
-    def _create_circle(self, x, y, r, **kwargs):
-        return self.create_oval(x - r, y - r, x + r, y + r, **kwargs)
 
     def plot_circle(self, normv, midx, midy, cszw, cszh, color, rad, fill):
         XX, YY = normv
@@ -1370,10 +1363,7 @@ class Gui(Frame):
                                                         width=0))
         # plot circle
         text_radius = self.get_text_radius()
-
-        # TODO
-        x_zero = self.engrave.xzero
-        y_zero = self.engrave.yzero
+        x_zero, y_zero = self.engrave.get_offset()
 
         if text_radius != 0:
             Rpx_lft = cszw / 2 + (-text_radius - midx - x_zero) / plot_scale
@@ -1683,8 +1673,7 @@ class Gui(Frame):
         mirror = self.settings.get('mirror')
         flip = self.settings.get('flip')
         angle = self.settings.get('text_angle')
-        # TODO image calculation
-        # if self.useIMGsize.get():
+
         y_scale = self.settings.get('yscale') / 100
         x_scale = self.settings.get('xscale') * y_scale / 100
 
@@ -1764,9 +1753,7 @@ class Gui(Frame):
         else:  # "Default"
             pass
 
-        # TODO use setter method
-        self.engrave.xzero = x_zero
-        self.engrave.yzero = y_zero
+        self.engrave.set_offset(x_zero, y_zero)
 
         return (x_zero, y_zero)
 
@@ -1814,7 +1801,7 @@ class Gui(Frame):
 
         return thickness / 2 + self.settings.get('boxgap')
 
-    # TODO Make this a MyFont method? Note that is being used in SVG and Gcode to generate textcircle
+    # TODO Make this a MyFont method? Note that it is also being used in SVG and Gcode to generate textcircle
 
     def calc_text_radius(self):
 
@@ -1865,7 +1852,7 @@ class Gui(Frame):
             self.do_it()
             self.engrave.init_clean_coords()
         elif self.engrave.clean_coords_sort != [] or self.engrave.v_clean_coords_sort != []:
-            # If there is existing cleanup data clear the screen before computing
+            # clear the screen before computing if there is existing cleanup data
             self.engrave.init_clean_coords()
             self.plot_toolpath()
 

@@ -84,10 +84,6 @@ class Engrave(object):
 
     def init_coords(self):
         # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt]) ?
-        # if self.image is None:
-        #     self.coords = []
-        # else:
-        #     self.coords = self.image.coords
         self.refresh_coords()
         self.v_coords = []
         self.init_clean_coords()
@@ -112,6 +108,13 @@ class Engrave(object):
         self.image = image
         self.init_coords()
         # self.move_origin()
+
+    def set_offset(self, x_offset=0, y_offset=0):
+        self.xzero = x_offset
+        self.yzero = y_offset
+
+    def get_offset(self):
+        return (self.xzero, self.yzero)
 
     def set_origin(self, x_origin=0, y_origin=0):
         self.x_origin = x_origin

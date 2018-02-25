@@ -94,7 +94,7 @@ class TextFontProperties(MainWindowWidget):
 
         self.initialise_variables()
         self.create_widgets()
-        self.configure()
+        self.master_configure()
 
     def create_widgets(self):
         self.Label_font_prop = Label(self, text="Text Font Properties:")
@@ -168,7 +168,7 @@ class TextFontProperties(MainWindowWidget):
                                             A vertical spacing of 1.0 could result in consecutive lines of text touching each other if the maximum  \
                                             height character is directly below a character that extends the lowest (like a "g").')
 
-    def configure(self):
+    def master_configure(self):
 
         # Text font properties
 
@@ -339,7 +339,7 @@ class TextPosition(MainWindowWidget):
 
         self.initialise_variables()
         self.create_widgets()
-        self.configure()
+        self.master_configure()
 
     def create_widgets(self):
 
@@ -391,7 +391,7 @@ class TextPosition(MainWindowWidget):
         self.Label_mirror_ToolTip = ToolTip(self.Label_mirror,
                                             text='Selecting Mirror Text mirrors the text about a vertical line.')
 
-    def configure(self):
+    def master_configure(self):
         self.Label_pos_orient.pack(side=TOP, anchor=W)
 
         self.Label_Tangle.pack(side=LEFT)
@@ -471,7 +471,7 @@ class TextOnCircle(MainWindowWidget):
 
         self.initialise_variables()
         self.create_widgets()
-        self.configure()
+        self.master_configure()
 
     def create_widgets(self):
         self.Label_text_on_arc = Label(self, text="Text on Circle Properties:", anchor=W)
@@ -509,7 +509,7 @@ class TextOnCircle(MainWindowWidget):
                                            text='Select whether the text is placed on the top of the circle of on the bottom of the circle  \
                                            (i.e. concave down or concave up).')
 
-    def configure(self):
+    def master_configure(self):
 
         # Text on circle properties
 
@@ -583,7 +583,7 @@ class GCodeProperties(MainWindowWidget):
 
         self.initialise_variables()
         self.create_widgets()
-        self.configure()
+        self.master_configure()
 
     def create_widgets(self):
         self.Label_gcode_opt = Label(self, text="Gcode Properties:", anchor=W)
@@ -633,7 +633,7 @@ class GCodeProperties(MainWindowWidget):
         self.Label_Zcut_ToolTip = ToolTip(self.Label_Zcut,
                                           text='Depth of the engraving cut. This setting has no effect when the v-carve option is selected.')
 
-    def configure(self):
+    def master_configure(self):
         self.Label_gcode_opt.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Feed.pack(side=LEFT)
@@ -766,7 +766,7 @@ class FontFiles(MainWindowWidget):
 
         self.initialise_variables()
         self.create_widgets()
-        self.configure()
+        self.master_configure()
         # self.bind_keys()
 
     def create_widgets(self):
@@ -820,7 +820,7 @@ class FontFiles(MainWindowWidget):
         # self.Listbox_1.bind('<Control-Up>', self.Listbox_Key_Up)
         # self.Listbox_1.bind('<Control-Down>', self.Listbox_Key_Down)
 
-    def configure(self):
+    def master_configure(self):
         self.Label_List_Box.pack(anchor=W, padx=10)
         self.Listbox_1_frame.pack(fill=Y, expand=1)
         self.Label_fontfile.pack()
@@ -928,7 +928,7 @@ class ImageProperties(MainWindowWidget):
 
         self.initialise_variables()
         self.create_widgets()
-        self.configure()
+        self.master_configure()
 
     def create_widgets(self):
         self.Label_image_prop = Label(self, text="Image Properties:", anchor=W)
@@ -973,7 +973,7 @@ class ImageProperties(MainWindowWidget):
         self.Label_Xscale_ToolTip = ToolTip(self.Label_Xscale,
                                             text='Scaling factor for the image width.')
 
-    def configure(self):
+    def master_configure(self):
         self.Label_image_prop.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Yscale.pack(side=LEFT, anchor=W)
@@ -1157,7 +1157,7 @@ class ImagePosition(TextPosition):
         self.Label_mirror_ToolTip = ToolTip(self.Label_mirror,
                                             text='Selecting Mirror Image mirrors the design about a vertical line.')
 
-    def configure(self):
+    def master_configure(self):
         self.Label_pos_orient.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Tangle.pack(side=LEFT)
@@ -1218,9 +1218,9 @@ class MainWindowTextLeft(Frame):
         self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
 
     def configure(self):
-        self.text_font_properties.configure()
-        self.text_position.configure()
-        self.text_on_circle.configure()
+        self.text_font_properties.master_configure()
+        self.text_position.master_configure()
+        self.text_on_circle.master_configure()
 
         self.text_font_properties.pack(side=TOP, anchor=W)
 
@@ -1293,7 +1293,7 @@ class MainWindowTextRight(Frame):
         self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
 
         self.create_widgets(gui, settings)
-        self.configure()
+        self.master_configure()
 
         # Callback
         self.fontdir_click = self.font_files.Fontdir_Click
@@ -1321,9 +1321,9 @@ class MainWindowTextRight(Frame):
         if self.cut_type.get() != self.settings.get('cut_type'):
             self.cut_type.set(self.settings.get('cut_type'))
 
-    def configure(self):
+    def master_configure(self):
         self.gcode_properties.pack(side=TOP, anchor=W)
-        self.font_files.configure()
+        self.font_files.master_configure()
 
         self.separator1.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
         self.font_files.pack(side=TOP, fill=BOTH, anchor=W, expand=1)
@@ -1390,7 +1390,7 @@ class MainWindowImageLeft(Frame):
         self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
         self.create_widgets(gui, settings)
-        self.configure()
+        self.master_configure()
 
     def create_widgets(self, gui, settings):
         self.image_properties = ImageProperties(self, gui, settings)
@@ -1418,7 +1418,7 @@ class MainWindowImageLeft(Frame):
         if self.cut_type.get() != self.settings.get('cut_type'):
             self.cut_type.set(self.settings.get('cut_type'))
 
-    def configure(self):
+    def master_configure(self):
         self.image_properties.pack(side=TOP, padx=10, anchor=W)
 
         self.separator1.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
