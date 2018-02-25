@@ -145,14 +145,25 @@ class VCarveSettings(object):
     def create_widgets(self):
 
         vcarve_settings = self.vcarve_settings
+        vcarve_settings.grid()
+
+        self.vcarve_settings_upper = Frame(self.vcarve_settings)
+        vcarve_settings_upper = self.vcarve_settings_upper
+
+        self.vcarve_settings_lower = Frame(self.vcarve_settings)
+        vcarve_settings_lower = self.vcarve_settings_lower
 
         w_label = 30
         w_entry = 5
         w_units = 5
         w_radio = 10
 
+        # V-Bit drawing
+        self.vbit_picture()
+        self.Label_photo = Label(vcarve_settings, image=self.PHOTO)
+
         # V-Bit shape
-        self.cutter_type_frame = Frame(vcarve_settings)
+        self.cutter_type_frame = Frame(vcarve_settings_upper)
         self.Label_cutter_type = Label(self.cutter_type_frame, text="Cutter Type", width=w_label)
         self.Label_cutter_type.pack(side=LEFT, anchor=N)
 
@@ -173,7 +184,7 @@ class VCarveSettings(object):
         self.bit_shape.trace_variable("w", self.Entry_Bit_Shape_var_Callback)
 
         # ...
-        self.vbitangle_frame = Frame(vcarve_settings)
+        self.vbitangle_frame = Frame(vcarve_settings_upper)
         self.Label_Vbitangle = Label(self.vbitangle_frame, text="V-Bit Angle", width=w_label)
         self.Label_Vbitangle.pack(side=LEFT, anchor=W)
         self.Label_Vbitangle_u = Label(self.vbitangle_frame, text="deg", anchor=W)
@@ -183,7 +194,7 @@ class VCarveSettings(object):
         self.Entry_Vbitangle.configure(textvariable=self.v_bit_angle)
         self.v_bit_angle.trace_variable("w", self.Entry_Vbitangle_Callback)
 
-        self.vbitdia_frame = Frame(vcarve_settings)
+        self.vbitdia_frame = Frame(vcarve_settings_upper)
         self.Label_Vbitdia = Label(self.vbitdia_frame, text="V-Bit Diameter", width=w_label)
         self.Label_Vbitdia.pack(side=LEFT, anchor=W)
         self.Label_Vbitdia_u = Label(self.vbitdia_frame, textvariable=self.units, anchor=W)
@@ -193,7 +204,7 @@ class VCarveSettings(object):
         self.Entry_Vbitdia.configure(textvariable=self.v_bit_dia)
         self.v_bit_dia.trace_variable("w", self.Entry_Vbitdia_Callback)
 
-        self.vdepth_frame = Frame(vcarve_settings)
+        self.vdepth_frame = Frame(vcarve_settings_upper)
         self.Label_VDepthLimit = Label(self.vdepth_frame, text="Cut Depth Limit", width=w_label)
         self.Label_VDepthLimit.pack(side=LEFT, anchor=W)
         self.Label_VDepthLimit_u = Label(self.vdepth_frame, textvariable=self.units, anchor=W)
@@ -203,7 +214,7 @@ class VCarveSettings(object):
         self.Entry_VDepthLimit.configure(textvariable=self.v_depth_lim)
         self.v_depth_lim.trace_variable("w", self.Entry_VDepthLimit_Callback)
 
-        self.maxcut_frame = Frame(vcarve_settings)
+        self.maxcut_frame = Frame(vcarve_settings_upper)
         self.Label_maxcut = Label(self.maxcut_frame, text="Max Cut Depth", width=w_label)
         self.Label_maxcut.pack(side=LEFT, anchor=W)
         self.Label_maxcut_u = Label(self.maxcut_frame, textvariable=self.units, anchor=W)
@@ -211,7 +222,7 @@ class VCarveSettings(object):
         self.Label_maxcut_i = Label(self.maxcut_frame, textvariable=self.max_cut, width=w_entry, anchor=W)
         self.Label_maxcut_i.pack(side=LEFT, anchor=W)
 
-        self.stepsize_frame = Frame(vcarve_settings)
+        self.stepsize_frame = Frame(vcarve_settings_upper)
         self.Label_StepSize = Label(self.stepsize_frame, text="Sub-Step Length", width=w_label)
         self.Label_StepSize.pack(side=LEFT, anchor=W)
         self.Label_StepSize_u = Label(self.stepsize_frame, textvariable=self.units, anchor=W)
@@ -222,7 +233,7 @@ class VCarveSettings(object):
         self.v_step_len.trace_variable("w", self.Entry_StepSize_Callback)
         
         # Flip normals
-        self.vflop_frame = Frame(vcarve_settings)
+        self.vflop_frame = Frame(vcarve_settings_lower)
         self.Label_v_flop = Label(self.vflop_frame, text="Flip Normals (Cut Outside)", width=w_label)
         self.Label_v_flop.pack(side=LEFT, anchor=W)
         self.Checkbutton_v_flop = Checkbutton(self.vflop_frame, text="", anchor=W)
@@ -230,7 +241,7 @@ class VCarveSettings(object):
         self.Checkbutton_v_flop.configure(variable=self.v_flop)
         self.v_flop.trace_variable("w", self.Entry_v_flop_Callback)
 
-        self.vbox_frame = Frame(vcarve_settings)
+        self.vbox_frame = Frame(vcarve_settings_lower)
         self.Label_vBox = Label(self.vbox_frame, text="Add Box (Flip Normals)", width=w_label)
         self.Label_vBox.pack(side=LEFT, anchor=W)
 
@@ -252,7 +263,7 @@ class VCarveSettings(object):
         self.GEN_Reload.pack(side=RIGHT, padx=10, anchor=E)
         self.GEN_Reload.bind("<ButtonRelease-1>", self.recalculate_click)
 
-        self.inlay_frame = Frame(vcarve_settings)
+        self.inlay_frame = Frame(vcarve_settings_lower)
         self.Label_inlay = Label(self.inlay_frame, text="Prismatic", width=w_label)
         self.Label_inlay.pack(side=LEFT, anchor=W)
         self.Checkbutton_inlay = Checkbutton(self.inlay_frame, text="", anchor=W)
@@ -263,7 +274,7 @@ class VCarveSettings(object):
         self.Label_inlay_right = Label(self.inlay_frame, text="(For inlay also select Add Box)", width=w_label)
         self.Label_inlay_right.pack(side=LEFT, anchor=W)
 
-        self.allowance_frame = Frame(vcarve_settings)
+        self.allowance_frame = Frame(vcarve_settings_lower)
         self.Label_Allowance = Label(self.allowance_frame, text="Prismatic Overcut", width=w_label)
         self.Label_Allowance.pack(side=LEFT, anchor=W)
         self.Label_Allowance_u = Label(self.allowance_frame, textvariable=self.units, anchor=W)
@@ -274,14 +285,14 @@ class VCarveSettings(object):
         self.allowance.trace_variable("w", self.Entry_Allowance_Callback)
 
         # Update Idle tasks before requesting anything from winfo
-        # vcarve_settings.update_idletasks()
+        # vcarve_settings_lower.update_idletasks()
 
         # Multipass Settings
 
-        self.Label_multipass = Label(vcarve_settings, text="Multipass Cutting")
+        self.Label_multipass = Label(vcarve_settings_lower, text="Multipass Cutting")
 
         # V-Carve finish pass stock
-        self.v_rough_stk_frame = Frame(vcarve_settings)
+        self.v_rough_stk_frame = Frame(vcarve_settings_lower)
         self.Label_v_rough_stk = Label(self.v_rough_stk_frame, text="V-Carve Finish Pass Stock", width=w_label)
         self.Label_v_rough_stk.pack(side=LEFT, anchor=W)
 
@@ -297,7 +308,7 @@ class VCarveSettings(object):
         self.Label_right_v_rough_stk.pack(side=RIGHT, padx=10, anchor=W)
 
         # ...
-        self.v_max_cut_frame = Frame(vcarve_settings)
+        self.v_max_cut_frame = Frame(vcarve_settings_lower)
         self.Label_v_max_cut = Label(self.v_max_cut_frame, text="V-Carve Max Depth per Pass", width=w_label)
         self.Label_v_max_cut.pack(side=LEFT, anchor=W)
         self.Label_v_max_cut_u = Label(self.v_max_cut_frame, textvariable=self.units, anchor=W)
@@ -309,9 +320,9 @@ class VCarveSettings(object):
 
         # Cleanup Settings
 
-        self.Label_clean = Label(vcarve_settings, text="Cleanup Operations", width=w_label)
+        self.Label_clean = Label(vcarve_settings_lower, text="Cleanup Operations", width=w_label)
 
-        self.clean_dia_frame = Frame(vcarve_settings)
+        self.clean_dia_frame = Frame(vcarve_settings_lower)
         self.CLEAN_Recalculate = Button(self.clean_dia_frame, text="Calculate\nCleanup",
                                         command=self.Calculate_CLEAN_Click)
         self.CLEAN_Recalculate.pack(side=RIGHT, padx=10, anchor=E)
@@ -325,7 +336,7 @@ class VCarveSettings(object):
         self.Entry_CLEAN_DIA.configure(textvariable=self.clean_dia)
         self.clean_dia.trace_variable("w", self.Entry_CLEAN_DIA_Callback)
 
-        self.clean_step_over_frame = Frame(vcarve_settings)
+        self.clean_step_over_frame = Frame(vcarve_settings_lower)
         self.Label_STEP_OVER = Label(self.clean_step_over_frame, text="Cleanup Cut Step Over", width=w_label)
         self.Label_STEP_OVER.pack(side=LEFT, anchor=W)
         self.Label_STEP_OVER_u = Label(self.clean_step_over_frame, text="%", anchor=W)
@@ -336,7 +347,7 @@ class VCarveSettings(object):
         self.clean_step.trace_variable("w", self.Entry_STEP_OVER_Callback)
 
         # Cleanup cut directions
-        self.clean_directions_frame = Frame(vcarve_settings)
+        self.clean_directions_frame = Frame(vcarve_settings_lower)
 
         self.Label_clean_P = Label(self.clean_directions_frame, text="Cleanup Cut Directions", width=w_label)
         self.Label_clean_P.pack(side=LEFT, anchor=W)
@@ -362,7 +373,7 @@ class VCarveSettings(object):
         self.clean_Y.trace_variable("w", self.Checkbutton_clean_Y_Callback)
 
         # V-Bit Cleanup step
-        self.v_cleanup_step_frame = Frame(vcarve_settings)
+        self.v_cleanup_step_frame = Frame(vcarve_settings_lower)
         self.Label_V_CLEAN = Label(self.v_cleanup_step_frame, text="V-Bit Cleanup Step", width=w_label)
         self.Label_V_CLEAN.pack(side=LEFT, anchor=W)
         self.Label_V_CLEAN_u = Label(self.v_cleanup_step_frame, textvariable=self.units, anchor=W)
@@ -373,7 +384,7 @@ class VCarveSettings(object):
         self.clean_v.trace_variable("w", self.Entry_V_CLEAN_Callback)
 
         # V-Bit Cleanup directions
-        self.v_clean_directions_frame = Frame(vcarve_settings)
+        self.v_clean_directions_frame = Frame(vcarve_settings_lower)
         self.Label_v_clean_P = Label(self.v_clean_directions_frame, text="V-Bit Cut Directions", width=w_label)
         self.Label_v_clean_P.pack(side=LEFT, anchor=W)
 
@@ -391,14 +402,8 @@ class VCarveSettings(object):
         self.Checkbutton_v_clean_Y.configure(variable=self.v_clean_Y)
         self.Checkbutton_v_clean_Y.pack(side=LEFT, anchor=W)
 
-        # V-Bit bitmap drawing
-        self.vbit_picture()
-        self.Label_photo = Label(vcarve_settings, image=self.PHOTO)
-        self.Label_photo.pack(side=RIGHT, anchor=NW)
-        self.Entry_Bit_Shape_Check()
-
         # Buttons
-        self.button_frame = Frame(vcarve_settings)
+        self.button_frame = Frame(vcarve_settings_lower)
         self.VCARVE_Recalculate = Button(self.button_frame, text="Calculate V-Carve",
                                          command=self.vcarve_recalculate_click)
         self.VCARVE_Recalculate.pack(side=LEFT, padx=10, anchor=W)
@@ -411,6 +416,14 @@ class VCarveSettings(object):
     def configure(self):
 
         vcarve_settings = self.vcarve_settings
+        vcarve_settings.grid()
+
+        vcarve_settings_upper = self.vcarve_settings_upper
+        vcarve_settings_lower = self.vcarve_settings_lower
+
+        # vcarve_settings_frame.columnconfigure(1, weight=1, minsize=400)
+        # vcarve_settings_frame.rowconfigure(0, weight=1, minsize=400)
+        # vcarve_settings_frame.rowconfigure(2, minsize=20)
 
         padx = 10
         pady = 10
@@ -422,26 +435,26 @@ class VCarveSettings(object):
         self.maxcut_frame.pack(side=TOP, anchor=W)
         self.stepsize_frame.pack(side=TOP, anchor=W)
 
-        self.vcarve_separator1 = Frame(vcarve_settings, height=2, bd=1, relief=SUNKEN)
+        self.vcarve_separator1 = Frame(vcarve_settings_lower, height=2, bd=1, relief=SUNKEN)
         self.vcarve_separator1.pack(side=TOP, fill=X, padx=padx, pady=pady, anchor=W)
 
         self.vflop_frame.pack(side=TOP, anchor=W)
         self.vbox_frame.pack(side=TOP, anchor=W)
 
-        self.vcarve_separator2 = Frame(vcarve_settings, height=2, bd=1, relief=SUNKEN)
+        self.vcarve_separator2 = Frame(vcarve_settings_lower, height=2, bd=1, relief=SUNKEN)
         self.vcarve_separator2.pack(side=TOP, fill=X, padx=padx, pady=pady, anchor=W)
 
         self.inlay_frame.pack(side=TOP, anchor=W)
         self.allowance_frame.pack(side=TOP, anchor=W)
 
-        self.vcarve_separator3 = Frame(vcarve_settings, height=2, bd=1, relief=SUNKEN)
+        self.vcarve_separator3 = Frame(vcarve_settings_lower, height=2, bd=1, relief=SUNKEN)
         self.vcarve_separator3.pack(side=TOP, fill=X, padx=padx, pady=pady, anchor=W)
         self.Label_multipass.pack(side=TOP, anchor=CENTER)
 
         self.v_rough_stk_frame.pack(side=TOP, anchor=W)
         self.v_max_cut_frame.pack(side=TOP, anchor=W)
 
-        self.vcarve_separator4 = Frame(vcarve_settings, height=2, bd=1, relief=SUNKEN)
+        self.vcarve_separator4 = Frame(vcarve_settings_lower, height=2, bd=1, relief=SUNKEN)
         self.vcarve_separator4.pack(side=TOP, fill=X, padx=padx, pady=pady, anchor=W)
         self.Label_clean.pack(side=TOP, anchor=CENTER)
 
@@ -452,6 +465,21 @@ class VCarveSettings(object):
         self.v_clean_directions_frame.pack(side=TOP, anchor=W)
         self.button_frame.pack(side=TOP, padx=padx, pady=pady, anchor=W)
 
+        self.configure_Bit_Shape()
+        self.configure_inlay()
+        self.configure_plotbox()
+        self.configure_rough_stk()
+
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            self.VCARVE_Recalculate.configure(state="normal", command=None)
+        else:
+            self.VCARVE_Recalculate.configure(state="disabled", command=None)
+
+        vcarve_settings_upper.grid(row=0, column=0)
+        self.Label_photo.grid(row=0, column=1)
+        vcarve_settings_lower.grid(row=1, column=0, columnspan=2)
+
+    def configure_rough_stk(self):
         if float(self.v_rough_stk.get()) == 0.0:
             self.Label_v_max_cut.configure(state="disabled")
             self.Label_v_max_cut_u.configure(state="disabled")
@@ -461,6 +489,7 @@ class VCarveSettings(object):
             self.Label_v_max_cut_u.configure(state="normal")
             self.Entry_v_max_cut.configure(state="normal")
 
+    def configure_inlay(self):
         if bool(self.inlay.get()) is True:
             self.Label_Allowance.configure(state="normal")
             self.Entry_Allowance.configure(state="normal")
@@ -470,6 +499,7 @@ class VCarveSettings(object):
             self.Entry_Allowance.configure(state="disabled")
             self.Label_Allowance_u.configure(state="disabled")
 
+    def configure_plotbox(self):
         if bool(self.plotbox.get()) is True:
             self.Label_BoxGap.configure(state="normal")
             self.Entry_BoxGap.configure(state="normal")
@@ -479,10 +509,27 @@ class VCarveSettings(object):
             self.Entry_BoxGap.configure(state="disabled")
             self.Label_BoxGap_u.configure(state="disabled")
 
-        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            self.VCARVE_Recalculate.configure(state="normal", command=None)
+    def configure_Bit_Shape(self):
+        if self.bit_shape.get() == "VBIT":
+            self.Label_Vbitangle.configure(state="normal")
+            self.Label_Vbitangle_u.configure(state="normal")
+            self.Entry_Vbitangle.configure(state="normal")
+            self.Label_photo.configure(state="normal")
+            self.Label_Vbitdia.configure(text="V-Bit Diameter")
+        elif self.bit_shape.get() == "BALL":
+            self.Label_Vbitangle.configure(state="disabled")
+            self.Label_Vbitangle_u.configure(state="disabled")
+            self.Entry_Vbitangle.configure(state="disabled")
+            self.Label_photo.configure(state="disabled")
+            self.Label_Vbitdia.configure(text="Ball Nose Bit Diameter")
+        elif self.bit_shape.get() == "FLAT":
+            self.Label_Vbitangle.configure(state="disabled")
+            self.Label_Vbitangle_u.configure(state="disabled")
+            self.Entry_Vbitangle.configure(state="disabled")
+            self.Label_photo.configure(state="disabled")
+            self.Label_Vbitdia.configure(text="Straight Bit Diameter")
         else:
-            self.VCARVE_Recalculate.configure(state="disabled", command=None)
+            pass
 
     def check_all_variables(self, new=1):
         error_cnt = self.entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), new) + \
@@ -491,6 +538,7 @@ class VCarveSettings(object):
                     self.entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), new) + \
                     self.entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), new) + \
                     self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), new) + \
+                    self.entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), new) + \
                     self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), new) + \
                     self.entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), new) + \
                     self.entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), new) + \
@@ -581,14 +629,7 @@ class VCarveSettings(object):
         self.entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), setting='allowance')
 
     def Entry_Prismatic_Callback(self, varName, index, mode):
-        if not bool(self.inlay.get()):
-            self.Label_Allowance.configure(state="disabled")
-            self.Entry_Allowance.configure(state="disabled")
-            self.Label_Allowance_u.configure(state="disabled")
-        else:
-            self.Label_Allowance.configure(state="normal")
-            self.Entry_Allowance.configure(state="normal")
-            self.Label_Allowance_u.configure(state="normal")
+        self.configure_inlay()
         self.settings.set('inlay', self.inlay.get())
         self.Recalc_RQD()
 
@@ -614,17 +655,7 @@ class VCarveSettings(object):
                 return INV
         except:
             return NAN
-        try:
-            if float(self.v_rough_stk.get()) == 0.0:
-                self.Label_v_max_cut.configure(state="disabled")
-                self.Label_v_max_cut_u.configure(state="disabled")
-                self.Entry_v_max_cut.configure(state="disabled")
-            else:
-                self.Label_v_max_cut.configure(state="normal")
-                self.Label_v_max_cut_u.configure(state="normal")
-                self.Entry_v_max_cut.configure(state="normal")
-        except:
-            pass
+        self.configure_rough_stk()
         return NOR
 
     def Entry_v_rough_stk_Callback(self, varName, index, mode):
@@ -680,28 +711,6 @@ class VCarveSettings(object):
     def Checkbutton_clean_Y_Callback(self, varName, index, mode):
         self.settings.set('clean_Y', self.clean_Y.get())
 
-    def Entry_Bit_Shape_Check(self):
-        if self.bit_shape.get() == "VBIT":
-            self.Label_Vbitangle.configure(state="normal")
-            self.Label_Vbitangle_u.configure(state="normal")
-            self.Entry_Vbitangle.configure(state="normal")
-            self.Label_photo.configure(state="normal")
-            self.Label_Vbitdia.configure(text="V-Bit Diameter")
-        elif self.bit_shape.get() == "BALL":
-            self.Label_Vbitangle.configure(state="disabled")
-            self.Label_Vbitangle_u.configure(state="disabled")
-            self.Entry_Vbitangle.configure(state="disabled")
-            self.Label_photo.configure(state="disabled")
-            self.Label_Vbitdia.configure(text="Ball Nose Bit Diameter")
-        elif self.bit_shape.get() == "FLAT":
-            self.Label_Vbitangle.configure(state="disabled")
-            self.Label_Vbitangle_u.configure(state="disabled")
-            self.Entry_Vbitangle.configure(state="disabled")
-            self.Label_photo.configure(state="disabled")
-            self.Label_Vbitdia.configure(text="Straight Bit Diameter")
-        else:
-            pass
-
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
         self.refresh_v_pplot()  # TODO only needed when plotting
@@ -718,14 +727,7 @@ class VCarveSettings(object):
 
     def Entry_BoxGap_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
-        if not bool(self.plotbox.get()):
-            self.Label_BoxGap.configure(state="disabled")
-            self.Entry_BoxGap.configure(state="disabled")
-            self.Label_BoxGap_u.configure(state="disabled")
-        else:
-            self.Label_BoxGap.configure(state="normal")
-            self.Entry_BoxGap.configure(state="normal")
-            self.Label_BoxGap_u.configure(state="normal")
+        self.configure_plotbox()
 
     def Entry_Box_Callback(self, varName, index, mode):
         self.Entry_BoxGap_Callback(varName, index, mode)
@@ -743,7 +745,7 @@ class VCarveSettings(object):
         self.vcarve_settings.grab_set()
 
     def Entry_Bit_Shape_var_Callback(self, varName, index, mode):
-        self.Entry_Bit_Shape_Check()
+        self.configure_Bit_Shape()
         self.settings.set('bit_shape', self.bit_shape.get())
         if self.calc_depth_limit():
             self.max_cut.set('%.3g' % self.settings.get('max_cut'))
