@@ -66,7 +66,7 @@ class Gui(Frame):
         self.engrave.set_status_callback(self.status_update)
 
         # callbacks (wherein this Gui/App acts as the Controller)
-        self.Fontdir_Click = lambda *_, **__: None
+        # self.Ctrl_Fontdir_Click = lambda *_, **__: None
         self.Ctrl_Entry_units_var_Callback = lambda *_, **__: None
         self.Ctrl_Scale_Linear_Inputs = lambda *_, **__: None
         self.Ctrl_set_mainwindow_cut_type = lambda *_, **__: None
@@ -884,10 +884,6 @@ class Gui(Frame):
                 self.input_type.set("image")
                 self.settings.set('input_type', self.input_type.get())
 
-        # TODO why adjust the boxgap?
-        if self.settings.get('boxsize') != "0":
-            self.settings.set('boxgap', self.settings.get('boxsize') * self.settings.get('line_thickness'))
-
         # TODO is this for backward compatibility?
         # if self.arc_fit.get() == "0":
         #     self.arc_fit.set("none")
@@ -1232,17 +1228,17 @@ class Gui(Frame):
         self.Ctrl_set_mainwindow_cut_type = self.Ctrl_set_cut_type_Text
         self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
         self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
+        self.Ctrl_Fontdir_Click = self.mainwindow_text_right.fontdir_click
 
         self.mainwindow_text_left.configure()
         self.mainwindow_text_right.configure()
 
     # callbacks (wherein this Gui/App is the Controller)
 
-    # TODO both Text and Image are updated (so the values are correct too after a mode_change)
-
     def Ctrl_get_image_height(self):
         return self.image.get_height()
 
+    # TODO both Text and Image are updated (so the values are correct too after a mode_change)
     def Ctrl_set_cut_type_Text(self):
         self.mainwindow_text_left.set_cut_type()
         self.mainwindow_text_right.set_cut_type()
@@ -1274,6 +1270,8 @@ class Gui(Frame):
         self.Ctrl_set_mainwindow_cut_type = self.Ctrl_set_cut_type_Text
         self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
         self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
+        self.Ctrl_Fontdir_Click = lambda *_, **__: None
+
         self.mainwindow_image_left.configure()
 
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):

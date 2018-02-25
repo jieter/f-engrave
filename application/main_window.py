@@ -857,6 +857,12 @@ class FontFiles(MainWindowWidget):
         self.readFontFile()
         self.Recalc_RQD()
 
+    def Fontdir_Click(self):
+        win_id = self.grab_current()
+        self.fontdir.set(self.settings.get('fontdir'))
+        win_id.withdraw()
+        win_id.deiconify()
+
     def Listbox_1_Click(self, event):
         labelL = []
         for i in self.Listbox_1.curselection():
@@ -867,7 +873,6 @@ class FontFiles(MainWindowWidget):
             return
 
         self.settings.set('fontfile', self.fontfile.get())
-        # self.font = readFontFile(self.settings)
         self.readFontFile()
         self.do_it()
 
@@ -1290,11 +1295,11 @@ class MainWindowTextRight(Frame):
 
         self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
 
-        self.set_cut_type()
-        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
-
         self.create_widgets(gui, settings)
         self.configure()
+
+        # Callback
+        self.fontdir_click = self.font_files.Fontdir_Click
 
     def create_widgets(self, gui, settings):
         self.gcode_properties = GCodeProperties(self, gui, settings)
@@ -1310,6 +1315,9 @@ class MainWindowTextRight(Frame):
         self.Radio_Cut_E.configure(variable=self.cut_type)
         self.Radio_Cut_V = Radiobutton(self, text="V-Carve", value="v-carve", anchor=W)
         self.Radio_Cut_V.configure(variable=self.cut_type)
+
+        self.set_cut_type()
+        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
     def set_cut_type(self):
         # only when changed (to avoid recursion due to trace_variable callback)

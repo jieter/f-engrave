@@ -3,8 +3,10 @@ from tooltip import ToolTip
 
 if VERSION == 3:
     from tkinter import *
+    from tkinter.filedialog import *
 else:
     from Tkinter import *
+    from tkFileDialog import *
 
 
 class GeneralSettings(object):
@@ -17,6 +19,7 @@ class GeneralSettings(object):
         self.entry_set = master.entry_set
         self.statusMessage = master.statusMessage
         self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
+        self.Ctrl_Fontdir_Click = master.Ctrl_Fontdir_Click
         self.write_config_file = master.write_config_file
         self.Recalc_RQD = master.Recalc_RQD
 
@@ -502,16 +505,11 @@ class GeneralSettings(object):
         self.Recalc_RQD()
 
     def Fontdir_Click(self, event):
-        win_id = self.grab_current()
         newfontdir = askdirectory(mustexist=1, initialdir=self.fontdir.get())
         if newfontdir != "" and newfontdir != ():
             self.fontdir.set(newfontdir.encode("utf-8"))
             self.settings.set('fontdir', self.fontdir.get())
-        try:
-            win_id.withdraw()
-            win_id.deiconify()
-        except:
-            pass
+            self.Ctrl_Fontdir_Click()
 
     def create_icon(self):
         try:
