@@ -441,6 +441,7 @@ class TextPosition(MainWindowWidget):
 
     def Entry_Tangle_Callback(self, varName, index, mode):
         self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), setting='text_angle')
+        self.Recalc_RQD()
 
     def Entry_justify_Callback(self, varName, index, mode):
         self.settings.set('justify', self.justify.get())
@@ -1112,10 +1113,6 @@ class ImagePosition(TextPosition):
 
     def __init__(self, parent, gui, settings):
         TextPosition.__init__(self, parent, gui, settings)
-
-        # self.initialise_variables()
-        self.create_widgets()
-        self.configure()
 
     # TODO aanpassen van de Text widgets
     def create_widgets(self):
