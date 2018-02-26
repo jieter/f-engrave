@@ -336,6 +336,13 @@ class Gui(Frame):
 
         self.master.config(menu=self.menuBar)
 
+    def create_mainwindow_widgets(self):
+        if self.settings.get('input_type') == 'text':
+            self.mainwindow_text_left = MainWindowTextLeft(self.master, self, self.settings)
+            self.mainwindow_text_right = MainWindowTextRight(self.master, self, self.settings)
+        else:
+            self.mainwindow_image_left = MainWindowImageLeft(self.master, self, self.settings)
+
     def create_previewcanvas(self):
         self.PreviewCanvas = Canvas(self.master, background="grey")
 
@@ -851,9 +858,12 @@ class Gui(Frame):
         if font is not None and len(font) > 0:
             stroke_list = font[ord("F")].stroke_list
             self.image.set_coords_from_strokes(stroke_list)
-            self.input_type.set(self.settings.get('input_type'))  # input_type may have been changed by read_image_file
         else:
             self.image = MyImage()
+
+        # input_type may have been changed by read_image_file
+        self.input_type.set(self.settings.get('input_type'))
+        self.create_mainwindow_widgets()
 
     def Open_G_Code_File(self, filename):
 
@@ -1131,11 +1141,7 @@ class Gui(Frame):
 
         self.delay_calc = True
 
-        if self.input_type.get() == 'text':
-            self.mainwindow_text_left = MainWindowTextLeft(self.master, self, self.settings)
-            self.mainwindow_text_right = MainWindowTextRight(self.master, self, self.settings)
-        else:
-            self.mainwindow_image_left = MainWindowImageLeft(self.master, self, self.settings)
+        self.create_mainwindow_widgets()
 
         dummy_event = Event()
         dummy_event.widget = self.master
@@ -1199,8 +1205,7 @@ class Gui(Frame):
             self.h = h
 
             # TODO get rid of window instance test
-            if self.settings.get('input_type') == "text" and \
-                    self.mainwindow_text_left is not None:
+            if self.settings.get('input_type') == "text":
                 self.Master_Configure_text()
 
             elif self.mainwindow_image_left is not None:
@@ -1214,6 +1219,8 @@ class Gui(Frame):
     def Master_Configure_text(self):
         self.PreviewCanvas.grid_forget()
         self.input_frame.grid_forget()
+        if self.mainwindow_image_left is not None:
+            self.mainwindow_image_left.grid_forget()
 
         self.PreviewCanvas.grid(row=0, column=1, pady=10, sticky=NSEW)
         self.input_frame.grid(row=1, column=1, pady=10, sticky=NSEW)
@@ -1256,8 +1263,9 @@ class Gui(Frame):
     def Master_Configure_image(self):
         self.PreviewCanvas.grid_forget()
         self.input_frame.grid_forget()
-        self.mainwindow_text_left.grid_forget()
-        self.mainwindow_text_right.grid_forget()
+        if self.mainwindow_text_left is not None:
+            self.mainwindow_text_left.grid_forget()
+            self.mainwindow_text_right.grid_forget()
 
         self.PreviewCanvas.grid(row=0, rowspan=2, column=1, columnspan=2, padx=10, pady=10, sticky=NSEW)
         self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, pady=10, sticky=NSEW)

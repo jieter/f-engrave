@@ -52,13 +52,12 @@ class MainWindowWidget(Frame):
             self.units = units
             self.configure_units()
 
-    def set_cut_type(self, cut_type):
-        if self.cut_type != cut_type:
-            self.cut_type = cut_type
-            self.configure_cut_type()
-
     # Virtual methods
+
     def configure_units(self):
+        pass
+
+    def set_cut_type(self, cut_type):
         pass
 
     def configure_cut_type(self):
@@ -229,7 +228,6 @@ class TextFontProperties(MainWindowWidget):
         self.WSPACE.set(self.settings.get('word_space'))
 
     def check_all_variables(self, new):
-
         error_cnt = \
             self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
             self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
@@ -237,7 +235,6 @@ class TextFontProperties(MainWindowWidget):
             self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), new) + \
             self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), new) + \
             self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), new)
-
         return error_cnt
 
     def scale_linear_inputs(self):
@@ -1198,11 +1195,13 @@ class MainWindowTextLeft(Frame):
         self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
         self.Recalc_RQD = gui.Recalc_RQD
 
-        self.set_cut_type()
-        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
-
+        self._initialise_variables()
         self.create_widgets(gui, settings)
         self.configure()
+
+    def _initialise_variables(self):
+        self.units.set(self.settings.get('units'))
+        self.cut_type.set(self.settings.get('cut_type'))
 
     def create_widgets(self, gui, settings):
         self.text_font_properties = TextFontProperties(self, gui, settings)
@@ -1216,6 +1215,8 @@ class MainWindowTextLeft(Frame):
         # Buttons
         self.Recalculate = Button(self, text="Recalculate")
         self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
+
+        self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
     def configure(self):
         self.text_font_properties.master_configure()
@@ -1234,9 +1235,17 @@ class MainWindowTextLeft(Frame):
         self.separator3.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
         self.Recalculate.pack(side=BOTTOM, anchor=W)
 
+    # def set_cut_type(self):
+    #     if self.cut_type.get() != self.settings.get('cut_type'):
+    #         self.cut_type.set(self.settings.get('cut_type'))
+
     def set_cut_type(self):
         if self.cut_type.get() != self.settings.get('cut_type'):
+            # avoid recursion due to trace callbacks in the Controller
+            self.cut_type.trace_vdelete('w', self.cut_type_trace)
             self.cut_type.set(self.settings.get('cut_type'))
+            self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        # self.configure_cut_type()
 
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
@@ -1292,11 +1301,16 @@ class MainWindowTextRight(Frame):
 
         self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
 
+        self._initialise_variables()
         self.create_widgets(gui, settings)
         self.master_configure()
 
         # Callback
         self.fontdir_click = self.font_files.Fontdir_Click
+
+    def _initialise_variables(self):
+        self.units.set(self.settings.get('units'))
+        self.cut_type.set(self.settings.get('cut_type'))
 
     def create_widgets(self, gui, settings):
         self.gcode_properties = GCodeProperties(self, gui, settings)
@@ -1313,13 +1327,20 @@ class MainWindowTextRight(Frame):
         self.Radio_Cut_V = Radiobutton(self, text="V-Carve", value="v-carve", anchor=W)
         self.Radio_Cut_V.configure(variable=self.cut_type)
 
-        self.set_cut_type()
-        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+
+    # def set_cut_type(self):
+    #     # only when changed (to avoid recursion due to trace_variable callback)
+    #     if self.cut_type.get() != self.settings.get('cut_type'):
+    #         self.cut_type.set(self.settings.get('cut_type'))
 
     def set_cut_type(self):
-        # only when changed (to avoid recursion due to trace_variable callback)
         if self.cut_type.get() != self.settings.get('cut_type'):
+            # avoid recursion due to trace callbacks in the Controller
+            self.cut_type.trace_vdelete('w', self.cut_type_trace)
             self.cut_type.set(self.settings.get('cut_type'))
+            self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        self.configure_cut_type()
 
     def master_configure(self):
         self.gcode_properties.pack(side=TOP, anchor=W)
@@ -1330,8 +1351,8 @@ class MainWindowTextRight(Frame):
 
         # Buttons
         self.separator3.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
-        self.Radio_Cut_E.pack(side=BOTTOM, anchor=W)
         self.Radio_Cut_V.pack(side=BOTTOM, anchor=W)
+        self.Radio_Cut_E.pack(side=BOTTOM, anchor=W)
         self.V_Carve_Calc.pack(side=BOTTOM, anchor=W)
 
         self.configure_cut_type()
@@ -1346,7 +1367,6 @@ class MainWindowTextRight(Frame):
         error_cnt = \
             self.gcode_properties.check_all_variables(new)
         # self.font_files.check_all_variables(new)
-
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
@@ -1386,11 +1406,13 @@ class MainWindowImageLeft(Frame):
         self.menu_View_Refresh = gui.menu_View_Refresh
         self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
 
-        self.set_cut_type()
-        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
-
+        self.initialise_variables()
         self.create_widgets(gui, settings)
         self.master_configure()
+
+    def initialise_variables(self):
+        self.units.set(self.settings.get('units'))
+        self.cut_type.set(self.settings.get('cut_type'))
 
     def create_widgets(self, gui, settings):
         self.image_properties = ImageProperties(self, gui, settings)
@@ -1411,12 +1433,20 @@ class MainWindowImageLeft(Frame):
         self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
         self.V_Carve_Calc = Button(self.button_frame, text="Calc V-Carve", command=self.V_Carve_Calc_Click)
 
-        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+
+    # def set_cut_type(self):
+    #     # only when changed (to avoid recursion due to trace_variable callback)
+    #     if self.cut_type.get() != self.settings.get('cut_type'):
+    #         self.cut_type.set(self.settings.get('cut_type'))
 
     def set_cut_type(self):
-        # only when changed (to avoid recursion due to trace_variable callback)
         if self.cut_type.get() != self.settings.get('cut_type'):
+            # avoid recursion due to trace callbacks in the Controller
+            self.cut_type.trace_vdelete('w', self.cut_type_trace)
             self.cut_type.set(self.settings.get('cut_type'))
+            self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        self.configure_cut_type()
 
     def master_configure(self):
         self.image_properties.pack(side=TOP, padx=10, anchor=W)
