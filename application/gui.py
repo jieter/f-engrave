@@ -699,7 +699,9 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        vcalc_status = Toplevel(width=525, height=60)
+        width = 525
+        height = 60
+        vcalc_status = Toplevel(width=width, height=height)
         # Use grab_set to prevent user input in the main window during calculations
         vcalc_status.grab_set()
 
@@ -731,6 +733,8 @@ class Gui(Frame):
                 os.remove("f_engrave_icon")
             except:
                 pass
+
+        left_window(vcalc_status, width, height)
 
         self.v_carve_it()
         self.menu_View_Refresh()
