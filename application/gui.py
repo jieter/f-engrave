@@ -1,6 +1,5 @@
 import getopt
 import webbrowser
-# from math import tan
 
 # from util import VERSION, POTRACE_AVAILABLE, TTF_AVAILABLE, PIL, IN_AXIS, header_text
 from util import *
@@ -12,7 +11,6 @@ from general_settings import GeneralSettings
 from main_window import MainWindowTextLeft, MainWindowTextRight, MainWindowImageLeft
 
 from geometry.coords import MyImage, MyText
-# from geometry.font import Font
 # from geometry.engrave import Engrave, Toolbit, VCarve, Straight
 from geometry.engrave import Engrave
 
@@ -57,6 +55,7 @@ class Gui(Frame):
         self.master.rowconfigure(2, minsize=20)
 
         self.create_widgets()
+        # center_window(self.master)
 
         self.engrave = Engrave(self.settings)
         # engrave callbacks
@@ -65,22 +64,19 @@ class Gui(Frame):
         self.engrave.set_status_callback(self.status_update)
 
         # callbacks (wherein this Gui/App acts as the Controller)
-        # self.Ctrl_Fontdir_Click = lambda *_, **__: None
+        self.Ctrl_Fontdir_Click = lambda *_, **__: None
         self.Ctrl_Entry_units_var_Callback = lambda *_, **__: None
         self.Ctrl_Scale_Linear_Inputs = lambda *_, **__: None
         self.Ctrl_set_mainwindow_cut_type = lambda *_, **__: None
 
-        # main window callbacks
-        # lambda *_, **__: None
-
     def general_settings_window(self):
-        self.general_settings_window = GeneralSettings(self, self.settings)
+        general_settings_window = GeneralSettings(self, self.settings)
 
     def bitmap_settings_window(self):
-        self.bitmap_settings_window = BitmapSettings(self, self.settings)
+        bitmap_settings_window = BitmapSettings(self, self.settings)
 
     def vcarve_settings_window(self):
-        self.vcarve_settings_window = VCarveSettings(self, self.settings)
+        vcarve_settings_window = VCarveSettings(self, self.settings)
 
     def status_update(self, msg, color='yellow'):
         self.statusMessage.set(msg)
@@ -134,7 +130,6 @@ class Gui(Frame):
         self.show_axis = BooleanVar()
         self.show_box = BooleanVar()
 
-        self.fontdex = BooleanVar()
         self.v_pplot = BooleanVar()
 
         self.cut_type = StringVar()
@@ -162,20 +157,21 @@ class Gui(Frame):
         # Derived variables
         self.calc_depth_limit()
 
-        config_file = "config.ngc"
-        home_config1 = self.HOME_DIR + "/" + config_file
-        config_file2 = ".fengraverc"
-        home_config2 = self.HOME_DIR + "/" + config_file2
-        if (os.path.isfile(config_file)):
-            self.Open_G_Code_File(config_file)
-        elif (os.path.isfile(home_config1)):
-            self.Open_G_Code_File(home_config1)
-        elif (os.path.isfile(home_config2)):
-            self.Open_G_Code_File(home_config2)
+        self.command_line_parameters()
 
-        ##########################################################################
-        #                             COMMAND LINE                               #
-        ##########################################################################
+        self.create_previewcanvas()
+        self.create_input()
+        self.create_statusbar()
+        self.create_menubar()
+
+        self.mainwindow_image_left = None
+        self.mainwindow_text_left = None
+        self.mainwindow_text_right = None
+
+    ##########################################################################
+    #                             COMMAND LINE                               #
+    ##########################################################################
+    def command_line_parameters(self):
         opts, args = None, None
         try:
             opts, args = getopt.getopt(sys.argv[1:], "hbg:f:d:t:",
@@ -256,15 +252,7 @@ class Gui(Frame):
 
             sys.exit()
 
-        self.create_previewcanvas()
-        self.create_input()
-        self.create_statusbar()
-
-        self.mainwindow_image_left = None
-        self.mainwindow_text_left = None
-        self.mainwindow_text_right = None
-
-        # Make Menu Bar
+    def create_menubar(self):
         self.menuBar = Menu(self.master, relief="raised", bd=2)
 
         top_File = Menu(self.menuBar, tearoff=0)
@@ -392,7 +380,6 @@ class Gui(Frame):
         self.show_box.set(self.settings.get('show_box'))
         self.show_thick.set(self.settings.get('show_thick'))
 
-        self.fontdex.set(self.settings.get('fontdex'))
         self.v_pplot.set(self.settings.get('v_pplot'))
 
         self.cut_type.set(self.settings.get('cut_type'))
@@ -1170,7 +1157,7 @@ class Gui(Frame):
         self.menu_Help_About()
 
     def KEY_F2(self, event):
-        self.GEN_Settings_Window()
+        self.general_settings_window()
 
     def KEY_F3(self, event):
         self.vcarve_settings_window()
@@ -1673,7 +1660,7 @@ class Gui(Frame):
                 else:
                     fmessage("(" + error_text + ")")
 
-        # reset the image coords (to avoid corruption, e.g. from previous transformations)
+        # reset the image coords (to avoid corruption, e.g. from a previous transformation)
         self.image.set_coords_from_strokes()
         self.engrave.set_image(self.image)
 
@@ -1957,3 +1944,50 @@ class Gui(Frame):
     def Quit_Click(self, event):
         self.statusMessage.set("Exiting!")
         self.master.destroy()
+
+
+def center_screen(win):
+    """
+    centers a tkinter window on the main screen
+    Source: https://stackoverflow.com/questions/3352918/how-to-center-a-window-on-the-screen-in-tkinter
+    :param win: the root or Toplevel window to center
+    """
+    win.update_idletasks()
+
+    width = win.winfo_width()
+    frm_width = win.winfo_rootx() - win.winfo_x()
+    win_width = width + 2 * frm_width
+
+    height = win.winfo_height()
+    titlebar_height = win.winfo_rooty() - win.winfo_y()
+    win_height = height + titlebar_height + frm_width
+    x = win.winfo_screenwidth() // 2 - win_width // 2
+    y = win.winfo_screenheight() // 2 - win_height // 2
+
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
+    win.deiconify()
+
+
+def left_window(win, width, height):
+    """
+    centers a tkinter Toplevel window to its master
+    Source: https://stackoverflow.com/questions/36050192/how-to-position-toplevel-widget-relative-to-root-window
+    :param width: the Toplevel window width
+    :param height: the Toplevel window height
+    :param win: the Toplevel window to center
+    """
+    win.update_idletasks()
+    # width = win.winfo_width()
+    # height = win.winfo_height()
+    # print 'w:', width, ' h:', height  # TEST
+
+    master = win.master
+    x = master.winfo_x()
+    y = master.winfo_y()
+
+    x -= width
+    # win.geometry("%dx%d+%d+%d" % (w, h, x + dx, y + dy)))
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
+    win.deiconify()

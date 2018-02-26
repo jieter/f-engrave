@@ -100,7 +100,7 @@ class TextFontProperties(MainWindowWidget):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        w_units = self.w_units
+        # w_units = self.w_units
 
         self.yscale_frame = Frame(self)
         self.Label_Yscale = Label(self.yscale_frame, text="Text Height", width=w_label, anchor=E)
@@ -389,6 +389,9 @@ class TextPosition(MainWindowWidget):
                                             text='Selecting Mirror Text mirrors the text about a vertical line.')
 
     def master_configure(self):
+
+        # Text Position and Orientation
+
         self.Label_pos_orient.pack(side=TOP, anchor=W)
 
         self.Label_Tangle.pack(side=LEFT)
@@ -508,7 +511,7 @@ class TextOnCircle(MainWindowWidget):
 
     def master_configure(self):
 
-        # Text on circle properties
+        # Text on Circle properties
 
         self.Label_text_on_arc.pack(side=TOP, anchor=W, padx=5)
 
@@ -583,6 +586,9 @@ class GCodeProperties(MainWindowWidget):
         self.master_configure()
 
     def create_widgets(self):
+
+        # G-Code properties
+
         self.Label_gcode_opt = Label(self, text="Gcode Properties:", anchor=W)
 
         w_label = self.w_label
@@ -767,6 +773,9 @@ class FontFiles(MainWindowWidget):
         # self.bind_keys()
 
     def create_widgets(self):
+
+        # Font files
+
         w_label = self.w_label
         w_entry = self.w_entry
         w_units = self.w_units
@@ -827,7 +836,7 @@ class FontFiles(MainWindowWidget):
         self.fontfile.set(self.settings.get('fontfile'))
         self.fontdir.set(self.settings.get('fontdir'))
 
-    # Font Properties callbacks
+    # Font files callbacks
 
     def Entry_fontdex_Callback(self, varName, index, mode):
         self.settings.set('fontdex', self.fontdex.get())
@@ -928,6 +937,9 @@ class ImageProperties(MainWindowWidget):
         self.master_configure()
 
     def create_widgets(self):
+
+        # Image properties
+
         self.Label_image_prop = Label(self, text="Image Properties:", anchor=W)
 
         w_label = self.w_label
@@ -1032,7 +1044,7 @@ class ImageProperties(MainWindowWidget):
         self.YSCALE.set('%.3g' % self.settings.get('yscale'))
         self.STHICK.set('%.3g' % self.settings.get('line_thickness'))
 
-    # Image Properties callbacks
+    # Image properties callbacks
 
     def useIMGsize_var_Callback(self):
 
@@ -1235,25 +1247,22 @@ class MainWindowTextLeft(Frame):
         self.separator3.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
         self.Recalculate.pack(side=BOTTOM, anchor=W)
 
-    # def set_cut_type(self):
-    #     if self.cut_type.get() != self.settings.get('cut_type'):
-    #         self.cut_type.set(self.settings.get('cut_type'))
-
-    def set_cut_type(self):
-        if self.cut_type.get() != self.settings.get('cut_type'):
-            # avoid recursion due to trace callbacks in the Controller
-            self.cut_type.trace_vdelete('w', self.cut_type_trace)
-            self.cut_type.set(self.settings.get('cut_type'))
-            self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
-        # self.configure_cut_type()
-
-    def entry_cut_type_callback(self, varName, index, mode):
-        self.settings.set('cut_type', self.cut_type.get())
-
+    def configure_cut_type(self):
         self.text_font_properties.configure_cut_type()
         self.text_position.configure_cut_type()
         self.text_on_circle.configure_cut_type()
 
+    def set_cut_type(self):
+        if self.cut_type.get() != self.settings.get('cut_type'):
+            # avoid recursion due to trace callbacks
+            self.cut_type.trace_vdelete('w', self.cut_type_trace)
+            self.cut_type.set(self.settings.get('cut_type'))
+            self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        self.configure_cut_type()
+
+    def entry_cut_type_callback(self, varName, index, mode):
+        self.settings.set('cut_type', self.cut_type.get())
+        self.configure_cut_type()
         self.set_menu_cut_type()
         self.Recalc_RQD()
 
@@ -1329,14 +1338,9 @@ class MainWindowTextRight(Frame):
 
         self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
-    # def set_cut_type(self):
-    #     # only when changed (to avoid recursion due to trace_variable callback)
-    #     if self.cut_type.get() != self.settings.get('cut_type'):
-    #         self.cut_type.set(self.settings.get('cut_type'))
-
     def set_cut_type(self):
         if self.cut_type.get() != self.settings.get('cut_type'):
-            # avoid recursion due to trace callbacks in the Controller
+            # avoid recursion due to trace callbacks
             self.cut_type.trace_vdelete('w', self.cut_type_trace)
             self.cut_type.set(self.settings.get('cut_type'))
             self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
@@ -1358,6 +1362,7 @@ class MainWindowTextRight(Frame):
         self.configure_cut_type()
 
     def configure_cut_type(self):
+        self.gcode_properties.configure_cut_type()
         if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.V_Carve_Calc.configure(state="normal", command=None)
         else:
@@ -1378,8 +1383,7 @@ class MainWindowTextRight(Frame):
 
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
-
-        self.gcode_properties.configure_cut_type()
+        self.configure_cut_type()
         self.set_menu_cut_type()
         self.Recalc_RQD()
 
@@ -1435,14 +1439,9 @@ class MainWindowImageLeft(Frame):
 
         self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
-    # def set_cut_type(self):
-    #     # only when changed (to avoid recursion due to trace_variable callback)
-    #     if self.cut_type.get() != self.settings.get('cut_type'):
-    #         self.cut_type.set(self.settings.get('cut_type'))
-
     def set_cut_type(self):
         if self.cut_type.get() != self.settings.get('cut_type'):
-            # avoid recursion due to trace callbacks in the Controller
+            # avoid recursion due to trace callbacks
             self.cut_type.trace_vdelete('w', self.cut_type_trace)
             self.cut_type.set(self.settings.get('cut_type'))
             self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
@@ -1469,6 +1468,9 @@ class MainWindowImageLeft(Frame):
         self.configure_cut_type()
 
     def configure_cut_type(self):
+        self.image_properties.configure_cut_type()
+        self.image_position.configure_cut_type()
+        self.gcode_properties.configure_cut_type()
         if self.cut_type.get() == CUT_TYPE_VCARVE:
             self.V_Carve_Calc.configure(state="normal", command=None)
         else:
@@ -1493,10 +1495,6 @@ class MainWindowImageLeft(Frame):
 
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
-
-        self.image_properties.configure_cut_type()
-        self.image_position.configure_cut_type()
-        self.gcode_properties.configure_cut_type()
-
+        self.configure_cut_type()
         self.set_menu_cut_type()
         self.Recalc_RQD()

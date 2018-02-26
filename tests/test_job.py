@@ -17,7 +17,6 @@ class JobTest(unittest.TestCase):
 
     def _job_with_settings(self, *args):
         settings = Settings(filename='tests/files/job_test_settings.ngc')
-        # settings.set('default_text', 'OOF-Engrave')
 
         for key, value in args:
             settings.set(key, value)

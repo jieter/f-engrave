@@ -1,5 +1,6 @@
 from util import VERSION, OK, NOR, INV, NAN
 from tooltip import ToolTip
+import gui
 
 if VERSION == 3:
     from tkinter import *
@@ -31,7 +32,10 @@ class GeneralSettings(object):
         self.refresh_v_pplot = master.engrave.refresh_v_pplot
 
         # General settings window
-        self.general_settings = Toplevel(width=250, height=500)
+        self.width = 600
+        self.height = 500
+        self.general_settings = Toplevel(width=self.width, height=self.height)
+        self.general_settings.withdraw()
 
         # Use grab_set to prevent user input in the main window during calculations
         self.general_settings.grab_set()
@@ -74,6 +78,9 @@ class GeneralSettings(object):
         self.create_widgets()
         self.configure_boxgap()
         self.create_icon()
+
+        gui.left_window(self.general_settings, self.width, self.height)
+        self.general_settings.deiconify()
 
     def initialise_variables(self):
         self.units.set(self.settings.get('units'))
@@ -280,7 +287,7 @@ class GeneralSettings(object):
         self.Checkbutton_plotbox.configure(variable=self.plotbox)
         self.plotbox.trace_variable("w", self.Entry_Box_Callback)
 
-        self.Label_BoxGap = Label(self.box_frame, text="Box/Circle Gap:", width=w_label, anchor=E)
+        self.Label_BoxGap = Label(self.box_frame, text="Box/Circle Gap:", width=15, anchor=E)
         self.Label_BoxGap.pack(side=LEFT)
         self.Entry_BoxGap = Entry(self.box_frame, width=w_entry)
         self.Entry_BoxGap.pack(side=LEFT)

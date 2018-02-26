@@ -1,5 +1,5 @@
-# from util import VERSION, OK, NOR, INV, NAN
 from util import VERSION, OK, INV, NAN
+import gui
 # from tooltip import ToolTip
 
 if VERSION == 3:
@@ -27,7 +27,10 @@ class BitmapSettings(object):
         self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
 
         # Bitmap settings window
-        self.bmp_settings = Toplevel(width=525, height=250)
+        self.width = 550
+        self.height = 250
+        self.bmp_settings = Toplevel(width=self.width, height=self.height)
+        self.bmp_settings.withdraw()
 
         # Use grab_set to prevent user input in the main window during calculations
         self.bmp_settings.grab_set()
@@ -50,6 +53,9 @@ class BitmapSettings(object):
         self.initialise_variables()
         self.create_widgets()
         self.create_icon()
+
+        gui.left_window(self.bmp_settings, self.width, self.height)
+        self.bmp_settings.deiconify()
 
     def initialise_variables(self):
         self.bmp_turnpol.set(self.settings.get('bmp_turnpol'))

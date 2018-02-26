@@ -1,6 +1,7 @@
 from util import VERSION, OK, NOR, INV, NAN
 from tooltip import ToolTip
 from settings import CUT_TYPE_VCARVE
+import gui
 
 if VERSION == 3:
     from tkinter import *
@@ -32,7 +33,10 @@ class VCarveSettings(object):
         self.refresh_v_pplot = master.engrave.refresh_v_pplot
 
         # V-Carve settings window
-        self.vcarve_settings = Toplevel(width=580, height=690)
+        self.width = 600
+        self.height = 700
+        self.vcarve_settings = Toplevel(width=self.width, height=self.height)
+        self.vcarve_settings.withdraw()
 
         # Use grab_set to prevent user input in the main window during calculations
         self.vcarve_settings.grab_set()
@@ -89,6 +93,9 @@ class VCarveSettings(object):
         self.initialise_variables()
         self.create_widgets()
         self.create_icon()
+
+        gui.left_window(self.vcarve_settings, self.width, self.height)
+        self.vcarve_settings.deiconify()
 
     def initialise_variables(self):
         self.units.set(self.settings.get('units'))
@@ -231,7 +238,7 @@ class VCarveSettings(object):
         self.Entry_StepSize.pack(side=LEFT, anchor=W)
         self.Entry_StepSize.configure(textvariable=self.v_step_len)
         self.v_step_len.trace_variable("w", self.Entry_StepSize_Callback)
-        
+
         # Flip normals
         self.vflop_frame = Frame(vcarve_settings_lower)
         self.Label_v_flop = Label(self.vflop_frame, text="Flip Normals (Cut Outside)", width=w_label)
