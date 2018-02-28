@@ -162,7 +162,7 @@ class VCarveSettings(object):
 
         w_label = 30
         w_entry = 5
-        w_units = 5
+        # w_units = 5
         w_radio = 10
 
         # V-Bit drawing
@@ -402,12 +402,17 @@ class VCarveSettings(object):
         self.Checkbutton_v_clean_P = Checkbutton(self.v_clean_directions_frame, text="P", anchor=W)
         self.Checkbutton_v_clean_P.configure(variable=self.v_clean_P)
         self.Checkbutton_v_clean_P.pack(side=LEFT, anchor=W)
+        self.v_clean_P.trace_variable("w", self.Checkbutton_v_clean_P_Callback)
+
         self.Checkbutton_v_clean_X = Checkbutton(self.v_clean_directions_frame, text="X", anchor=W)
         self.Checkbutton_v_clean_X.configure(variable=self.v_clean_X)
         self.Checkbutton_v_clean_X.pack(side=LEFT, anchor=W)
+        self.v_clean_X.trace_variable("w", self.Checkbutton_v_clean_X_Callback)
+
         self.Checkbutton_v_clean_Y = Checkbutton(self.v_clean_directions_frame, text="Y", anchor=W)
         self.Checkbutton_v_clean_Y.configure(variable=self.v_clean_Y)
         self.Checkbutton_v_clean_Y.pack(side=LEFT, anchor=W)
+        self.v_clean_Y.trace_variable("w", self.Checkbutton_v_clean_Y_Callback)
 
         # Buttons
         self.button_frame = Frame(vcarve_settings_lower)
@@ -717,6 +722,15 @@ class VCarveSettings(object):
 
     def Checkbutton_clean_Y_Callback(self, varName, index, mode):
         self.settings.set('clean_Y', self.clean_Y.get())
+
+    def Checkbutton_v_clean_P_Callback(self, varName, index, mode):
+        self.settings.set('v_clean_P', self.v_clean_P.get())
+
+    def Checkbutton_v_clean_X_Callback(self, varName, index, mode):
+        self.settings.set('v_clean_X', self.v_clean_X.get())
+
+    def Checkbutton_v_clean_Y_Callback(self, varName, index, mode):
+        self.settings.set('v_clean_Y', self.v_clean_Y.get())
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())

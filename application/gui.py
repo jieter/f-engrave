@@ -483,7 +483,7 @@ class Gui(Frame):
     def CopyClipboard_SVG(self):
         self.clipboard_clear()
 
-        # self.engrave.refresh_coords()  # TODO
+        self.engrave.refresh_coords()  # TODO
         svgcode = svg(self.engrave)
 
         for line in svgcode:
@@ -751,6 +751,8 @@ class Gui(Frame):
 
         if self.engrave.number_of_clean_coords() == 0:
 
+            width = 525
+            height = 50
             vcalc_status = Toplevel(width=525, height=50)
 
             # Use grab_set to prevent user input in the main window during calculations
@@ -779,10 +781,10 @@ class Gui(Frame):
                 except:
                     pass
 
+            left_window(vcalc_status, width, height)
+
             self.v_carve_it(clean=True)
-
             vcalc_status.grab_release()
-
             try:
                 vcalc_status.destroy()
             except:
@@ -1428,8 +1430,8 @@ class Gui(Frame):
 
             loop_old = -1
             rold = -1
-            for line in self.engrave.v_coords:
-                new = (line[0], line[1])
+            for XY in self.engrave.v_coords:
+                new = (XY[0], XY[1])
                 r = XY[2]
                 loop = XY[3]
                 color = "white"

@@ -119,6 +119,18 @@ class JobTest(unittest.TestCase):
         )
         self._save_testfiles(job, 'vcarve')
 
+    # TODO add clean step
+    def test_vcarve_box(self):
+        job = self._job_with_settings(
+            ('default_text', 'L'),
+            ('fontfile', 'kochigothic.cxf'),
+            ('cut_type', 'v-carve'),
+            ('plotbox', 'True'),
+            ('boxgap', '5'),
+            ('yscale', '500'),
+        )
+        self._save_testfiles(job, 'vcarve_box')
+
     def test_image(self):
         job = self._job_with_settings(
             ('input_type', 'image'),

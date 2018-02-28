@@ -318,7 +318,7 @@ class GeneralSettings(object):
 
         padx = 10
         pady = 10
-        
+
         self.GEN_Reload = Button(self.button_frame, text="Recalculate")
         self.GEN_Reload.pack(side=LEFT, padx=padx, pady=pady, anchor=CENTER)
         self.GEN_Reload.bind("<ButtonRelease-1>", self.recalculate_click)

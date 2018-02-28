@@ -3,7 +3,7 @@ from math import atan2, cos, sin, degrees, radians, hypot, sqrt
 from boundingbox import BoundingBox
 from util import MAXINT
 
-Zero = 1e-6
+Zero = 1e-5
 
 
 def transform(x, y, angle):

@@ -83,9 +83,10 @@ class Engrave(object):
         self.STOP_CALC = False
 
     def init_coords(self):
-        # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt]) ?
+        # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt])
         self.refresh_coords()
         self.v_coords = []
+        self.clean_segment = []
         self.init_clean_coords()
 
     def refresh_coords(self):
@@ -99,7 +100,7 @@ class Engrave(object):
         self.clean_coords = []
         self.clean_coords_sort = []
         self.v_clean_coords_sort = []
-        self.clean_segment = []
+        # self.clean_segment = []
 
     def stop_calc(self):
         self.STOP_CALC = True
@@ -168,19 +169,32 @@ class Engrave(object):
     def get_coords(self):
         return self.coords
 
-    def get_segments_length(self, i_x1, i_y1, i_x2, i_y2, clean):
+    def get_segments_length(self, clean):
 
         total_length = 0.0
 
+        v_inc = 1
+        v_start = 0
+        v_end = self.number_of_segments()
+        v_flop, i_x1, i_y1, i_x2, i_y2 = self.get_v_flop()
+        if v_flop:
+            # reverse order
+            v_inc = -1
+            v_start = self.number_of_segments() - 1
+            v_end = -1
+
         # determine the total length of segments
-        for idx, line in enumerate(self.coords):
+        curr_cnt = -1
+        for v_index in xrange(v_start, v_end, v_inc):
+            curr_cnt += 1
+            line = self.coords[v_index]
             x1 = line[i_x1]
             y1 = line[i_y1]
             x2 = line[i_x2]
             y2 = line[i_y2]
-            length = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
+            length = hypot((x2 - x1), (y2 - y1))
             if clean:
-                if self.clean_segment[idx] != 0:
+                if self.clean_segment[curr_cnt] != 0:
                     total_length += length
             else:
                 total_length += length
@@ -189,11 +203,8 @@ class Engrave(object):
 
     def v_carve(self, clean=False):
 
-        # TODO Extracted code, to be further refactored
-        xN, xPartitionLength, yN, yPartitionLength = self.setup_grid_partitions(clean)
-
-        # TODO Extracted code, to be further refactored
-        self.determine_active_partitions(xN, xPartitionLength, yN, yPartitionLength, clean)
+        xN, yN = self.setup_grid_partitions(clean)
+        self.determine_active_partitions(xN, yN, clean)
 
         # Update GUI with the modified toolpath
         if self.progress_callback is not None:
@@ -229,29 +240,16 @@ class Engrave(object):
         theta = 9999.0
         loop_cnt = 0  # the number of loops in this model
 
-        v_flop = self.get_flop_status(clean)
-        if v_flop:
-            v_inc = -1
-            v_index = self.number_of_segments()
-            i_x1 = 2
-            i_y1 = 3
-            i_x2 = 0
-            i_y2 = 1
-        else:
-            v_inc = 1
-            v_index = -1
-            i_x1 = 0
-            i_y1 = 1
-            i_x2 = 2
-            i_y2 = 3
-
         not_b_carve = not bool(self.settings.get('bit_shape') == "BALL")
+
         # TODO has CHK_STRING not been set before, else add set check in settings
         CHK_STRING = self.settings.get('v_check_all')
         if self.settings.get('input_type') != "text":
             CHK_STRING = "all"
 
         bit_angle = self.settings.get('v_bit_angle')
+        rbit = self.calc_vbit_radius()
+        # r_clean = self.settings.get('clean_dia') / 2.0
 
         dangle = degrees(dline / rbit)
         if dangle < 2.0:
@@ -264,212 +262,225 @@ class Engrave(object):
             v_drv_corner = self.settings.get('v_drv_corner')
 
         if self.settings.get('input_type') == "image" and clean is False:
-            self.coords = self._sort_for_v_carve(self.coords, LN_START=0)
+            self.coords = self._sort_for_v_carve(self.coords)
 
-        TOT_LENGTH = self.get_segments_length(i_x1, i_y1, i_x2, i_y2, clean)
+        TOT_LENGTH = self.get_segments_length(clean)
         CUR_LENGTH = 0.0
         START_TIME = time()
-
         done = True
 
-        if TOT_LENGTH > 0.0:
+        if TOT_LENGTH <= 0.0:
+            return done  # there is nothing to do
 
-            calc_flag = 1
+        calc_flag = 1
+        v_index = -1
+        v_inc = 1
+        v_flop, i_x1, i_y1, i_x2, i_y2 = self.get_v_flop()
+        if v_flop:
+            v_index = self.number_of_segments()
+            v_inc = -1
 
-            for curr in range(self.number_of_segments()):
+        # for curr in xrange(iter_begin, iter_end, inc):
+        for curr in range(self.number_of_segments()):
 
-                if not clean:
-                    self.clean_segment.append(0)
-                elif self.number_of_clean_segments() == self.number_of_segments():
-                    calc_flag = self.clean_segment[curr]
+            if clean is False:
+                self.clean_segment.append(0)
+            elif self.number_of_clean_segments() == self.number_of_segments():
+                calc_flag = self.clean_segment[curr]
+            else:
+                fmessage('Need to Recalculate V-Carve Path')
+                done = False
+                break
+
+            CUR_PCT = float(CUR_LENGTH) / TOT_LENGTH * 100.0
+            if CUR_PCT > 0.0:
+                MIN_REMAIN = (time() - START_TIME) / 60 * (100 - CUR_PCT) / CUR_PCT
+                MIN_TOTAL = 100.0 / CUR_PCT * (time() - START_TIME) / 60
+            else:
+                MIN_REMAIN = -1
+                MIN_TOTAL = -1
+
+            if self.status_callback is not None:
+                msg = '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL)
+                self.status_callback(msg)
+
+            if self.STOP_CALC:
+                self.STOP_CALC = False
+                if clean:
+                    self.clean_coords = []
+                    calc_flag = 0
                 else:
-                    fmessage('Need to Recalculate V-Carve Path')
-                    done = False
-                    break
+                    self.v_coords = []
+                done = False
+                break
 
-                CUR_PCT = float(CUR_LENGTH) / TOT_LENGTH * 100.0
-                if CUR_PCT > 0.0:
-                    MIN_REMAIN = (time() - START_TIME) / 60 * (100 - CUR_PCT) / CUR_PCT
-                    MIN_TOTAL = 100.0 / CUR_PCT * (time() - START_TIME) / 60
-                else:
-                    MIN_REMAIN = -1
-                    MIN_TOTAL = -1
+            v_index += v_inc
+            New_Loop = 0
+            x1 = self.coords[v_index][i_x1]
+            y1 = self.coords[v_index][i_y1]
+            x2 = self.coords[v_index][i_x2]
+            y2 = self.coords[v_index][i_y2]
+            char_num = int(self.coords[v_index][5])
+            dx = x2 - x1
+            dy = y2 - y1
+            Lseg = hypot(dx, dy)
 
-                if self.status_callback is not None:
-                    msg = '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL)
-                    self.status_callback(msg)
+            if Lseg < Zero:  # was accuracy
+                continue
 
-                if self.STOP_CALC:
-                    self.STOP_CALC = False
-                    if clean:
-                        self.clean_coords = []
-                        calc_flag = 0
-                    else:
-                        self.v_coords = []
-                    done = False
-                    break
+            # calculate the sin and cos of the coord transformation needed for
+            # the distance calculations
+            seg_sin = dy / Lseg
+            seg_cos = -dx / Lseg
+            phi = get_angle(seg_sin, seg_cos)
 
-                v_index = v_index + v_inc
-                New_Loop = 0
-                x1 = self.coords[v_index][i_x1]
-                y1 = self.coords[v_index][i_y1]
-                x2 = self.coords[v_index][i_x2]
-                y2 = self.coords[v_index][i_y2]
-                char_num = int(self.coords[v_index][5])
-                dx = x2 - x1
-                dy = y2 - y1
-                Lseg = sqrt(dx * dx + dy * dy)
+            if calc_flag != 0:
+                CUR_LENGTH = CUR_LENGTH + Lseg
+            else:
+                # theta = phi         #V1.62
+                # x0=x2               #V1.62
+                # y0=y2               #V1.62
+                # seg_sin0=seg_sin    #V1.62
+                # seg_cos0=seg_cos    #V1.62
+                # char_num0=char_num  #V1.62
+                continue
 
-                if Lseg < Zero:  # was accuracy
-                    continue
+            # another loop, or another character
+            if fabs(x1 - x0) > Zero or fabs(y1 - y0) > Zero or char_num != char_num0:
+                New_Loop = 1
+                loop_cnt += 1
 
-                # calculate the sin and cos of the coord transformation needed for
-                # the distance calculations
-                seg_sin = dy / Lseg
-                seg_cos = -dx / Lseg
-                phi = get_angle(seg_sin, seg_cos)
+                xa = float(x1)
+                ya = float(y1)
+                xb = float(x2)
+                yb = float(y2)
+                theta = 9999.0
+                seg_sin0 = 2
+                seg_cos0 = 2
 
-                if calc_flag != 0:
-                    CUR_LENGTH = CUR_LENGTH + Lseg
-                else:
-                    # theta = phi         #V1.62
-                    # x0=x2               #V1.62
-                    # y0=y2               #V1.62
-                    # seg_sin0=seg_sin    #V1.62
-                    # seg_cos0=seg_cos    #V1.62
-                    # char_num0=char_num  #V1.62
-                    continue
+            if seg_cos0 > 1.0:
+                delta = 180
+            else:
+                xtmp1 = (x2 - x1) * seg_cos0 - (y2 - y1) * seg_sin0
+                ytmp1 = (x2 - x1) * seg_sin0 + (y2 - y1) * seg_cos0
+                Ltmp = hypot(xtmp1, ytmp1)
+                d_seg_sin = ytmp1 / Ltmp
+                d_seg_cos = xtmp1 / Ltmp
+                delta = get_angle(d_seg_sin, d_seg_cos)
 
-                if fabs(x1 - x0) > Zero or fabs(y1 - y0) > Zero or char_num != char_num0:
-                    New_Loop = 1
-                    loop_cnt += 1
-                    xa = float(x1)
-                    ya = float(y1)
-                    xb = float(x2)
-                    yb = float(y2)
-                    theta = 9999.0
-                    seg_sin0 = 2
-                    seg_cos0 = 2
+            if delta < v_drv_corner and bit_angle != 0 and not_b_carve and clean is False:
+                # drive to corner
+                self.v_coords.append([x1, y1, 0.0, loop_cnt])
 
-                if seg_cos0 > 1.0:
-                    delta = 180
-                else:
-                    xtmp1 = (x2 - x1) * seg_cos0 - (y2 - y1) * seg_sin0
-                    ytmp1 = (x2 - x1) * seg_sin0 + (y2 - y1) * seg_cos0
-                    Ltmp = sqrt(xtmp1 * xtmp1 + ytmp1 * ytmp1)
-                    d_seg_sin = ytmp1 / Ltmp
-                    d_seg_cos = xtmp1 / Ltmp
-                    delta = get_angle(d_seg_sin, d_seg_cos)
+            if delta > float(v_step_corner):
+                # add sub-steps around corner
+                phisteps = max(floor((delta - 180) / dangle), 2)
+                step_phi = (delta - 180) / phisteps
+                pcnt = 0
+                while pcnt < (phisteps - 1):
+                    pcnt += 1
+                    sub_phi = radians(-pcnt * step_phi + theta)
+                    sub_seg_cos = cos(sub_phi)
+                    sub_seg_sin = sin(sub_phi)
 
-                if delta < v_drv_corner and bit_angle != 0 and not_b_carve and clean is False:
-                    # drive to corner
-                    self.v_coords.append([x1, y1, 0.0, loop_cnt])
-
-                if delta > float(v_step_corner):
-                    # add sub-steps around corner
-                    phisteps = max(floor((delta - 180) / dangle), 2)
-                    step_phi = (delta - 180) / phisteps
-                    pcnt = 0
-                    while pcnt < phisteps - 1:
-                        pcnt = pcnt + 1
-                        sub_phi = radians(-pcnt * step_phi + theta)
-                        sub_seg_cos = cos(sub_phi)
-                        sub_seg_sin = sin(sub_phi)
-
-                        rout = self.find_max_circle(x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
-                        normv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rout, loop_cnt, clean)
-                        self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
-
-                        if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
-                            self.plot_progress_callback(normv, "blue", rv)
-
-                theta = phi
-                x0 = x2
-                y0 = y2
-                seg_sin0 = seg_sin
-                seg_cos0 = seg_cos
-                char_num0 = char_num
-
-                # Calculate the number of steps, then dx and dy for each step.
-                # Don't calculate at the joints.
-                nsteps = max(floor(Lseg / dline), 2)
-                dxpt = dx / nsteps
-                dypt = dy / nsteps
-
-                # this makes sure the first cut start at the begining of the first segment
-                cnt = 0
-                if New_Loop == 1 and bit_angle != 0 and not_b_carve:
-                    cnt = -1
-
-                seg_sin = dy / Lseg
-                seg_cos = -dx / Lseg
-                phi2 = radians(get_angle(seg_sin, seg_cos))
-                while cnt < nsteps - 1:
-                    cnt += 1
-                    # determine location of next step along outline (xpt, ypt)
-                    xpt = x1 + dxpt * cnt
-                    ypt = y1 + dypt * cnt
-
-                    rout = self.find_max_circle(xpt, ypt, rmax, char_num, seg_sin, seg_cos, 0, CHK_STRING)
-                    # make the first cut drive down at an angle instead of straight down plunge
-                    if cnt == 0 and not_b_carve:
-                        rout = 0.0
-                    normv, rv, clean_seg = self.record_v_carve_data(xpt, ypt, phi2, rout, loop_cnt, clean)
+                    rout = self.find_max_circle(x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
+                    normv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rbit, rout, loop_cnt, clean)
                     self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
                     if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
                         self.plot_progress_callback(normv, "blue", rv)
 
-                    if New_Loop == 1 and cnt == 1:
-                        xpta = xpt
-                        ypta = ypt
-                        phi2a = phi2
-                        routa = rout
+            theta = phi
+            x0 = x2
+            y0 = y2
+            seg_sin0 = seg_sin
+            seg_cos0 = seg_cos
+            char_num0 = char_num
 
-                # Check to see if we need to close an open loop
-                if abs(x2 - xa) < self.accuracy and abs(y2 - ya) < self.accuracy:
-                    xtmp1 = (xb - xa) * seg_cos0 - (yb - ya) * seg_sin0
-                    ytmp1 = (xb - xa) * seg_sin0 + (yb - ya) * seg_cos0
-                    Ltmp = sqrt(xtmp1 * xtmp1 + ytmp1 * ytmp1)
-                    d_seg_sin = ytmp1 / Ltmp
-                    d_seg_cos = xtmp1 / Ltmp
-                    delta = get_angle(d_seg_sin, d_seg_cos)
-                    if delta < v_drv_corner and clean is False:
-                        # drive to corner
-                        self.v_coords.append([xa, ya, 0.0, loop_cnt])
+            # Calculate the number of steps, then dx and dy for each step.
+            # Don't calculate at the joints.
+            nsteps = max(floor(Lseg / dline), 2)
+            dxpt = dx / nsteps
+            dypt = dy / nsteps
 
-                    elif delta > v_step_corner:
-                        # add substeps around corner
-                        phisteps = max(floor((delta - 180) / dangle), 2)
-                        step_phi = (delta - 180) / phisteps
-                        pcnt = 0
+            # this makes sure the first cut start at the begining of the first segment
+            cnt = 0
+            if New_Loop == 1 and bit_angle != 0 and not_b_carve:
+                cnt = -1
 
-                        while pcnt < phisteps - 1:
-                            pcnt = pcnt + 1
-                            sub_phi = radians(-pcnt * step_phi + theta)
-                            sub_seg_cos = cos(sub_phi)
-                            sub_seg_sin = sin(sub_phi)
+            seg_sin = dy / Lseg
+            seg_cos = -dx / Lseg
+            phi2 = radians(get_angle(seg_sin, seg_cos))
+            while cnt < nsteps - 1:
+                cnt += 1
+                # determine location of next step along outline (xpt, ypt)
+                xpt = x1 + dxpt * cnt
+                ypt = y1 + dypt * cnt
 
-                            rout = self.find_max_circle(xa, ya, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
-                            normv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rout, loop_cnt, clean)
-                            self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
+                rout = self.find_max_circle(xpt, ypt, rmax, char_num, seg_sin, seg_cos, 0, CHK_STRING)
+                # make the first cut drive down at an angle instead of straight down plunge
+                if cnt == 0 and not_b_carve:
+                    rout = 0.0
+                normv, rv, clean_seg = self.record_v_carve_data(xpt, ypt, phi2, rbit, rout, loop_cnt, clean)
+                self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
-                            if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
-                                self.plot_progress_callback(normv, "blue", rv)
+                if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
+                    self.plot_progress_callback(normv, "blue", rv)
 
-                        normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean)
+                if New_Loop == 1 and cnt == 1:
+                    xpta = xpt
+                    ypta = ypt
+                    phi2a = phi2
+                    routa = rout
+
+            # Check to see if we need to close an open loop
+            if abs(x2 - xa) < self.accuracy and abs(y2 - ya) < self.accuracy:
+                xtmp1 = (xb - xa) * seg_cos0 - (yb - ya) * seg_sin0
+                ytmp1 = (xb - xa) * seg_sin0 + (yb - ya) * seg_cos0
+                Ltmp = sqrt(xtmp1 * xtmp1 + ytmp1 * ytmp1)
+                d_seg_sin = ytmp1 / Ltmp
+                d_seg_cos = xtmp1 / Ltmp
+                delta = get_angle(d_seg_sin, d_seg_cos)
+                if delta < v_drv_corner and clean is False:
+                    # drive to corner
+                    self.v_coords.append([xa, ya, 0.0, loop_cnt])
+
+                elif delta > v_step_corner:
+                    # add substeps around corner
+                    phisteps = max(floor((delta - 180) / dangle), 2)
+                    step_phi = (delta - 180) / phisteps
+                    pcnt = 0
+
+                    while pcnt < phisteps - 1:
+                        pcnt += 1
+                        sub_phi = radians(-pcnt * step_phi + theta)
+                        sub_seg_cos = cos(sub_phi)
+                        sub_seg_sin = sin(sub_phi)
+
+                        rout = self.find_max_circle(xa, ya, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
+                        normv, rv, clean_seg = self.record_v_carve_data(xa, ya, sub_phi, rbit, rout, loop_cnt, clean)
                         self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
-                    else:
-                        # add closing segment
-                        normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, routa, loop_cnt, clean)
-                        self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
+                        if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
+                            self.plot_progress_callback(normv, "blue", rv)
+
+                    normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, rbit, routa, loop_cnt, clean)
+                    self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
+
+                else:
+                    # add closing segment
+                    normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, rbit, routa, loop_cnt, clean)
+                    self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
+
         return done
 
-    def determine_active_partitions(self, xN, xPartitionLength, yN, yPartitionLength, clean):
+    def determine_active_partitions(self, xN, yN, clean):
         """
-        Determine active paritions for each line segment
+        Determine active partitions for each line segment
         """
+        xPartitionLength = self.xPartitionLength
+        yPartitionLength = self.yPartitionLength
+
         rbit = self.calc_vbit_radius()
         rmax = self._calc_rmax(rbit, clean)
 
@@ -480,7 +491,7 @@ class Engrave(object):
             y1_R = XY_R[1]
             x2_R = XY_R[2]
             y2_R = XY_R[3]
-            length = sqrt((x2_R - x1_R) * (x2_R - x1_R) + (y2_R - y1_R) * (y2_R - y1_R))
+            length = hypot((x2_R - x1_R), (y2_R - y1_R))
 
             R_R = length / 2 + rmax
             X_R = (x1_R + x2_R) / 2
@@ -490,6 +501,7 @@ class Engrave(object):
 
             # find the local coordinates of the line segment ends
             minx, maxx, miny, maxy = self.image.get_bbox().tuple()
+
             x1_G = XY_R[0] - minx
             y1_G = XY_R[1] - miny
             x2_G = XY_R[2] - minx
@@ -551,9 +563,8 @@ class Engrave(object):
             # For each grid box in check_points add the grid box and all adjacent grid boxes
             # to the list of boxes for this line segment
             for xy_point in check_points:
-                xy_p = xy_point
-                xIndex = xy_p[0]
-                yIndex = xy_p[1]
+                xIndex = xy_point[0]
+                yIndex = xy_point[1]
                 for i in range(max(xIndex - 1, 0), min(xN, xIndex + 2)):
                     for j in range(max(yIndex - 1, 0), min(yN, yIndex + 2)):
                         coded_index.append(int(i + j * xN))
@@ -568,8 +579,6 @@ class Engrave(object):
                 line_R_appended.append(R_R)
                 self.partitionList[int(thisIndex % xN)][int(thisIndex / xN)].append(line_R_appended)
 
-        return
-
     def setup_grid_partitions(self, clean):
         """
         Setup Grid Partitions for the cleaning toolpath
@@ -578,9 +587,8 @@ class Engrave(object):
         rmax = self._calc_rmax(rbit, clean)
         dline = self.settings.get('v_step_len')
 
-        minx, maxx, miny, maxy = self.image.get_bbox().tuple()
-        xLength = maxx - minx
-        yLength = maxy - miny
+        xLength = self.image.get_bbox().width()
+        yLength = self.image.get_bbox().height()
 
         xN_minus_1 = max(int(xLength / ((2 * rmax + dline) * 1.1)), 1)
         yN_minus_1 = max(int(yLength / ((2 * rmax + dline) * 1.1)), 1)
@@ -606,13 +614,9 @@ class Engrave(object):
             for yCount in range(0, yN):
                 self.partitionList[xCount].append([])
 
-        return xN, xPartitionLength, yN, yPartitionLength
+        return xN, yN
 
-    # TODO optimize (now vbit radius calc is within a loop)
-
-    def record_v_carve_data(self, x1, y1, phi, rout, loop_cnt, clean):
-
-        rbit = self.calc_vbit_radius()
+    def record_v_carve_data(self, x1, y1, phi, rbit, rout, loop_cnt, clean):
 
         Lx, Ly = transform(0, rout, -phi)
         xnormv = x1 + Lx
@@ -765,7 +769,7 @@ class Engrave(object):
 
         return rmin
 
-    def _sort_for_v_carve(self, sort_coords, LN_START):
+    def _sort_for_v_carve(self, sort_coords, LN_START=0):
 
         ecoords = []
         Lbeg = []
@@ -780,21 +784,19 @@ class Engrave(object):
                 cnt = 0
                 ecoords.append([x1, y1])
                 Lbeg.append(cnt)
-                cnt = cnt + 1
                 ecoords.append([x2, y2])
                 oldx, oldy = x2, y2
             else:
-                dist = sqrt((oldx - x1) ** 2 + (oldy - y1) ** 2)
-                # check and see if we need to move
-                # to a new discontinuous start point
+                dist = hypot((oldx - x1), (oldy - y1))
+                # check and see if we need to move to a new discontinuous start point
                 if dist > Zero:
                     Lend.append(cnt)
-                    cnt = cnt + 1
+                    cnt += 1
                     ecoords.append([x1, y1])
                     Lbeg.append(cnt)
-                cnt += 1
                 ecoords.append([x2, y2])
                 oldx, oldy = x2, y2
+            cnt += 1
 
         Lend.append(cnt)
 
@@ -808,8 +810,9 @@ class Engrave(object):
         while i < len(Lbeg):  # for each loop
             [Xstart, Ystart] = ecoords[Lbeg[i]]
             [Xend, Yend] = ecoords[Lend[i]]
-            dist = sqrt((Xend - Xstart) ** 2 + (Yend - Ystart) ** 2)
-            if dist <= Zero:  # if end is the same as the beginning (changed in V1.55: was Acc)
+            dist = hypot((Xend - Xstart), (Yend - Ystart))
+            # if end is the same as the beginning (changed in V1.55: was Acc)
+            if dist <= Zero:
                 ecoords[Lend[i]] = [Xstart, Ystart]
                 i += 1
             else:  # end != to beginning
@@ -834,15 +837,15 @@ class Engrave(object):
             OPEN = True
             while OPEN and len(LObeg) > 0:
                 [Xend, Yend] = ecoords[End]
-                dist_beg_min = sqrt((Xend - Xstart) ** 2 + (Yend - Ystart) ** 2)
+                dist_beg_min = hypot((Xend - Xstart), (Yend - Ystart))
                 dist_end_min = dist_beg_min
                 k_min_beg = -1
                 k_min_end = -1
                 for k in range(len(LObeg)):
                     [Xkstart, Ykstart] = ecoords[LObeg[k]]
                     [Xkend, Ykend] = ecoords[LOend[k]]
-                    dist_beg = sqrt((Xend - Xkstart) ** 2 + (Yend - Ykstart) ** 2)
-                    dist_end = sqrt((Xend - Xkend) ** 2 + (Yend - Ykend) ** 2)
+                    dist_beg = hypot((Xend - Xkstart), (Yend - Ykstart))
+                    dist_end = hypot((Xend - Xkend), (Yend - Ykend))
                     if dist_beg < dist_beg_min:
                         dist_beg_min = dist_beg
                         k_min_beg = k
@@ -974,12 +977,12 @@ class Engrave(object):
                             LoopTree[jloop][2].append(iloop)
 
         # Set Loop clockwise flag to the state of each loop
-        # could flip cut side here for auto side determination
+        # Could flip cut side here for auto side determination
         for iloop in range(Nloops):
             if Lflip[iloop]:
                 Lcw[iloop] = not Lcw[iloop]
 
-        # Find new order based on distance to next beg
+        # Find new order based on distance to next beginning
         if self.status_callback is not None:
             self.status_callback('Re-Ordering Loops')
 
@@ -1004,12 +1007,14 @@ class Engrave(object):
             dx = Xcur - ecoords[Lbeg[0]][0]
             dy = Ycur - ecoords[Lbeg[0]][1]
             min_dist = dx * dx + dy * dy
+            # min_dist = hypot(dx, dy)  # TODO
 
             inext = 0
             for j in range(1, len(Lbeg)):
                 dx = Xcur - ecoords[Lbeg[j]][0]
                 dy = Ycur - ecoords[Lbeg[j]][1]
                 dist = dx * dx + dy * dy
+                # dist = hypot(dx, dy)  # TODO
                 if dist < min_dist:
                     min_dist = dist
                     inext = j
@@ -1098,27 +1103,24 @@ class Engrave(object):
             Y = miny_c
             line_cnt = skip - 1
             while Y <= maxy_c:
-                line_cnt = line_cnt + 1
+                line_cnt += 1
                 X = minx_c
-                x1 = X
-                x2 = X
+                x1 = x2 = X
                 x1_old = x1
                 x2_old = x2
 
                 # Find relevant clean_coord_data
                 temp_coords = []
-                for line in check_coords:
-                    XY = line
-                    if Y < XY[1] + XY[2] and Y > XY[1] - XY[2]:
+                for XY in check_coords:
+                    if Y < (XY[1] + XY[2]) and Y > (XY[1] - XY[2]):
                         temp_coords.append(XY)
 
                 while X <= maxx_c:
-                    for line in temp_coords:
-                        XY = line
+                    for XY in temp_coords:
                         h = XY[0]
                         k = XY[1]
                         R = XY[2] - Radjust
-                        dist = sqrt((X - h) ** 2 + (Y - k) ** 2)
+                        dist = hypot((X - h), (Y - k))
                         if dist <= R:
                             Root = sqrt(R ** 2 - (Y - k) ** 2)
                             XL = h - Root
@@ -1138,17 +1140,17 @@ class Engrave(object):
                         if line_cnt == skip:
                             Xclean_coords_short.append([x1, Y, loop_cnt])
                             Xclean_coords_short.append([x2, Y, loop_cnt])
-
-                        X = X + DX
-                        x1 = X
-                        x2 = X
+                        X += DX
+                        x1 = x2 = X
                     else:
                         X = x2
                     x1_old = x1
                     x2_old = x2
+
                 if line_cnt == skip:
                     line_cnt = 0
-                Y = Y + DY
+
+                Y += DY
 
         Xclean_coords_out = []
         Xclean_coords_short_out = []
@@ -1184,16 +1186,11 @@ class Engrave(object):
 
     def clean_path_calc(self, bit_type="straight"):
 
-        v_flop = self.get_flop_status(CLEAN=True)
+        v_flop = self.get_flop_status(clean=True)
         if v_flop:
             edge = 1
         else:
             edge = 0
-
-        rbit = self.calc_vbit_radius()
-
-        loop_cnt = 0
-        loop_cnt_out = 0
 
         # reorganize clean_coords
         if bit_type == "straight":
@@ -1205,19 +1202,25 @@ class Engrave(object):
                          self.settings.get('v_clean_X') + \
                          self.settings.get('v_clean_Y')
 
+        rbit = self.calc_vbit_radius()
+        # loop_cnt = 0
+        loop_cnt_out = 0
         check_coords = []
 
         if bit_type == "straight":
-            # self.controller.statusMessage.set('Calculating Cleanup Cut Paths')
-            # self.controller.master.update()
+
             if self.status_callback is not None:
                 self.status_callback('Calculating Cleanup Cut Paths')
 
             self.clean_coords_sort = []
-            clean_dia = self.settings.get('clean_dia')  # diameter of cleanup bit
-            # v_step_len = self.settings.get('v_step_len')
-            step_over = self.settings.get('clean_step')  # percent of cut DIA
+
+            # diameter of cleanup bit
+            clean_dia = self.settings.get('clean_dia')
+
+            # percentage of the cut diameter
+            step_over = self.settings.get('clean_step')
             clean_step = step_over / 100.0
+
             Radjust = clean_dia / 2.0 + rbit
             check_coords = self.clean_coords
 
@@ -1226,47 +1229,43 @@ class Engrave(object):
             if self.status_callback is not None:
                 self.status_callback('Calculating V-Bit Cleanup Cut Paths')
 
-            skip = 1
-            clean_step = 1.0
-
             self.v_clean_coords_sort = []
 
             # effective diameter of clean-up v-bit
-            clean_dia = self.settings.get('clean_dia')
-            if float(clean_dia) < Zero:
+            clean_dia = self.settings.get('clean_v')
+            if clean_dia < Zero:
                 return
+            clean_step = 1.0
 
             # allow the cutter to get within 1/4 of the v-clean step of the v-carved surface
             offset = clean_dia / 4.0
             Radjust = rbit + offset
             flat_clean_r = self.settings.get('clean_dia') / 2.0
-            for line in self.clean_coords:
-                XY = line
+            for XY in self.clean_coords:
                 R = XY[2] - Radjust
-                if R > 0.0 and R < flat_clean_r - offset - Zero:
+                if R > 0.0 and R < (flat_clean_r - offset - Zero):
                     check_coords.append(XY)
 
         # TODO use CUT_TYPE_VCARVE
         if self.settings.get('cut_type') == "v-carve" and len(self.clean_coords) > 1 and test_clean > 0:
-            DX = clean_dia * clean_step
-            DY = DX
 
+            # DX = clean_dia * clean_step
+            # DY = DX
             if bit_type == "straight":
                 MAXD = clean_dia
             else:
-                MAXD = sqrt(DX ** 2 + DY ** 2) * 1.1  # fudge factor
-
-            Xclean_coords = []
-            Yclean_coords = []
-            clean_coords_out = []
+                # TODO DX = DY, cleanup
+                # MAXD=sqrt(DX**2+DY**2)*1.1  #fudge factor
+                # MAXD = hypot(DX, DY) * 1.1  # fudge factor
+                MAXD = clean_dia * clean_step * 1.1  # fudge factor
 
             if bit_type == "straight":
-                clean_coords_out, loop_cnt_out = \
-                    self.straight_toolpath(DX, Xclean_coords, Yclean_coords, clean_coords_out, edge, loop_cnt, loop_cnt_out, rbit)
+                Xclean_coords, Yclean_coords, clean_coords_out, loop_cnt_out = \
+                    self.straight_toolpath(clean_dia, clean_step, edge, loop_cnt_out, rbit)
 
             elif bit_type == "v-bit":
-                Xclean_coords, Yclean_coords, loop_cnt_out = \
-                    self.vbit_toolpath(MAXD, Radjust, Xclean_coords, Yclean_coords, check_coords, clean_coords_out, clean_dia, clean_step, loop_cnt_out, skip)
+                Xclean_coords, Yclean_coords, clean_coords_out, loop_cnt_out = \
+                    self.vbit_toolpath(MAXD, Radjust, check_coords, clean_dia, clean_step, loop_cnt_out, 1)
 
             # Now deal with the horizontal line cuts...
             if (self.settings.get('clean_X') == 1 and bit_type != "v-bit") or \
@@ -1314,8 +1313,7 @@ class Engrave(object):
 
                 dx = x1 - x_old
                 dy = y1 - y_old
-                dist = sqrt(dx * dx + dy * dy)
-
+                dist = hypot(dx, dy)
                 if dist > MAXD and loop != loop_old:
                     loop_cnt_out += 1
 
@@ -1327,12 +1325,14 @@ class Engrave(object):
 
         return loop_cnt_out
 
-    def vbit_toolpath(self, MAXD, Radjust, Xclean_coords, Yclean_coords, check_coords, clean_coords_out, clean_dia,
+    def vbit_toolpath(self, MAXD, Radjust, check_coords, clean_dia,
                       clean_step, loop_cnt_out, skip):
         """
         Make V-Bit cutter toolpath
         Returns the X and Y clean_coordinates, and the number of loops
         """
+        clean_coords_out = []
+
         # Find ends of horizontal lines for carving clean-up
         Xclean_perimeter, Xclean_coords = \
             self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip, "X")
@@ -1368,12 +1368,14 @@ class Engrave(object):
                 dx = Xcur - ecoords[Lbeg[0]][0]
                 dy = Ycur - ecoords[Lbeg[0]][1]
                 min_dist = dx * dx + dy * dy
+                # min_dist = hypot(dx, dy)  # TODO
 
                 inext = 0
                 for j in range(1, len(Lbeg)):
                     dx = Xcur - ecoords[Lbeg[j]][0]
                     dy = Ycur - ecoords[Lbeg[j]][1]
                     dist = dx * dx + dy * dy
+                    # dist = hypot(dx, dy)  # TODO
                     if dist < min_dist:
                         min_dist = dist
                         inext = j
@@ -1389,11 +1391,11 @@ class Engrave(object):
                 y1 = ecoords[i][1]
                 dx = x1 - x_old
                 dy = y1 - y_old
-                dist = sqrt(dx * dx + dy * dy)
+                dist = hypot(dx, dy)
                 if dist > MAXD:
                     dx = x_start_loop - x_old
                     dy = y_start_loop - y_old
-                    dist = sqrt(dx * dx + dy * dy)
+                    dist = hypot(dx, dy)
                     # Fully close loop if the current point is close enough to the start of the loop
                     if dist < MAXD:
                         clean_coords_out.append([x_start_loop, y_start_loop, clean_dia / 2, loop_cnt_out])
@@ -1404,39 +1406,43 @@ class Engrave(object):
                 x_old = x1
                 y_old = y1
 
-        return Xclean_coords, Yclean_coords, loop_cnt_out
+        return Xclean_coords, Yclean_coords, clean_coords_out, loop_cnt_out
 
-    def straight_toolpath(self, DX, Xclean_coords, Yclean_coords, clean_coords_out, edge, loop_cnt,
-                          loop_cnt_out, rbit):
+    def straight_toolpath(self, clean_dia, clean_step, edge, loop_cnt_out, rbit):
         """
         Make straight bit toolpath
         Returns the clean coordinates and the number of loops
         """
-        MaxLoop = 0
+        DX = clean_dia * clean_step
+
         clean_dia = self.settings.get('clean_dia')  # diameter of cleanup bit
         step_over = self.settings.get('clean_step')  # percent of cut DIA
         clean_step = step_over / 100.0
         Rperimeter = rbit + (clean_dia / 2.0)
 
+        MaxLoop = 0
+        loop_cnt = 0
+        Xclean_coords = []
+        Yclean_coords = []
+
         # Extract straight bit points from clean_coords
         check_coords = []
         junk = -1
-        for line in self.clean_coords:
-            XY = line
+        for XY in self.clean_coords:
             R = XY[2]
-            if R >= Rperimeter - Zero:
+            if R >= (Rperimeter - Zero):
                 check_coords.append(XY)
             elif len(check_coords) > 0:
-                junk = junk - 1
+                junk -= 1
                 check_coords.append([None, None, None, junk])
                 # check_coords[len(check_coords)-1][3]=junk
 
         # Calculate Straight bit "Perimeter" tool path
-        P_coords = []
         loop_coords = self._clean_coords_to_path_coords(check_coords)
-        loop_coords = self._sort_for_v_carve(loop_coords, LN_START=0)
+        loop_coords = self._sort_for_v_carve(loop_coords)
 
         # Line fit loop_coords
+        P_coords = []
         if loop_coords:
             cuts = []
             Ln_last = loop_coords[0][4]
@@ -1467,16 +1473,18 @@ class Engrave(object):
             y_pmin = min(y_pmin, P_coords[i][1])
             y_pmax = max(y_pmax, P_coords[i][1])
 
-        loop_cnt_out = loop_cnt_out + MaxLoop
+        loop_cnt_out += MaxLoop
 
         if self.settings.get('clean_P') == 1:
             clean_coords_out = P_coords
+        else:
+            clean_coords_out = []
 
         offset = DX / 2.0
 
         if self.settings.get('clean_X') == 1:
-            y_pmax = y_pmax - offset
-            y_pmin = y_pmin + offset
+            y_pmax -= offset
+            y_pmin += offset
             Ysize = y_pmax - y_pmin
             Ysteps = ceil(Ysize / (clean_dia * clean_step))
             if Ysteps > 0:
@@ -1490,20 +1498,19 @@ class Engrave(object):
                         y1 = intXYlist[i][1]
                         x2 = intXYlist[i + 1][0]
                         y2 = intXYlist[i + 1][1]
-                        if x2 - x1 > offset * 2:
+                        if (x2 - x1) > (offset * 2):
                             loop_cnt += 1
                             Xclean_coords.append([x1 + offset, y1, loop_cnt])
                             Xclean_coords.append([x2 - offset, y2, loop_cnt])
 
         if self.settings.get('clean_Y') == 1:
-            x_pmax = x_pmax - offset
-            x_pmin = x_pmin + offset
+            x_pmax -= offset
+            x_pmin += offset
             Xsize = x_pmax - x_pmin
             Xsteps = ceil(Xsize / (clean_dia * clean_step))
             if Xsteps > 0:
                 for iX in range(0, int(Xsteps + 1)):
                     x = x_pmin + iX / Xsteps * (x_pmax - x_pmin)
-                    intXYlist = []
                     intXYlist = detect_intersect([x, y_pmin - 1], [x, y_pmax + 1], loop_coords, XY_T_F=True)
                     intXY_len = len(intXYlist)
                     for i in range(edge, intXY_len - 1 - edge, 2):
@@ -1511,23 +1518,46 @@ class Engrave(object):
                         y1 = intXYlist[i][1]
                         x2 = intXYlist[i + 1][0]
                         y2 = intXYlist[i + 1][1]
-                        if y2 - y1 > offset * 2:
+                        if (y2 - y1) > (offset * 2):
                             loop_cnt += 1
                             Yclean_coords.append([x1, y1 + offset, loop_cnt])
                             Yclean_coords.append([x2, y2 - offset, loop_cnt])
 
-        return clean_coords_out, loop_cnt_out
+        return Xclean_coords, Yclean_coords, clean_coords_out, loop_cnt_out
 
-    def get_flop_status(self, CLEAN=False):
+    def get_flop_status(self, clean=False):
 
         v_flop = self.settings.get('v_flop')
 
-        if self.settings.get('input_type') == "text" and CLEAN is False:
+        if self.settings.get('input_type') == "text" and clean is False:
             if self.settings.get('plotbox'):
-                v_flop = not (v_flop)
+                v_flop = not v_flop
             if self.settings.get('mirror'):
-                v_flop = not (v_flop)
+                v_flop = not v_flop
             if self.settings.get('flip'):
-                v_flop = not (v_flop)
+                v_flop = not v_flop
 
         return v_flop
+
+    def get_v_flop(self, clean=False):
+        """
+        In case of reversed normals, some iterations traverse the coordinate list in reverse order,
+        with the indexes for x and y changed accordingly
+        :param clean: True indicates we are called for making a clean path
+        :return: v_flop: True indicates reverse order,
+         x_n and y_n are the applicable indices for the segments start and end point
+        """
+        v_flop = self.get_flop_status(clean)
+
+        if v_flop:
+            i_x1 = 2
+            i_y1 = 3
+            i_x2 = 0
+            i_y2 = 1
+        else:
+            i_x1 = 0
+            i_y1 = 1
+            i_x2 = 2
+            i_y2 = 3
+
+        return (v_flop, i_x1, i_y1, i_x2, i_y2)

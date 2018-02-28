@@ -342,7 +342,7 @@ class TextPosition(MainWindowWidget):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        w_units = self.w_units
+        # w_units = self.w_units
 
         self.Label_pos_orient = Label(self, text="Text Position and Orientation:")
 
@@ -478,7 +478,7 @@ class TextOnCircle(MainWindowWidget):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        w_units = self.w_units
+        # w_units = self.w_units
 
         self.tradius_frame = Frame(self)
         self.Label_Tradius = Label(self.tradius_frame, text="Circle Radius", width=w_label, anchor=E)
@@ -593,7 +593,7 @@ class GCodeProperties(MainWindowWidget):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        w_units = self.w_units
+        # w_units = self.w_units
 
         self.feed_frame = Frame(self)
         self.Label_Feed = Label(self.feed_frame, text="Feed Rate", width=w_label, anchor=E)
@@ -776,9 +776,9 @@ class FontFiles(MainWindowWidget):
 
         # Font files
 
-        w_label = self.w_label
-        w_entry = self.w_entry
-        w_units = self.w_units
+        # w_label = self.w_label
+        # w_entry = self.w_entry
+        # w_units = self.w_units
 
         self.Checkbutton_fontdex = Checkbutton(self, text="Show All Font Characters", width=20, anchor=W)
         self.fontdex.trace_variable("w", self.Entry_fontdex_Callback)
@@ -944,7 +944,7 @@ class ImageProperties(MainWindowWidget):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        w_units = self.w_units
+        # w_units = self.w_units
 
         self.useIMGsize_frame = Frame(self)
         self.Label_useIMGsize = Label(self.useIMGsize_frame, text="Set Height as %", width=w_label, anchor=E)
