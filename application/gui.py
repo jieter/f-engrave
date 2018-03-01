@@ -8,7 +8,7 @@ from util import *
 from bitmap_settings import BitmapSettings
 from vcarve_settings import VCarveSettings
 from general_settings import GeneralSettings
-from main_window import MainWindowTextLeft, MainWindowTextRight, MainWindowImageLeft
+from main_window import MenuBar, MainWindowTextLeft, MainWindowTextRight, MainWindowImageLeft
 
 from geometry.coords import MyImage, MyText
 # from geometry.engrave import Engrave, Toolbit, VCarve, Straight
@@ -54,12 +54,12 @@ class Gui(Frame):
         self.master.rowconfigure(0, weight=1, minsize=400)
         self.master.rowconfigure(2, minsize=20)
 
+        # self.Ctrl_set_cut_type
+        # self.Ctrl_mode_change
         self.create_widgets()
-        # center_window(self.master)
 
         self.engrave = Engrave(self.settings)
         # engrave callbacks
-        self.engrave.set_progress_callback(self.plot_toolpath)
         self.engrave.set_plot_progress_callback(self.plot_progress)
         self.engrave.set_status_callback(self.status_update)
 
@@ -68,6 +68,9 @@ class Gui(Frame):
         self.Ctrl_Entry_units_var_Callback = lambda *_, **__: None
         self.Ctrl_Scale_Linear_Inputs = lambda *_, **__: None
         self.Ctrl_set_mainwindow_cut_type = lambda *_, **__: None
+
+        self.Ctrl_set_menu_cut_type = self.menubar.set_cut_type
+        self.Ctrl_set_menu_input_type = self.menubar.set_input_type
 
     def general_settings_window(self):
         general_settings_window = GeneralSettings(self, self.settings)
@@ -107,7 +110,7 @@ class Gui(Frame):
             self.load_image_file()
 
         self.initComplete = True
-        self.menu_mode_change()
+        self.Ctrl_mode_change()
         self.bind_keys()
 
     def bind_keys(self):
@@ -126,15 +129,7 @@ class Gui(Frame):
     def create_widgets(self):
         self.batch = BooleanVar()
 
-        self.show_thick = BooleanVar()
-        self.show_axis = BooleanVar()
-        self.show_box = BooleanVar()
-
         self.v_pplot = BooleanVar()
-
-        self.cut_type = StringVar()
-        self.input_type = StringVar()
-
         self.current_input_file = StringVar()
         self.bounding_box = StringVar()
 
@@ -162,8 +157,8 @@ class Gui(Frame):
         self.create_previewcanvas()
         self.create_input()
         self.create_statusbar()
-        self.create_menubar()
 
+        self.menubar = MenuBar(self.master, self, self.settings)
         self.mainwindow_image_left = None
         self.mainwindow_text_left = None
         self.mainwindow_text_right = None
@@ -252,78 +247,6 @@ class Gui(Frame):
 
             sys.exit()
 
-    def create_menubar(self):
-        self.menuBar = Menu(self.master, relief="raised", bd=2)
-
-        top_File = Menu(self.menuBar, tearoff=0)
-        top_File.add("command", label="Save Settings to File", command=self.menu_File_Save_Settings_File)
-        top_File.add("command", label="Read Settings from File", command=self.menu_File_Open_G_Code_File)
-        top_File.add_separator()
-        if POTRACE_AVAILABLE:
-            top_File.add("command", label="Open DXF/Bitmap", command=self.menu_File_Open_DXF_File)
-        else:
-            top_File.add("command", label="Open DXF", command=self.menu_File_Open_DXF_File)
-        top_File.add_separator()
-        top_File.add("command", label="Save G-Code", command=self.menu_File_Save_G_Code_File)
-        top_File.add_separator()
-        top_File.add("command", label="Export SVG", command=self.menu_File_Save_SVG_File)
-        top_File.add("command", label="Export DXF", command=self.menu_File_Save_DXF_File)
-        top_File.add("command", label="Export DXF (close loops)", command=self.menu_File_Save_DXF_File_close_loops)
-        if IN_AXIS:
-            top_File.add("command", label="Write To Axis and Exit", command=self.WriteToAxis)
-        else:
-            top_File.add("command", label="Exit", command=self.menu_File_Quit)
-        self.menuBar.add("cascade", label="File", menu=top_File)
-
-        top_Edit = Menu(self.menuBar, tearoff=0)
-        top_Edit.add("command", label="Copy G-Code Data to Clipboard", command=self.CopyClipboard_GCode)
-        top_Edit.add("command", label="Copy SVG Data to Clipboard", command=self.CopyClipboard_SVG)
-        self.menuBar.add("cascade", label="Edit", menu=top_Edit)
-
-        top_View = Menu(self.menuBar, tearoff=0)
-        top_View.add("command", label="Recalculate", command=self.menu_View_Recalculate)
-        top_View.add_separator()
-
-        top_View.add("command", label="Zoom In <Page Up>", command=self.menu_View_Zoom_in)
-        top_View.add("command", label="Zoom Out <Page Down>", command=self.menu_View_Zoom_out)
-        top_View.add("command", label="Zoom Fit <F5>", command=self.menu_View_Refresh)
-
-        top_View.add_separator()
-
-        top_View.add_checkbutton(label="Show Thickness", variable=self.show_thick, command=self.menu_View_Refresh)
-        top_View.add_checkbutton(label="Show Origin Axis", variable=self.show_axis, command=self.menu_View_Refresh)
-        top_View.add_checkbutton(label="Show Bounding Box", variable=self.show_box, command=self.menu_View_Refresh)
-        self.menuBar.add("cascade", label="View", menu=top_View)
-        self.show_thick.trace_variable("w", self.Entry_show_thick_Callback)
-        self.show_axis.trace_variable("w", self.Entry_show_axis_Callback)
-        self.show_box.trace_variable("w", self.Entry_show_box_Callback)
-
-        top_Settings = Menu(self.menuBar, tearoff=0)
-        top_Settings.add("command", label="General Settings", command=self.general_settings_window)
-        top_Settings.add("command", label="V-Carve Settings", command=self.vcarve_settings_window)
-        if POTRACE_AVAILABLE:
-            top_Settings.add("command", label="Bitmap Import Settings", command=self.bitmap_settings_window)
-
-        top_Settings.add_separator()
-        top_Settings.add_radiobutton(label="Engrave Mode", variable=self.cut_type, value="engrave")
-        top_Settings.add_radiobutton(label="V-Carve Mode", variable=self.cut_type, value="v-carve")
-        self.cut_type.trace_variable("w", self.Entry_cut_type_Callback)
-
-        top_Settings.add_separator()
-        top_Settings.add_radiobutton(label="Text Mode (CXF/TTF)", variable=self.input_type, value="text",
-                                     command=self.menu_mode_change)
-        top_Settings.add_radiobutton(label="Image Mode (DXF/Bitmap)", variable=self.input_type, value="image",
-                                     command=self.menu_mode_change)
-
-        self.menuBar.add("cascade", label="Settings", menu=top_Settings)
-
-        top_Help = Menu(self.menuBar, tearoff=0)
-        top_Help.add("command", label="About (E-Mail)", command=self.menu_Help_About)
-        top_Help.add("command", label="Help (Web Page)", command=self.menu_Help_Web)
-        self.menuBar.add("cascade", label="Help", menu=top_Help)
-
-        self.master.config(menu=self.menuBar)
-
     def create_mainwindow_widgets(self):
         if self.settings.get('input_type') == 'text':
             self.mainwindow_text_left = MainWindowTextLeft(self.master, self, self.settings)
@@ -371,19 +294,8 @@ class Gui(Frame):
         self.statusbar.grid(row=2, column=0, columnspan=3, sticky=NSEW)
 
     def initialise_settings(self):
-        """
-        Initialise the TK widgets with the values from settings
-        """
         self.batch.set(self.settings.get('batch'))
-
-        self.show_axis.set(self.settings.get('show_axis'))
-        self.show_box.set(self.settings.get('show_box'))
-        self.show_thick.set(self.settings.get('show_thick'))
-
         self.v_pplot.set(self.settings.get('v_pplot'))
-
-        self.cut_type.set(self.settings.get('cut_type'))
-        self.input_type.set(self.settings.get('input_type'))
         self.default_text = self.settings.get('default_text')
 
         self.HOME_DIR = (self.settings.get('HOME_DIR'))
@@ -633,7 +545,7 @@ class Gui(Frame):
             elif bit_shape == "FLAT":
                 bit_depth = -v_bit_dia / 2.0
             else:
-                pass
+                bit_depth = 0
 
             if settings.get('bit_shape') != "FLAT":
                 if depth_lim_in < 0.0:
@@ -659,27 +571,6 @@ class Gui(Frame):
         inlay_depth = self.settings.get('v_depth_lim')
         r_inlay_top = tan(half_angle) * inlay_depth
         return r_inlay_top
-
-    ###############
-    # Menu        #
-    ###############
-    def Entry_show_axis_Callback(self, varName, index, mode):
-        self.settings.set('show_axis', self.show_axis.get())
-
-    def Entry_show_box_Callback(self, varName, index, mode):
-        self.settings.set('show_box', self.show_box.get())
-
-    def Entry_show_thick_Callback(self, varName, index, mode):
-        self.settings.set('show_thick', self.show_thick.get())
-
-    def Entry_cut_type_Callback(self, varName, index, mode):
-        self.settings.set('cut_type', self.cut_type.get())
-        self.Ctrl_set_mainwindow_cut_type()
-
-    def Ctrl_set_menu_cut_type(self):
-        # only when changed (to avoid recursion due to trace_variable callback)
-        if self.cut_type.get() != self.settings.get('cut_type'):
-            self.cut_type.set(self.settings.get('cut_type'))
 
     def Check_All_Variables(self, new=2):
 
@@ -855,7 +746,7 @@ class Gui(Frame):
             self.image = MyImage()
 
         # input_type may have been changed by read_image_file
-        self.input_type.set(self.settings.get('input_type'))
+        self.Ctrl_set_menu_input_type()
         self.create_mainwindow_widgets()
 
     def Open_G_Code_File(self, filename):
@@ -1129,8 +1020,7 @@ class Gui(Frame):
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, True)
 
-    def menu_mode_change(self):
-        self.settings.set('input_type', self.input_type.get())
+    def Ctrl_mode_change(self):
 
         self.delay_calc = True
 
@@ -1240,6 +1130,9 @@ class Gui(Frame):
         error_cnt = self.mainwindow_text_left.check_all_variables(new) + \
                     self.mainwindow_text_right.check_all_variables(new)
         return error_cnt
+
+    def Ctrl_set_cut_type(self):
+        self.Ctrl_set_mainwindow_cut_type()
 
     def Ctrl_set_cut_type_Text(self):
         self.mainwindow_text_left.set_cut_type()
@@ -1788,7 +1681,7 @@ class Gui(Frame):
 
         if self.settings.get('input_type') == "text":
             if self.settings.get('plotbox') and \
-                    self.cut_type.get() == CUT_TYPE_ENGRAVE and \
+                    self.settings.get('cut_type') == CUT_TYPE_ENGRAVE and \
                     self.settings.get('text_radius') != 0:
                 text_radius = self.settings.get('text_radius')
 

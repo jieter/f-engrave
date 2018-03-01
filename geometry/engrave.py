@@ -1,5 +1,5 @@
 from time import time
-from math import (ceil, fabs, floor, sqrt, tan)
+from math import (ceil, fabs, floor, tan)
 
 from util import fmessage
 from geometry import *
@@ -62,7 +62,6 @@ class Engrave(object):
     """
     def __init__(self, settings, image=None):
 
-        self.progress_callback = None
         self.plot_progress_callback = None
         self.status_callback = None
 
@@ -74,7 +73,7 @@ class Engrave(object):
                         self.settings.get('yorigin'))
         self.init_coords()
 
-        # TODO make this plot_circle_center + setter methods
+        # X and Y offset
         self.xzero = 0
         self.yzero = 0
 
@@ -123,9 +122,6 @@ class Engrave(object):
 
     def set_coords(self, coords):
         self.coords = coords
-
-    def set_progress_callback(self, callback):
-        self.progress_callback = callback
 
     def set_plot_progress_callback(self, callback):
         self.plot_progress_callback = callback
@@ -205,10 +201,6 @@ class Engrave(object):
 
         xN, yN = self.setup_grid_partitions(clean)
         self.determine_active_partitions(xN, yN, clean)
-
-        # Update GUI with the modified toolpath
-        if self.progress_callback is not None:
-            self.progress_callback()
 
         return self.make_vcarve_toolpath(clean)
 
@@ -1006,15 +998,15 @@ class Engrave(object):
 
             dx = Xcur - ecoords[Lbeg[0]][0]
             dy = Ycur - ecoords[Lbeg[0]][1]
-            min_dist = dx * dx + dy * dy
-            # min_dist = hypot(dx, dy)  # TODO
+            # min_dist = hypot(dx, dy)
+            min_dist = dx * dx + dy * dy  # optimized
 
             inext = 0
             for j in range(1, len(Lbeg)):
                 dx = Xcur - ecoords[Lbeg[j]][0]
                 dy = Ycur - ecoords[Lbeg[j]][1]
-                dist = dx * dx + dy * dy
-                # dist = hypot(dx, dy)  # TODO
+                # dist = hypot(dx, dy)
+                dist = dx * dx + dy * dy  # optimized
                 if dist < min_dist:
                     min_dist = dist
                     inext = j
@@ -1367,15 +1359,15 @@ class Engrave(object):
                 Ycur = ecoords[ii][1]
                 dx = Xcur - ecoords[Lbeg[0]][0]
                 dy = Ycur - ecoords[Lbeg[0]][1]
-                min_dist = dx * dx + dy * dy
-                # min_dist = hypot(dx, dy)  # TODO
+                # min_dist = hypot(dx, dy)
+                min_dist = dx * dx + dy * dy  # optimized
 
                 inext = 0
                 for j in range(1, len(Lbeg)):
                     dx = Xcur - ecoords[Lbeg[j]][0]
                     dy = Ycur - ecoords[Lbeg[j]][1]
-                    dist = dx * dx + dy * dy
-                    # dist = hypot(dx, dy)  # TODO
+                    # dist = hypot(dx, dy)
+                    dist = dx * dx + dy * dy  # optimized
                     if dist < min_dist:
                         min_dist = dist
                         inext = j

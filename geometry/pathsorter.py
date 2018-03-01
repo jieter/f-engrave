@@ -1,3 +1,6 @@
+# from math import hypot
+
+
 def sort_paths(ecoords, i_loop=2):
     """
     Sort paths
@@ -40,7 +43,8 @@ def sort_paths(ecoords, i_loop=2):
 
         dx = Xcur - ecoords[Lbeg[0]][0]
         dy = Ycur - ecoords[Lbeg[0]][1]
-        min_dist = dx * dx + dy * dy
+        # min_dist = hypot(dx, dy)
+        min_dist = dx * dx + dy * dy  # optimized
 
         dxe = Xcur - ecoords[Lend[0]][0]
         dye = Ycur - ecoords[Lend[0]][1]
@@ -51,14 +55,16 @@ def sort_paths(ecoords, i_loop=2):
         for j in range(1, len(Lbeg)):
             dx = Xcur - ecoords[Lbeg[j]][0]
             dy = Ycur - ecoords[Lbeg[j]][1]
-            dist = dx * dx + dy * dy
+            # dist = hypot(dx, dy)
+            dist = dx * dx + dy * dy  # optimized
             if dist < min_dist:
                 min_dist = dist
                 inext = j
 
             dxe = Xcur - ecoords[Lend[j]][0]
             dye = Ycur - ecoords[Lend[j]][1]
-            diste = dxe * dxe + dye * dye
+            # diste = hypot(dxe, dye)
+            diste = dxe * dxe + dye * dye  # optimized
             if diste < min_diste:
                 min_diste = diste
                 inexte = j

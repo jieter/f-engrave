@@ -360,12 +360,7 @@ def vcarve_gcode(job):
     # Feed rate
     FORMAT = '%%.%df' % dpfeed
     feed_str = FORMAT % settings.get('feedrate')
-    plunge_str = FORMAT % settings.get('plunge_rate')
-    zero_feed = FORMAT % 0.0
-
     code.append("F%s" % feed_str)
-    if plunge_str == zero_feed:
-        plunge_str = feed_str
 
     # Set up variables for multipass cutting
     maxDZ = settings.get('v_max_cut')
@@ -383,8 +378,7 @@ def vcarve_gcode(job):
     if len(job.v_coords) > 0:
 
         loop_old = job.v_coords[0][3]
-        # for i in range(1, job.number_of_v_coords()):
-        for i in range(1, len(job.v_coords)):
+        for i in range(1, job.number_of_v_coords()):
             loop = job.v_coords[i][3]
             if loop != loop_old:
                 Lbeg.append(i)
@@ -405,13 +399,15 @@ def vcarve_gcode(job):
 
             dx = Xcur - job.v_coords[Lbeg[0]][0]
             dy = Ycur - job.v_coords[Lbeg[0]][1]
-            min_dist = dx * dx + dy * dy
+            # min_dist = hypot(dx, dy)
+            min_dist = dx * dx + dy * dy  # optimized
 
             inext = 0
             for j in range(1, len(Lbeg)):
                 dx = Xcur - job.v_coords[Lbeg[j]][0]
                 dy = Ycur - job.v_coords[Lbeg[j]][1]
-                dist = dx * dx + dy * dy
+                # dist = hypot(dx, dy)
+                dist = dx * dx + dy * dy  # optimized
                 if dist < min_dist:
                     min_dist = dist
                     inext = j
@@ -428,11 +424,6 @@ def vcarve_gcode(job):
         bit_radius = settings.get('v_bit_dia') / 2.0
 
         # V-carve stuff
-        # maxDZ       =  job.settings.get('v_max_cut')
-        # rough_stock =  job.settings.get('v_rough_stk')
-        # zmin        =  0.0
-        # roughing    = True
-        # rough_again = False
         if rough_stock > 0:
             rough_again = True
 
@@ -449,13 +440,6 @@ def vcarve_gcode(job):
             zmin += maxDZ
 
             loop_old = -1
-            # R_last = 999
-            # x_center_last = 999
-            # y_center_last = 999
-            # FLAG_arc = 0
-            # FLAG_line = 0
-            # code = []
-
             v_index = -1
 
             while v_index < len(new_coords) - 1:
@@ -626,7 +610,6 @@ def write_clean_up(job, bit_type="straight"):
     feed_str = FORMAT % settings.get('feedrate')
     plunge_str = FORMAT % settings.get('plunge_rate')
     feed_current = FORMAT % 0.0
-    # fmessage(feed_str +" "+plunge_str)
     if plunge_str == feed_current:
         plunge_str = feed_str
 

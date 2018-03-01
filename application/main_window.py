@@ -10,6 +10,165 @@ else:
     from tkFileDialog import *
 
 
+class MenuBar(object):
+
+    def __init__(self, parent, gui, settings):
+
+        self.menuBar = Menu(parent, relief="raised", bd=2)
+
+        self.gui = gui
+        self.master = parent
+        self.settings = settings
+
+        # variables
+        self.show_thick = BooleanVar()
+        self.show_axis = BooleanVar()
+        self.show_box = BooleanVar()
+
+        self.cut_type = StringVar()
+        self.input_type = StringVar()
+
+        # Gui callbacks
+        self.menu_File_Save_Settings_File = gui.menu_File_Save_Settings_File
+        self.menu_File_Open_G_Code_File = gui.menu_File_Open_G_Code_File
+        self.menu_File_Open_DXF_File = gui.menu_File_Open_DXF_File
+        self.menu_File_Save_G_Code_File = gui.menu_File_Save_G_Code_File
+        self.menu_File_Save_SVG_File = gui.menu_File_Save_SVG_File
+        self.menu_File_Save_SVG_File = gui.menu_File_Save_SVG_File
+        self.menu_File_Save_DXF_File = gui.menu_File_Save_DXF_File
+        self.menu_File_Save_DXF_File_close_loops = gui.menu_File_Save_DXF_File_close_loops
+
+        self.WriteToAxis = gui.WriteToAxis
+        self.menu_File_Quit = gui.menu_File_Quit
+
+        self.CopyClipboard_GCode = gui.CopyClipboard_GCode
+        self.CopyClipboard_SVG = gui.CopyClipboard_SVG
+        self.menu_View_Recalculate = gui.menu_View_Recalculate
+
+        self.menu_View_Zoom_in = gui.menu_View_Zoom_in
+        self.menu_View_Zoom_out = gui.menu_View_Zoom_out
+        self.menu_View_Refresh = gui.menu_View_Refresh
+
+        self.general_settings_window = gui.general_settings_window
+        self.vcarve_settings_window = gui.vcarve_settings_window
+        self.bitmap_settings_window = gui.bitmap_settings_window
+
+        self.menu_Help_About = gui.menu_Help_About
+        self.menu_Help_Web = gui.menu_Help_Web
+
+        self.Ctrl_set_cut_type = gui.Ctrl_set_cut_type
+        self.Ctrl_mode_change = gui.Ctrl_mode_change
+
+        self.initialise_variables()
+        self.create_widgets()
+
+    def initialise_variables(self):
+        self.cut_type.set(self.settings.get('cut_type'))
+        self.input_type.set(self.settings.get('input_type'))
+
+        self.show_axis.set(self.settings.get('show_axis'))
+        self.show_box.set(self.settings.get('show_box'))
+        self.show_thick.set(self.settings.get('show_thick'))
+
+    def create_widgets(self):
+
+        top_File = Menu(self.menuBar, tearoff=0)
+        top_File.add("command", label="Save Settings to File", command=self.menu_File_Save_Settings_File)
+        top_File.add("command", label="Read Settings from File", command=self.menu_File_Open_G_Code_File)
+        top_File.add_separator()
+        if POTRACE_AVAILABLE:
+            top_File.add("command", label="Open DXF/Bitmap", command=self.menu_File_Open_DXF_File)
+        else:
+            top_File.add("command", label="Open DXF", command=self.menu_File_Open_DXF_File)
+        top_File.add_separator()
+        top_File.add("command", label="Save G-Code", command=self.menu_File_Save_G_Code_File)
+        top_File.add_separator()
+        top_File.add("command", label="Export SVG", command=self.menu_File_Save_SVG_File)
+        top_File.add("command", label="Export DXF", command=self.menu_File_Save_DXF_File)
+        top_File.add("command", label="Export DXF (close loops)", command=self.menu_File_Save_DXF_File_close_loops)
+        if IN_AXIS:
+            top_File.add("command", label="Write To Axis and Exit", command=self.WriteToAxis)
+        else:
+            top_File.add("command", label="Exit", command=self.menu_File_Quit)
+        self.menuBar.add("cascade", label="File", menu=top_File)
+
+        top_Edit = Menu(self.menuBar, tearoff=0)
+        top_Edit.add("command", label="Copy G-Code Data to Clipboard", command=self.CopyClipboard_GCode)
+        top_Edit.add("command", label="Copy SVG Data to Clipboard", command=self.CopyClipboard_SVG)
+        self.menuBar.add("cascade", label="Edit", menu=top_Edit)
+
+        top_View = Menu(self.menuBar, tearoff=0)
+        top_View.add("command", label="Recalculate", command=self.menu_View_Recalculate)
+        top_View.add_separator()
+
+        top_View.add("command", label="Zoom In <Page Up>", command=self.menu_View_Zoom_in)
+        top_View.add("command", label="Zoom Out <Page Down>", command=self.menu_View_Zoom_out)
+        top_View.add("command", label="Zoom Fit <F5>", command=self.menu_View_Refresh)
+
+        top_View.add_separator()
+
+        top_View.add_checkbutton(label="Show Thickness", variable=self.show_thick, command=self.menu_View_Refresh)
+        top_View.add_checkbutton(label="Show Origin Axis", variable=self.show_axis, command=self.menu_View_Refresh)
+        top_View.add_checkbutton(label="Show Bounding Box", variable=self.show_box, command=self.menu_View_Refresh)
+        self.menuBar.add("cascade", label="View", menu=top_View)
+        self.show_thick.trace_variable("w", self.Entry_show_thick_Callback)
+        self.show_axis.trace_variable("w", self.Entry_show_axis_Callback)
+        self.show_box.trace_variable("w", self.Entry_show_box_Callback)
+
+        top_Settings = Menu(self.menuBar, tearoff=0)
+        top_Settings.add("command", label="General Settings", command=self.general_settings_window)
+        top_Settings.add("command", label="V-Carve Settings", command=self.vcarve_settings_window)
+        if POTRACE_AVAILABLE:
+            top_Settings.add("command", label="Bitmap Import Settings", command=self.bitmap_settings_window)
+
+        top_Settings.add_separator()
+        top_Settings.add_radiobutton(label="Engrave Mode", variable=self.cut_type, value="engrave")
+        top_Settings.add_radiobutton(label="V-Carve Mode", variable=self.cut_type, value="v-carve")
+        self.cut_type.trace_variable("w", self.Entry_cut_type_Callback)
+
+        top_Settings.add_separator()
+        top_Settings.add_radiobutton(label="Text Mode (CXF/TTF)", variable=self.input_type, value="text",
+                                     command=self.Entry_menu_mode_change_Callback)
+        top_Settings.add_radiobutton(label="Image Mode (DXF/Bitmap)", variable=self.input_type, value="image",
+                                     command=self.Entry_menu_mode_change_Callback)
+
+        self.menuBar.add("cascade", label="Settings", menu=top_Settings)
+
+        top_Help = Menu(self.menuBar, tearoff=0)
+        top_Help.add("command", label="About (E-Mail)", command=self.menu_Help_About)
+        top_Help.add("command", label="Help (Web Page)", command=self.menu_Help_Web)
+        self.menuBar.add("cascade", label="Help", menu=top_Help)
+
+        self.master.config(menu=self.menuBar)
+
+    def Entry_show_axis_Callback(self, varName, index, mode):
+        self.settings.set('show_axis', self.show_axis.get())
+
+    def Entry_show_box_Callback(self, varName, index, mode):
+        self.settings.set('show_box', self.show_box.get())
+
+    def Entry_show_thick_Callback(self, varName, index, mode):
+        self.settings.set('show_thick', self.show_thick.get())
+
+    def Entry_cut_type_Callback(self, varName, index, mode):
+        self.settings.set('cut_type', self.cut_type.get())
+        self.Ctrl_set_cut_type()
+
+    def Entry_menu_mode_change_Callback(self):
+        self.settings.set('input_type', self.input_type.get())
+        self.Ctrl_mode_change()
+
+    def set_cut_type(self):
+        # only when changed (to avoid recursion due to trace_variable callback)
+        if self.cut_type.get() != self.settings.get('cut_type'):
+            self.cut_type.set(self.settings.get('cut_type'))
+            self.Ctrl_set_cut_type()
+
+    def set_input_type(self):
+        if self.input_type.get() != self.settings.get('input_type'):
+            self.input_type.set(self.settings.get('input_type'))
+
+
 class MainWindowWidget(Frame):
 
     def __init__(self, parent, gui, settings):
@@ -1129,7 +1288,7 @@ class ImagePosition(TextPosition):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        w_units = self.w_units
+        # w_units = self.w_units
 
         self.tangle_frame = Frame(self)
         self.Label_Tangle = Label(self.tangle_frame, text="Image Angle", width=w_label, anchor=E)
