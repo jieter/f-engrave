@@ -162,7 +162,6 @@ class MenuBar(object):
         # only when changed (to avoid recursion due to trace_variable callback)
         if self.cut_type.get() != self.settings.get('cut_type'):
             self.cut_type.set(self.settings.get('cut_type'))
-            self.Ctrl_set_cut_type()
 
     def set_input_type(self):
         if self.input_type.get() != self.settings.get('input_type'):
@@ -181,7 +180,7 @@ class MainWindowWidget(Frame):
         # default widget widths
         self.w_label = 12
         self.w_entry = 5
-        self.w_units = 5
+        self.w_units = 6
 
         self.settings = settings
 
@@ -259,12 +258,12 @@ class TextFontProperties(MainWindowWidget):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        # w_units = self.w_units
+        w_units = self.w_units
 
         self.yscale_frame = Frame(self)
         self.Label_Yscale = Label(self.yscale_frame, text="Text Height", width=w_label, anchor=E)
         self.Label_Yscale_u = Label(self.yscale_frame, textvariable=self.units, anchor=W)
-        self.Label_Yscale_pct = Label(self.yscale_frame, text="%")
+        self.Label_Yscale_pct = Label(self.yscale_frame, text="%", width=w_units, anchor=W)
         self.Entry_Yscale = Entry(self.yscale_frame, width=w_entry)
         self.Entry_Yscale.configure(textvariable=self.YSCALE)
         self.Entry_Yscale.bind('<Return>', self.Recalculate_Click)
@@ -286,7 +285,7 @@ class TextFontProperties(MainWindowWidget):
 
         self.xscale_frame = Frame(self)
         self.Label_Xscale = Label(self.xscale_frame, text="Text Width", width=w_label, anchor=E)
-        self.Label_Xscale_u = Label(self.xscale_frame, text="%", anchor=W)
+        self.Label_Xscale_u = Label(self.xscale_frame, text="%", width=w_units, anchor=W)
         self.Entry_Xscale = Entry(self.xscale_frame, width=w_entry)
         self.Entry_Xscale.configure(textvariable=self.XSCALE)
         self.Entry_Xscale.bind('<Return>', self.Recalculate_Click)
@@ -296,7 +295,7 @@ class TextFontProperties(MainWindowWidget):
 
         self.cspace_frame = Frame(self)
         self.Label_Cspace = Label(self.cspace_frame, text="Char Spacing", width=w_label, anchor=E)
-        self.Label_Cspace_u = Label(self.cspace_frame, text="%", anchor=W)
+        self.Label_Cspace_u = Label(self.cspace_frame, text="%", width=w_units, anchor=W)
         self.Entry_Cspace = Entry(self.cspace_frame, width=w_entry)
         self.Entry_Cspace.configure(textvariable=self.CSPACE)
         self.Entry_Cspace.bind('<Return>', self.Recalculate_Click)
@@ -306,7 +305,7 @@ class TextFontProperties(MainWindowWidget):
 
         self.wspace_frame = Frame(self)
         self.Label_Wspace = Label(self.wspace_frame, text="Word Spacing", width=w_label, anchor=E)
-        self.Label_Wspace_u = Label(self.wspace_frame, text="%", anchor=W)
+        self.Label_Wspace_u = Label(self.wspace_frame, text="%", width=w_units, anchor=W)
         self.Entry_Wspace = Entry(self.wspace_frame, width=w_entry)
         self.Entry_Wspace.configure(textvariable=self.WSPACE)
         self.Entry_Wspace.bind('<Return>', self.Recalculate_Click)
@@ -675,16 +674,16 @@ class TextOnCircle(MainWindowWidget):
         self.Label_text_on_arc.pack(side=TOP, anchor=W, padx=5)
 
         self.Label_Tradius.pack(side=LEFT)
-        self.Label_Tradius_u.pack(side=RIGHT)
-        self.Entry_Tradius.pack()
+        self.Entry_Tradius.pack(side=LEFT)
+        self.Label_Tradius_u.pack(side=LEFT)
         self.tradius_frame.pack(anchor=W, padx=5)
 
         self.Label_outer.pack(side=LEFT)
-        self.Checkbutton_outer.pack(side=RIGHT)
+        self.Checkbutton_outer.pack(side=LEFT)
         self.outer_frame.pack(anchor=W, padx=5)
 
         self.Label_upper.pack(side=LEFT)
-        self.Checkbutton_upper.pack(side=RIGHT)
+        self.Checkbutton_upper.pack(side=LEFT)
         self.upper_frame.pack(anchor=W, padx=5)
 
         self.configure_units()
@@ -752,11 +751,11 @@ class GCodeProperties(MainWindowWidget):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        # w_units = self.w_units
+        w_units = self.w_units
 
         self.feed_frame = Frame(self)
         self.Label_Feed = Label(self.feed_frame, text="Feed Rate", width=w_label, anchor=E)
-        self.Label_Feed_u = Label(self.feed_frame, textvariable=self.funits, anchor=W)
+        self.Label_Feed_u = Label(self.feed_frame, textvariable=self.funits, width=w_units, anchor=W)
         self.Entry_Feed = Entry(self.feed_frame, width=w_entry)
         self.Entry_Feed.configure(textvariable=self.FEED)
         self.Entry_Feed.bind('<Return>', self.Recalculate_Click)
@@ -766,7 +765,7 @@ class GCodeProperties(MainWindowWidget):
 
         self.plunge_frame = Frame(self)
         self.Label_Plunge = Label(self.plunge_frame, text="Plunge Rate", width=w_label, anchor=E)
-        self.Label_Plunge_u = Label(self.plunge_frame, textvariable=self.funits, anchor=W)
+        self.Label_Plunge_u = Label(self.plunge_frame, textvariable=self.funits, width=w_units, anchor=W)
         self.Entry_Plunge = Entry(self.plunge_frame, width=w_entry)
         self.Entry_Plunge.configure(textvariable=self.PLUNGE)
         self.Entry_Plunge.bind('<Return>', self.Recalculate_Click)
@@ -777,7 +776,7 @@ class GCodeProperties(MainWindowWidget):
 
         self.zsafe_frame = Frame(self)
         self.Label_Zsafe = Label(self.zsafe_frame, text="Z Safe", width=w_label, anchor=E)
-        self.Label_Zsafe_u = Label(self.zsafe_frame, textvariable=self.units, anchor=W)
+        self.Label_Zsafe_u = Label(self.zsafe_frame, textvariable=self.units, width=w_units, anchor=W)
         self.Entry_Zsafe = Entry(self.zsafe_frame, width=w_entry)
         self.Entry_Zsafe.configure(textvariable=self.ZSAFE)
         self.Entry_Zsafe.bind('<Return>', self.Recalculate_Click)
@@ -787,7 +786,7 @@ class GCodeProperties(MainWindowWidget):
 
         self.zcut_frame = Frame(self)
         self.Label_Zcut = Label(self.zcut_frame, text="Engrave Depth", width=w_label, anchor=E)
-        self.Label_Zcut_u = Label(self.zcut_frame, textvariable=self.units, anchor=W)
+        self.Label_Zcut_u = Label(self.zcut_frame, textvariable=self.units, width=w_units, anchor=W)
         self.Entry_Zcut = Entry(self.zcut_frame, width=w_entry)
         self.Entry_Zcut.configure(textvariable=self.ZCUT)
         self.Entry_Zcut.bind('<Return>', self.Recalculate_Click)
@@ -799,23 +798,23 @@ class GCodeProperties(MainWindowWidget):
         self.Label_gcode_opt.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Feed.pack(side=LEFT)
-        self.Label_Feed_u.pack(side=RIGHT)
-        self.Entry_Feed.pack()
+        self.Entry_Feed.pack(side=LEFT)
+        self.Label_Feed_u.pack(side=LEFT)
         self.feed_frame.pack(anchor=W, padx=5)
 
         self.Label_Plunge.pack(side=LEFT)
-        self.Label_Plunge_u.pack(side=RIGHT)
-        self.Entry_Plunge.pack()
+        self.Entry_Plunge.pack(side=LEFT)
+        self.Label_Plunge_u.pack(side=LEFT)
         self.plunge_frame.pack(anchor=W, padx=5)
 
         self.Label_Zsafe.pack(side=LEFT)
-        self.Label_Zsafe_u.pack(side=RIGHT)
-        self.Entry_Zsafe.pack()
+        self.Entry_Zsafe.pack(side=LEFT)
+        self.Label_Zsafe_u.pack(side=LEFT)
         self.zsafe_frame.pack(anchor=W, padx=5)
 
         self.Label_Zcut.pack(side=LEFT)
-        self.Label_Zcut_u.pack(side=RIGHT)
-        self.Entry_Zcut.pack()
+        self.Entry_Zcut.pack(side=LEFT)
+        self.Label_Zcut_u.pack(side=LEFT)
         self.zcut_frame.pack(anchor=W, padx=5)
 
         self.configure_cut_type()
@@ -1103,7 +1102,7 @@ class ImageProperties(MainWindowWidget):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        # w_units = self.w_units
+        w_units = self.w_units
 
         self.useIMGsize_frame = Frame(self)
         self.Label_useIMGsize = Label(self.useIMGsize_frame, text="Set Height as %", width=w_label, anchor=E)
@@ -1112,8 +1111,8 @@ class ImageProperties(MainWindowWidget):
 
         self.yscale_frame = Frame(self)
         self.Label_Yscale = Label(self.yscale_frame, text="Image Height", width=w_label, anchor=E)
-        self.Label_Yscale_u = Label(self.yscale_frame, textvariable=self.units, anchor=W)
-        self.Label_Yscale_pct = Label(self.yscale_frame, text="%", anchor=W)
+        self.Label_Yscale_u = Label(self.yscale_frame, textvariable=self.units, width=w_units, anchor=W)
+        self.Label_Yscale_pct = Label(self.yscale_frame, text="%", width=w_units, anchor=W)
         self.Entry_Yscale = Entry(self.yscale_frame, width=w_entry)
         self.Entry_Yscale.configure(textvariable=self.YSCALE)
         self.Entry_Yscale.bind('<Return>', self.Recalculate_Click)
@@ -1121,7 +1120,7 @@ class ImageProperties(MainWindowWidget):
 
         self.sthick_frame = Frame(self)
         self.Label_Sthick = Label(self.sthick_frame, text="Line Thickness", width=w_label, anchor=E)
-        self.Label_Sthick_u = Label(self.sthick_frame, textvariable=self.units, anchor=W)
+        self.Label_Sthick_u = Label(self.sthick_frame, textvariable=self.units, width=w_units, anchor=W)
         self.Entry_Sthick = Entry(self.sthick_frame, width=w_entry)
         self.Entry_Sthick.configure(textvariable=self.STHICK)
         self.Entry_Sthick.bind('<Return>', self.Recalculate_Click)
@@ -1133,7 +1132,7 @@ class ImageProperties(MainWindowWidget):
 
         self.xscale_frame = Frame(self)
         self.Label_Xscale = Label(self.xscale_frame, text="Image Width", width=w_label, anchor=E)
-        self.Label_Xscale_u = Label(self.xscale_frame, text="%", anchor=W)
+        self.Label_Xscale_u = Label(self.xscale_frame, text="%", width=w_units, anchor=W)
         self.Entry_Xscale = Entry(self.xscale_frame, width=w_entry)
         self.Entry_Xscale.configure(textvariable=self.XSCALE)
         self.Entry_Xscale.bind('<Return>', self.Recalculate_Click)
@@ -1145,27 +1144,27 @@ class ImageProperties(MainWindowWidget):
         self.Label_image_prop.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Yscale.pack(side=LEFT, anchor=W)
+        self.Entry_Yscale.pack(side=LEFT)
         if self.settings.get('useIMGsize'):
             self.Label_Yscale_u.pack_forget()
             self.Label_Yscale_pct.pack(side=RIGHT)
         else:
             self.Label_Yscale_pct.pack_forget()
-            self.Label_Yscale_u.pack(side=RIGHT)
-        self.Entry_Yscale.pack()
+            self.Label_Yscale_u.pack(side=LEFT)
         self.yscale_frame.pack(anchor=W, padx=5)
 
         self.Label_useIMGsize.pack(side=LEFT, anchor=W)
-        self.Checkbutton_useIMGsize.pack()
+        self.Checkbutton_useIMGsize.pack(side=LEFT)
         self.useIMGsize_frame.pack(anchor=W, padx=5)
 
         self.Label_Sthick.pack(side=LEFT, anchor=W)
-        self.Label_Sthick_u.pack(side=RIGHT)
-        self.Entry_Sthick.pack()
+        self.Entry_Sthick.pack(side=LEFT)
+        self.Label_Sthick_u.pack(side=LEFT)
         self.sthick_frame.pack(anchor=W, padx=5)
 
         self.Label_Xscale.pack(side=LEFT, anchor=W)
-        self.Label_Xscale_u.pack(side=RIGHT)
-        self.Entry_Xscale.pack()
+        self.Entry_Xscale.pack(side=LEFT)
+        self.Label_Xscale_u.pack(side=LEFT)
         self.xscale_frame.pack(anchor=W, padx=5)
 
         self.configure_units()
@@ -1288,11 +1287,11 @@ class ImagePosition(TextPosition):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        # w_units = self.w_units
+        w_units = self.w_units
 
         self.tangle_frame = Frame(self)
         self.Label_Tangle = Label(self.tangle_frame, text="Image Angle", width=w_label, anchor=E)
-        self.Label_Tangle_u = Label(self.tangle_frame, text="deg", anchor=W)
+        self.Label_Tangle_u = Label(self.tangle_frame, text="deg", width=w_units, anchor=W)
         self.Entry_Tangle = Entry(self.tangle_frame, width=w_entry)
         self.Entry_Tangle.configure(textvariable=self.TANGLE)
         self.Entry_Tangle.bind('<Return>', self.Recalculate_Click)
@@ -1329,20 +1328,20 @@ class ImagePosition(TextPosition):
         self.Label_pos_orient.pack(side=TOP, padx=10, anchor=W)
 
         self.Label_Tangle.pack(side=LEFT)
-        self.Label_Tangle_u.pack(side=RIGHT)
-        self.Entry_Tangle.pack()
+        self.Entry_Tangle.pack(side=LEFT)
+        self.Label_Tangle_u.pack(side=LEFT)
         self.tangle_frame.pack(anchor=W, padx=5)
 
         self.Label_Origin.pack(side=LEFT)
-        self.Origin_OptionMenu.pack()
+        self.Origin_OptionMenu.pack(side=LEFT)
         self.origin_frame.pack(anchor=W, padx=5)
 
         self.Label_flip.pack(side=LEFT)
-        self.Checkbutton_flip.pack()
+        self.Checkbutton_flip.pack(side=LEFT)
         self.flip_frame.pack(anchor=W, padx=5)
 
         self.Label_mirror.pack(side=LEFT, anchor=W)
-        self.Checkbutton_mirror.pack()
+        self.Checkbutton_mirror.pack(side=LEFT)
         self.mirror_frame.pack(anchor=W, padx=5)
 
         self.configure_units()
@@ -1387,7 +1386,7 @@ class MainWindowTextLeft(Frame):
         self.Recalculate = Button(self, text="Recalculate")
         self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
 
-        self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
     def configure(self):
         self.text_font_properties.master_configure()
@@ -1413,17 +1412,13 @@ class MainWindowTextLeft(Frame):
 
     def set_cut_type(self):
         if self.cut_type.get() != self.settings.get('cut_type'):
-            # avoid recursion due to trace callbacks
-            self.cut_type.trace_vdelete('w', self.cut_type_trace)
             self.cut_type.set(self.settings.get('cut_type'))
-            self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
         self.configure_cut_type()
 
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
         self.configure_cut_type()
         self.set_menu_cut_type()
-        self.Recalc_RQD()
 
     def check_all_variables(self, new):
         error_cnt = \
@@ -1495,14 +1490,11 @@ class MainWindowTextRight(Frame):
         self.Radio_Cut_V = Radiobutton(self, text="V-Carve", value="v-carve", anchor=W)
         self.Radio_Cut_V.configure(variable=self.cut_type)
 
-        self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
     def set_cut_type(self):
         if self.cut_type.get() != self.settings.get('cut_type'):
-            # avoid recursion due to trace callbacks
-            self.cut_type.trace_vdelete('w', self.cut_type_trace)
             self.cut_type.set(self.settings.get('cut_type'))
-            self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
         self.configure_cut_type()
 
     def master_configure(self):
@@ -1544,7 +1536,6 @@ class MainWindowTextRight(Frame):
         self.settings.set('cut_type', self.cut_type.get())
         self.configure_cut_type()
         self.set_menu_cut_type()
-        self.Recalc_RQD()
 
 
 class MainWindowImageLeft(Frame):
@@ -1596,14 +1587,11 @@ class MainWindowImageLeft(Frame):
         self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
         self.V_Carve_Calc = Button(self.button_frame, text="Calc V-Carve", command=self.V_Carve_Calc_Click)
 
-        self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
+        self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
     def set_cut_type(self):
         if self.cut_type.get() != self.settings.get('cut_type'):
-            # avoid recursion due to trace callbacks
-            self.cut_type.trace_vdelete('w', self.cut_type_trace)
             self.cut_type.set(self.settings.get('cut_type'))
-            self.cut_type_trace = self.cut_type.trace_variable("w", self.entry_cut_type_callback)
         self.configure_cut_type()
 
     def master_configure(self):
@@ -1624,6 +1612,7 @@ class MainWindowImageLeft(Frame):
         self.V_Carve_Calc.pack(side=RIGHT)
         self.button_frame.pack(side=TOP)
 
+        self.image_properties.master_configure()
         self.configure_cut_type()
 
     def configure_cut_type(self):
@@ -1656,4 +1645,3 @@ class MainWindowImageLeft(Frame):
         self.settings.set('cut_type', self.cut_type.get())
         self.configure_cut_type()
         self.set_menu_cut_type()
-        self.Recalc_RQD()

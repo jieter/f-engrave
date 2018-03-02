@@ -54,23 +54,20 @@ class Gui(Frame):
         self.master.rowconfigure(0, weight=1, minsize=400)
         self.master.rowconfigure(2, minsize=20)
 
-        # self.Ctrl_set_cut_type
-        # self.Ctrl_mode_change
-        self.create_widgets()
-
         self.engrave = Engrave(self.settings)
+
         # engrave callbacks
         self.engrave.set_plot_progress_callback(self.plot_progress)
         self.engrave.set_status_callback(self.status_update)
 
         # callbacks (wherein this Gui/App acts as the Controller)
+        self.Ctrl_check_all_variables = lambda *_, **__: None
         self.Ctrl_Fontdir_Click = lambda *_, **__: None
         self.Ctrl_Entry_units_var_Callback = lambda *_, **__: None
         self.Ctrl_Scale_Linear_Inputs = lambda *_, **__: None
         self.Ctrl_set_mainwindow_cut_type = lambda *_, **__: None
 
-        self.Ctrl_set_menu_cut_type = self.menubar.set_cut_type
-        self.Ctrl_set_menu_input_type = self.menubar.set_input_type
+        self.create_widgets()
 
     def general_settings_window(self):
         general_settings_window = GeneralSettings(self, self.settings)
@@ -1131,6 +1128,14 @@ class Gui(Frame):
                     self.mainwindow_text_right.check_all_variables(new)
         return error_cnt
 
+    def Ctrl_set_menu_cut_type(self):
+        self.menubar.set_cut_type()
+        self.Recalc_RQD()
+
+    def Ctrl_set_menu_input_type(self):
+        self.menubar.set_input_type()
+        self.Recalc_RQD()
+
     def Ctrl_set_cut_type(self):
         self.Ctrl_set_mainwindow_cut_type()
 
@@ -1420,9 +1425,10 @@ class Gui(Frame):
             return
 
         self.text.set_font(self.font)
-        self.text.set_word_space(self.settings.get('word_space'))
-        self.text.set_line_space(self.settings.get('line_space'))
         self.text.set_char_space(self.settings.get('char_space'))
+        self.text.set_line_space(self.settings.get('line_space'))
+        self.text.set_word_space(self.settings.get('word_space'))
+        self.text.set_thickness(self.settings.get('line_thickness'))
 
         # the text to be carved or engraved
         if self.batch.get():
@@ -1546,13 +1552,13 @@ class Gui(Frame):
             if not self.batch.get():
                 self.statusbar.configure(bg='red')
 
-            if self.H_CALC.get() == "max_all":
+            if self.settings.get('height_calculation') == "max_all":
                 if not self.batch.get():
                     self.statusMessage.set("No Font Characters Found")
                 else:
                     fmessage("(No Font Characters Found)")
 
-            elif self.H_CALC.get() == "max_use":
+            elif self.settings.get('height_calculation') == "max_use":
                 error_text = "Image contains no design information. (Empty DXF File)"
                 if not self.batch.get():
                     self.statusMessage.set(error_text)
@@ -1670,7 +1676,7 @@ class Gui(Frame):
         if y_scale <= Zero:
             y_scale = .1
 
-        y_scale = y_scale_in / 100
+        # y_scale = y_scale_in / 100
         x_scale = x_scale_in * y_scale / 100
 
         return (x_scale, y_scale)

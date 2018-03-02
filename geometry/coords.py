@@ -161,7 +161,6 @@ class MyText(MyImage):
         self.line_space = 1.1
         self.char_space = 25
         self.word_space = 1.0
-        self.angle = 0.0
         self.thickness = 0.25
 
     def __str__(self):
@@ -182,9 +181,6 @@ class MyText(MyImage):
 
     def set_word_space(self, word_space):
         self.word_space = word_space
-
-    def set_angle(self, angle):
-        self.angle = angle
 
     def set_thickness(self, thickness):
         self.thickness = thickness

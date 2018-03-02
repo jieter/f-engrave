@@ -131,9 +131,21 @@ class JobTest(unittest.TestCase):
         )
         self._save_testfiles(job, 'vcarve_box')
 
-    def test_image(self):
+    def test_bitmap(self):
+        job = self._job_with_settings(
+            ('input_type', 'image'),
+            ('IMAGE_FILE', 'tests/files/outline.bmp'),
+        )
+        self._save_testfiles(job, 'bitmap')
+
+    # TODO diff with original v1.65 output
+    def test_dxf(self):
         job = self._job_with_settings(
             ('input_type', 'image'),
             ('IMAGE_FILE', 'tests/files/ring.dxf'),
+            ('accuracy', '0.001'),
+            ('useIMGsize', 'True'),
+            ('yscale', '100'),
+            ('arc_fit', 'none'),
         )
-        self._save_testfiles(job, 'image')
+        self._save_testfiles(job, 'dxf')
