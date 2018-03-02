@@ -1122,9 +1122,8 @@ class Engrave(object):
                             if XR > x2:
                                 x2 = XR
                     if x1 == x2:
-                        X = X + DX
-                        x1 = X
-                        x2 = X
+                        X += DX
+                        x1 = x2 = X
                     elif x1 == x1_old and x2 == x2_old:
                         loop_cnt += 1
                         Xclean_coords.append([x1, Y, loop_cnt])
@@ -1195,7 +1194,6 @@ class Engrave(object):
                          self.settings.get('v_clean_Y')
 
         rbit = self.calc_vbit_radius()
-        # loop_cnt = 0
         loop_cnt_out = 0
         check_coords = []
 
@@ -1241,14 +1239,9 @@ class Engrave(object):
         # TODO use CUT_TYPE_VCARVE
         if self.settings.get('cut_type') == "v-carve" and len(self.clean_coords) > 1 and test_clean > 0:
 
-            # DX = clean_dia * clean_step
-            # DY = DX
             if bit_type == "straight":
                 MAXD = clean_dia
             else:
-                # TODO DX = DY, cleanup
-                # MAXD=sqrt(DX**2+DY**2)*1.1  #fudge factor
-                # MAXD = hypot(DX, DY) * 1.1  # fudge factor
                 MAXD = clean_dia * clean_step * 1.1  # fudge factor
 
             if bit_type == "straight":
@@ -1269,11 +1262,6 @@ class Engrave(object):
                     (self.settings.get('v_clean_Y') == 1 and bit_type == "v-bit"):
                 self.line_cuts(MAXD, Yclean_coords, clean_coords_out, clean_dia, loop_cnt_out)
 
-            # TODO move to controller
-            # self.controller.entry_set(self.controller.Entry_CLEAN_DIA, self.controller.Entry_CLEAN_DIA_Check(), 1)
-            # self.controller.entry_set(self.controller.Entry_STEP_OVER, self.controller.Entry_STEP_OVER_Check(), 1)
-            # self.controller.entry_set(self.controller.Entry_V_CLEAN, self.controller.Entry_V_CLEAN_Check(), 1)
-
             if bit_type == "v-bit":
                 self.v_clean_coords_sort = clean_coords_out
             else:
@@ -1284,11 +1272,10 @@ class Engrave(object):
 
     def line_cuts(self, MAXD, clean_coords, clean_coords_out, clean_dia, loop_cnt_out):
 
-        x_old = -999
-        y_old = -999
-
         order_out = sort_paths(clean_coords)
 
+        x_old = -999
+        y_old = -999
         loop_old = -1
         for line in order_out:
 
@@ -1314,8 +1301,6 @@ class Engrave(object):
                 x_old = x1
                 y_old = y1
                 loop_old = loop
-
-        return loop_cnt_out
 
     def vbit_toolpath(self, MAXD, Radjust, check_coords, clean_dia,
                       clean_step, loop_cnt_out, skip):
@@ -1391,7 +1376,7 @@ class Engrave(object):
                     # Fully close loop if the current point is close enough to the start of the loop
                     if dist < MAXD:
                         clean_coords_out.append([x_start_loop, y_start_loop, clean_dia / 2, loop_cnt_out])
-                    loop_cnt_out = loop_cnt_out + 1
+                    loop_cnt_out += 1
                     x_start_loop = x1
                     y_start_loop = y1
                 clean_coords_out.append([x1, y1, clean_dia / 2, loop_cnt_out])
@@ -1535,7 +1520,7 @@ class Engrave(object):
         """
         In case of reversed normals, some iterations traverse the coordinate list in reverse order,
         with the indexes for x and y changed accordingly
-        :param clean: True indicates we are called for making a clean path
+        :param clean: True indicates we are making a clean path
         :return: v_flop: True indicates reverse order,
          x_n and y_n are the applicable indices for the segments start and end point
         """

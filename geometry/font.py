@@ -64,6 +64,10 @@ class Font(object):
 
         return self.characters[key]
 
+    def __iter__(self):
+        for char in self.characters:
+            yield char
+
     def add_character(self, char):
         self.characters[char.key] = char
         self.bbox.extend(char.bounds())

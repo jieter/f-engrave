@@ -1,20 +1,17 @@
 import getopt
 import webbrowser
 
-# from util import VERSION, POTRACE_AVAILABLE, TTF_AVAILABLE, PIL, IN_AXIS, header_text
+# from util import (VERSION, POTRACE_AVAILABLE, PIL, OK, NOR, INV, NAN, message_ask_ok_cancel)
 from util import *
 
-# from tooltip import ToolTip
 from bitmap_settings import BitmapSettings
 from vcarve_settings import VCarveSettings
 from general_settings import GeneralSettings
 from main_window import MenuBar, MainWindowTextLeft, MainWindowTextRight, MainWindowImageLeft
 
 from geometry.coords import MyImage, MyText
-# from geometry.engrave import Engrave, Toolbit, VCarve, Straight
 from geometry.engrave import Engrave
 
-import readers
 from readers import *
 from writers import *
 
@@ -23,11 +20,9 @@ from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE
 if VERSION == 3:
     from tkinter import *
     from tkinter.filedialog import *
-    # import tkinter.messagebox
 else:
     from Tkinter import *
     from tkFileDialog import *
-    # import tkMessageBox
 
 
 class Gui(Frame):
@@ -96,13 +91,13 @@ class Gui(Frame):
         self.plot_circle(normv, midx, midy, cszw, cszh, color, radius, False)
 
     def readFontFile(self):
-        self.font = readers.readFontFile(self.settings)
+        self.font = readFontFile(self.settings)
 
     def f_engrave_init(self):
         self.master.update()
 
         if self.settings.get('input_type') == "text":
-            self.font = readers.readFontFile(self.settings)
+            self.font = readFontFile(self.settings)
         else:
             self.load_image_file()
 
@@ -198,7 +193,7 @@ class Gui(Frame):
                     if TYPE == '.CXF' or TYPE == '.TTF':
                         self.input_type.set('text')
                         self.settings.set('fontdir', dirname)
-                        self.settings.set('fontfile.', os.path.basename(fileName) + fileExtension)
+                        self.settings.set('fontfile', os.path.basename(fileName) + fileExtension)
                     else:
                         self.input_type.set('image')
                         self.IMAGE_FILE = value
@@ -226,7 +221,7 @@ class Gui(Frame):
             fmessage('(F-Engrave Batch Mode)')
 
             if self.settings.get('input_type') == "text":
-                self.font = readers.readFontFile(self.settings)
+                self.font = readFontFile(self.settings)
             else:
                 self.load_image_file()
 
@@ -735,7 +730,7 @@ class Gui(Frame):
     def load_image_file(self):
 
         # TODO future read_image_file will return a MyImage instead of a Font instance
-        font = readers.read_image_file(self.settings)
+        font = read_image_file(self.settings)
         if font is not None and len(font) > 0:
             stroke_list = font[ord("F")].stroke_list
             self.image.set_coords_from_strokes(stroke_list)
@@ -1434,7 +1429,10 @@ class Gui(Frame):
         if self.batch.get():
             self.text.set_text(self.default_text)
         else:
-            self.text.set_text(self.input.get(1.0, END))
+            if self.settings.get('fontdex') is True:
+                self.text.set_text(self.all_font_characters())
+            else:
+                self.text.set_text(self.input.get(1.0, END))
 
         self.text.set_coords_from_strokes()
         self.engrave.set_image(self.text)
@@ -1612,6 +1610,38 @@ class Gui(Frame):
                                   " %s " % self.settings.get('units')
                                   )
             self.statusMessage.set(self.bounding_box.get())
+
+    def all_font_characters(self):
+
+        ext_char = self.settings.get('ext_char')
+
+        string = ""
+        for key in self.font:
+            try:
+                if ext_char:
+                    string += unichr(key)
+                elif int(key) < 256:
+                    string += unichr(key)
+            except:
+                pass
+
+        string_sort = sorted(string)
+        mcnt = 0
+
+        string = ""
+        if ext_char:
+            pcols = int(1.5 * sqrt(len(self.font)))
+        else:
+            pcols = 15
+
+        for char in string_sort:
+            mcnt = mcnt + 1
+            string += char
+            if mcnt > pcols:
+                string += '\n'
+                mcnt = 0
+
+        return string
 
     def get_origin(self):
         return (

@@ -173,8 +173,6 @@ class MainWindowWidget(Frame):
     def __init__(self, parent, gui, settings):
 
         self.w = 250
-        # self.h = 100
-        # Frame.__init__(self, parent, width=self.w, height=self.h)
         Frame.__init__(self, parent, width=self.w)
 
         # default widget widths
@@ -252,6 +250,14 @@ class TextFontProperties(MainWindowWidget):
         self.initialise_variables()
         self.create_widgets()
         self.master_configure()
+
+    def initialise_variables(self):
+        self.YSCALE.set(self.settings.get('yscale'))
+        self.XSCALE.set(self.settings.get('xscale'))
+        self.STHICK.set(self.settings.get('line_thickness'))
+        self.LSPACE.set(self.settings.get('line_space'))
+        self.CSPACE.set(self.settings.get('char_space'))
+        self.WSPACE.set(self.settings.get('word_space'))
 
     def create_widgets(self):
         self.Label_font_prop = Label(self, text="Text Font Properties:")
@@ -377,14 +383,6 @@ class TextFontProperties(MainWindowWidget):
     def configure_units(self):
         self.units.set(self.settings.get('units'))
 
-    def initialise_variables(self):
-        self.YSCALE.set(self.settings.get('yscale'))
-        self.XSCALE.set(self.settings.get('xscale'))
-        self.STHICK.set(self.settings.get('line_thickness'))
-        self.LSPACE.set(self.settings.get('line_space'))
-        self.CSPACE.set(self.settings.get('char_space'))
-        self.WSPACE.set(self.settings.get('word_space'))
-
     def check_all_variables(self, new):
         error_cnt = \
             self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
@@ -496,17 +494,24 @@ class TextPosition(MainWindowWidget):
         self.create_widgets()
         self.master_configure()
 
+    def initialise_variables(self):
+        self.TANGLE.set(self.settings.get('text_angle'))
+        self.origin.set(self.settings.get('origin'))
+        self.justify.set(self.settings.get('justify'))
+        self.flip.set(self.settings.get('flip'))
+        self.mirror.set(self.settings.get('mirror'))
+
     def create_widgets(self):
 
         w_label = self.w_label
         w_entry = self.w_entry
-        # w_units = self.w_units
+        w_units = self.w_units
 
         self.Label_pos_orient = Label(self, text="Text Position and Orientation:")
 
         self.tangle_frame = Frame(self)
         self.Label_Tangle = Label(self.tangle_frame, text="Text Angle", width=w_label, anchor=E)
-        self.Label_Tangle_u = Label(self.tangle_frame, text="deg")
+        self.Label_Tangle_u = Label(self.tangle_frame, text="deg", width=w_units)
         self.Entry_Tangle = Entry(self.tangle_frame, width=w_entry)
         self.Entry_Tangle.configure(textvariable=self.TANGLE)
         self.Entry_Tangle.bind('<Return>', self.Recalculate_Click)
@@ -573,13 +578,6 @@ class TextPosition(MainWindowWidget):
         self.Checkbutton_mirror.pack()
         self.mirror_frame.pack(anchor=W, padx=5)
 
-    def initialise_variables(self):
-        self.TANGLE.set(self.settings.get('text_angle'))
-        self.origin.set(self.settings.get('origin'))
-        self.justify.set(self.settings.get('justify'))
-        self.flip.set(self.settings.get('flip'))
-        self.mirror.set(self.settings.get('mirror'))
-
     def check_all_variables(self, new):
         error_cnt = \
             self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), new)
@@ -630,6 +628,11 @@ class TextOnCircle(MainWindowWidget):
         self.initialise_variables()
         self.create_widgets()
         self.master_configure()
+
+    def initialise_variables(self):
+        self.TRADIUS.set(self.settings.get('text_radius'))
+        self.outer.set(self.settings.get('outer'))
+        self.upper.set(self.settings.get('upper'))
 
     def create_widgets(self):
         self.Label_text_on_arc = Label(self, text="Text on Circle Properties:", anchor=W)
@@ -691,11 +694,6 @@ class TextOnCircle(MainWindowWidget):
     def configure_units(self):
         self.units.set(self.settings.get('units'))
 
-    def initialise_variables(self):
-        self.TRADIUS.set(self.settings.get('text_radius'))
-        self.outer.set(self.settings.get('outer'))
-        self.upper.set(self.settings.get('upper'))
-
     def check_all_variables(self, new):
         error_cnt = \
             self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), new)
@@ -742,6 +740,13 @@ class GCodeProperties(MainWindowWidget):
         self.initialise_variables()
         self.create_widgets()
         self.master_configure()
+
+    def initialise_variables(self):
+        self.funits.set(self.settings.get('feed_units'))
+        self.FEED.set(self.settings.get('feedrate'))
+        self.PLUNGE.set(self.settings.get('plunge_rate'))
+        self.ZSAFE.set(self.settings.get('zsafe'))
+        self.ZCUT.set(self.settings.get('zcut'))
 
     def create_widgets(self):
 
@@ -820,13 +825,6 @@ class GCodeProperties(MainWindowWidget):
         self.configure_cut_type()
         self.configure_units()
 
-    def configure_units(self):
-        self.units.set(self.settings.get('units'))
-        if self.units.get() == 'in':
-            self.funits.set('in/min')
-        else:
-            self.funits.set('mm/min')
-
     def configure_cut_type(self):
         if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             self.Entry_Zcut.configure(state="disabled")
@@ -837,12 +835,12 @@ class GCodeProperties(MainWindowWidget):
             self.Label_Zcut.configure(state="normal")
             self.Label_Zcut_u.configure(state="normal")
 
-    def initialise_variables(self):
-        self.funits.set(self.settings.get('feed_units'))
-        self.FEED.set(self.settings.get('feedrate'))
-        self.PLUNGE.set(self.settings.get('plunge_rate'))
-        self.ZSAFE.set(self.settings.get('zsafe'))
-        self.ZCUT.set(self.settings.get('zcut'))
+    def configure_units(self):
+        self.units.set(self.settings.get('units'))
+        if self.units.get() == 'in':
+            self.funits.set('in/min')
+        else:
+            self.funits.set('mm/min')
 
     def check_all_variables(self, new):
         error_cnt = self.entry_set(self.Entry_Feed, self.Entry_Feed_Check(), new) + \
@@ -928,20 +926,15 @@ class FontFiles(MainWindowWidget):
         self.initialise_variables()
         self.create_widgets()
         self.master_configure()
-        # self.bind_keys()
+
+    def initialise_variables(self):
+        self.fontfile.set(self.settings.get('fontfile'))
+        self.current_input_file.set(self.settings.get('fontfile'))
+        self.fontdir.set(self.settings.get('fontdir'))
 
     def create_widgets(self):
 
         # Font files
-
-        # w_label = self.w_label
-        # w_entry = self.w_entry
-        # w_units = self.w_units
-
-        self.Checkbutton_fontdex = Checkbutton(self, text="Show All Font Characters", width=20, anchor=W)
-        self.fontdex.trace_variable("w", self.Entry_fontdex_Callback)
-        self.Checkbutton_fontdex.configure(variable=self.fontdex)
-        self.Label_fontfile = Label(self, textvariable=self.current_input_file, anchor=W, foreground='grey50')
 
         self.Label_List_Box = Label(self, text="Font Files:", foreground="#101010", anchor=W)
 
@@ -956,6 +949,12 @@ class FontFiles(MainWindowWidget):
         self.Listbox_1.bind("<ButtonRelease-1>", self.Listbox_1_Click)
         self.Listbox_1.bind("<Up>", self.Listbox_Key_Up)
         self.Listbox_1.bind("<Down>", self.Listbox_Key_Down)
+
+        self.Label_fontfile = Label(self, textvariable=self.current_input_file, foreground='grey50')
+
+        self.Checkbutton_fontdex = Checkbutton(self, text="Show All Font Characters", width=20, anchor=W)
+        self.fontdex.trace_variable("w", self.Entry_fontdex_Callback)
+        self.Checkbutton_fontdex.configure(variable=self.fontdex)
 
         # default font
         try:
@@ -987,12 +986,8 @@ class FontFiles(MainWindowWidget):
     def master_configure(self):
         self.Label_List_Box.pack(anchor=W, padx=10)
         self.Listbox_1_frame.pack(fill=Y, expand=1)
-        self.Label_fontfile.pack()
-        self.Checkbutton_fontdex.pack(side=LEFT)
-
-    def initialise_variables(self):
-        self.fontfile.set(self.settings.get('fontfile'))
-        self.fontdir.set(self.settings.get('fontdir'))
+        self.Checkbutton_fontdex.pack(side=BOTTOM)
+        self.Label_fontfile.pack(side=BOTTOM, padx=15, anchor=W)
 
     # Font files callbacks
 
@@ -1019,6 +1014,7 @@ class FontFiles(MainWindowWidget):
                 self.fontfile.set(" ")
 
         self.settings.set('fontfile', self.fontfile.get())
+        self.current_input_file.set(self.fontfile.get())
         self.readFontFile()
         self.Recalc_RQD()
 
@@ -1038,6 +1034,7 @@ class FontFiles(MainWindowWidget):
             return
 
         self.settings.set('fontfile', self.fontfile.get())
+        self.current_input_file.set(self.fontfile.get())
         self.readFontFile()
         self.do_it()
 
@@ -1054,7 +1051,7 @@ class FontFiles(MainWindowWidget):
             return
 
         self.settings.set('fontfile', self.fontfile.get())
-        # self.font = readFontFile(self.settings)
+        self.current_input_file.set(self.fontfile.get())
         self.readFontFile()
         self.do_it()
 
@@ -1071,6 +1068,7 @@ class FontFiles(MainWindowWidget):
             return
 
         self.settings.set('fontfile', self.fontfile.get())
+        self.current_input_file.set(self.fontfile.get())
         self.readFontFile()
         self.do_it()
 
@@ -1093,6 +1091,12 @@ class ImageProperties(MainWindowWidget):
         self.initialise_variables()
         self.create_widgets()
         self.master_configure()
+
+    def initialise_variables(self):
+        self.useIMGsize.set(self.settings.get('useIMGsize'))
+        self.YSCALE.set(self.settings.get('yscale'))
+        self.XSCALE.set(self.settings.get('xscale'))
+        self.STHICK.set(self.settings.get('line_thickness'))
 
     def create_widgets(self):
 
@@ -1184,12 +1188,6 @@ class ImageProperties(MainWindowWidget):
             self.Entry_Sthick.configure(state="normal")
             self.Label_Sthick.configure(state="normal")
             self.Label_Sthick_u.configure(state="normal")
-
-    def initialise_variables(self):
-        self.useIMGsize.set(self.settings.get('useIMGsize'))
-        self.YSCALE.set(self.settings.get('yscale'))
-        self.XSCALE.set(self.settings.get('xscale'))
-        self.STHICK.set(self.settings.get('line_thickness'))
 
     def check_all_variables(self, new):
         error_cnt = \
