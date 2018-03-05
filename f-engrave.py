@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from application.settings import Settings
+from util import f_engrave_version
 
 """
     oof-engrave.py G-Code Generator
@@ -282,8 +283,6 @@ from application.settings import Settings
 
 """
 
-version = '1.65b'
-
 # TODO insert psyco / pypy
 
 settings = Settings(autoload=True)
@@ -305,7 +304,7 @@ else:
 
     root = Tk()
     app = Gui(root, settings)
-    app.master.title("F-Engrave v" + version)
+    app.master.title("F-Engrave v" + f_engrave_version())
     app.master.iconname("F-Engrave")
     app.master.minsize(780, 540)
 

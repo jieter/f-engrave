@@ -185,6 +185,7 @@ class MainWindowWidget(Frame):
         self.units = StringVar()
         self.cut_type = StringVar()
 
+        # TODO rename callbacks and reduce widgets' dependency on Gui internals
         # Gui callbacks
         self.entry_set = gui.entry_set
         self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
@@ -1607,10 +1608,12 @@ class MainWindowImageLeft(Frame):
         self.Radio_Cut_V.pack(side=TOP, anchor=E)
 
         self.Recalculate.pack(side=LEFT)
+        self.Recalculate.pack(side=LEFT)
         self.V_Carve_Calc.pack(side=RIGHT)
         self.button_frame.pack(side=TOP)
 
         self.image_properties.master_configure()
+        self.image_position.master_configure()
         self.configure_cut_type()
 
     def configure_cut_type(self):

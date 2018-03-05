@@ -22,7 +22,6 @@ The repo name was changed into OOF-Engrave to avoid confusion with the original.
  	- Compare some newly generated gcode files to the output of F-Engrave 1.65
  	- More coverage on geometry functions
  - GUI
- 	- Font preview
  	- settings with documentation
 
 ## Running tests

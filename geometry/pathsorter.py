@@ -1,12 +1,9 @@
-# from math import hypot
-
-
 def sort_paths(ecoords, i_loop=2):
     """
     Sort paths
-    :param ecoords: list of loops
-    :param i_loop: inner loop? #TODO
-    :return: ordered loops
+    :param ecoords: list of loop segment begin and end position coordinates
+    :param i_loop, loop
+    :return: list of loop x/y indices, ordered by distance
     """
 
     # find loop ends
@@ -28,6 +25,7 @@ def sort_paths(ecoords, i_loop=2):
     use_beg = 0
     if len(ecoords) > 0:
         order_out.append([Lbeg[0], Lend[0]])
+
     inext = 0
     total = len(Lbeg)
     for i in range(total - 1):
@@ -43,8 +41,7 @@ def sort_paths(ecoords, i_loop=2):
 
         dx = Xcur - ecoords[Lbeg[0]][0]
         dy = Ycur - ecoords[Lbeg[0]][1]
-        # min_dist = hypot(dx, dy)
-        min_dist = dx * dx + dy * dy  # optimized
+        min_dist = dx * dx + dy * dy
 
         dxe = Xcur - ecoords[Lend[0]][0]
         dye = Ycur - ecoords[Lend[0]][1]
@@ -55,16 +52,14 @@ def sort_paths(ecoords, i_loop=2):
         for j in range(1, len(Lbeg)):
             dx = Xcur - ecoords[Lbeg[j]][0]
             dy = Ycur - ecoords[Lbeg[j]][1]
-            # dist = hypot(dx, dy)
-            dist = dx * dx + dy * dy  # optimized
+            dist = dx * dx + dy * dy
             if dist < min_dist:
                 min_dist = dist
                 inext = j
 
             dxe = Xcur - ecoords[Lend[j]][0]
             dye = Ycur - ecoords[Lend[j]][1]
-            # diste = hypot(dxe, dye)
-            diste = dxe * dxe + dye * dye  # optimized
+            diste = dxe * dxe + dye * dye
             if diste < min_diste:
                 min_diste = diste
                 inexte = j

@@ -4,6 +4,7 @@ from math import (ceil, fabs, floor, tan)
 from util import fmessage
 from geometry import *
 from geometry.pathsorter import sort_paths
+# from sortPaths import sort_paths
 
 from writers import douglas
 # TODO How to import higher level package:
@@ -82,7 +83,7 @@ class Engrave(object):
         self.STOP_CALC = False
 
     def init_coords(self):
-        # Path coords format: ([x1, y1, x2, y2, line_cnt, char_cnt])
+        # Path coords format: (x1, y1, x2, y2, line_cnt, char_cnt)
         self.refresh_coords()
         self.v_coords = []
         self.clean_segment = []
@@ -95,11 +96,10 @@ class Engrave(object):
             self.coords = self.image.coords
 
     def init_clean_coords(self):
-        # Clean coords format: ([xnormv, ynormv, rout, loop_cnt])
+        # Clean coords format: (xnormv, ynormv [, rout, loop_cnt])
         self.clean_coords = []
         self.clean_coords_sort = []
         self.v_clean_coords_sort = []
-        # self.clean_segment = []
 
     def stop_calc(self):
         self.STOP_CALC = True
@@ -300,7 +300,6 @@ class Engrave(object):
                 self.STOP_CALC = False
                 if clean:
                     self.clean_coords = []
-                    calc_flag = 0
                 else:
                     self.v_coords = []
                 done = False
@@ -1271,6 +1270,11 @@ class Engrave(object):
             self.status_callback('Done Calculating Cleanup Cut Paths', color='white')
 
     def line_cuts(self, MAXD, clean_coords, clean_coords_out, clean_dia, loop_cnt_out):
+
+        # for line in clean_coords:
+        #     print 'clean_coords: x:%d, y:%d, loop:%d' % (line[0], line[1], line[2])  # TEST
+
+        # print 'len(clean_coords):%d\n' % len(clean_coords)  # TEST
 
         order_out = sort_paths(clean_coords)
 
