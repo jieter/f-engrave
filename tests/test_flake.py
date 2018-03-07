@@ -25,6 +25,7 @@ style_guide = flake8.get_style_guide(
         'E128',  # continuation line under-indented for visual indent
         # 'E221',  # multiple spaces before operator
         # 'E222',  # multiple spaces after operator
+        'E722',  # do not use bare except
         'F403',  # 'import *' used; unable to detect undefined names
         'F405',  # ... may be undefined, or defined from star imports: ...
     ),

@@ -843,7 +843,7 @@ class Gcode:
 
         for move, (x, y, z), cent in douglas(self.cuts, self.tolerance, self.plane):
             if cent:
-                self._move_common(x, y, z, I=cent[0], J=cent[1], gcode=move)
+                self._move_common(x, y, z, i=cent[0], j=cent[1], gcode=move)
             else:
                 self._move_common(x, y, z, gcode="G1")
 
@@ -858,7 +858,7 @@ class Gcode:
         self.flush()
         self._move_common(x, y, z, gcode="G0")
 
-    def _move_common(self, x=None, y=None, z=None, I=None, J=None, gcode="G0"):
+    def _move_common(self, x=None, y=None, z=None, i=None, j=None, gcode="G0"):
         """
         G0 and G1 moves
         """
@@ -877,8 +877,8 @@ class Gcode:
         FORMAT = "%%.%df" % (self.dp)
 
         if (gcode == "G2" or gcode == "G3"):
-            XC = self.lastx + I
-            YC = self.lasty + J
+            XC = self.lastx + i
+            YC = self.lasty + j
             R_check_1 = sqrt((XC - self.lastx) ** 2 + (YC - self.lasty) ** 2)
             R_check_2 = sqrt((XC - x) ** 2 + (YC - y) ** 2)
 
@@ -897,10 +897,10 @@ class Gcode:
         if z != self.lastz:
             zstring = " Z" + FORMAT % (z)
             self.lastz = z
-        if I is not None:
-            Istring = " I" + FORMAT % (I)
-        if J is not None:
-            Jstring = " J" + FORMAT % (J)
+        if i is not None:
+            Istring = " I" + FORMAT % (i)
+        if j is not None:
+            Jstring = " J" + FORMAT % (j)
         if xstring == ystring == zstring == fstring == "":
             return
 

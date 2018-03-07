@@ -17,19 +17,19 @@ class GeneralSettings(object):
         self.settings = settings
 
         # GUI callbacks
-        self.entry_set = master.entry_set
-        self.statusMessage = master.statusMessage
-        self.Settings_ReLoad_Click = master.Settings_ReLoad_Click
-        self.Ctrl_Fontdir_Click = master.Ctrl_Fontdir_Click
-        self.write_config_file = master.write_config_file
-        self.Recalc_RQD = master.Recalc_RQD
+        self.Ctrl_entry_set = master.entry_set
+        self.Ctrl_status_message = master.statusMessage
+        self.Ctrl_reload = master.Settings_ReLoad_Click
+        self.Ctrl_font_selected = master.Ctrl_Fontdir_Click
+        self.Ctrl_write_config_file = master.write_config_file
+        self.Ctrl_recalculation_required = master.Recalc_RQD
 
-        self.Ctrl_Recalculate_Click = master.Recalculate_Click
-        self.Ctrl_Entry_units_var_Callback = master.Ctrl_Entry_units_var_Callback
-        self.Ctrl_Scale_Linear_Inputs = master.Ctrl_Scale_Linear_Inputs
+        self.Ctrl_recalculate = master.Recalculate_Click
+        self.Ctrl_units_changed = master.Ctrl_Entry_units_var_Callback
+        self.Ctrl_scale_changed = master.Ctrl_Scale_Linear_Inputs
 
         # GUI Engraver callbacks
-        self.refresh_v_pplot = master.engrave.refresh_v_pplot
+        self.Ctrl_v_pplot_changed = master.engrave.refresh_v_pplot
 
         # General settings window
         self.width = 600
@@ -105,24 +105,23 @@ class GeneralSettings(object):
         self.plotbox.set(self.settings.get('plotbox'))
         self.boxgap.set(self.settings.get('boxgap'))
         self.v_pplot.set(self.settings.get('v_pplot'))
-        # self.input_type.set(self.settings.get('input_type'))
 
     def Close_Current_Window_Click(self):
 
         error_cnt = \
-            self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
-            self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
-            self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
-            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
-            self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2) + \
-            self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
-            self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
-            self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
-            self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
-            self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
+            self.Ctrl_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
+            self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
 
         if error_cnt > 0:
-            self.statusMessage.set(
+            self.Ctrl_status_message.set(
                 "Entry Error Detected: Check the entry values in the General Settings window")
         else:
             self.general_settings.destroy()
@@ -269,6 +268,7 @@ class GeneralSettings(object):
                                            value="max_all", width=w_radio, anchor=W)
         self.Radio_Hcalc_ALL.pack(side=LEFT, anchor=W)
         self.Radio_Hcalc_ALL.configure(variable=self.H_CALC)
+        self.H_CALC.trace_variable("w", self.Checkbutton_H_CALC_Callback)
 
         if self.settings.get('input_type') == "image":
             self.Entry_Fontdir.configure(state="disabled")
@@ -312,7 +312,7 @@ class GeneralSettings(object):
         self.Label_SaveConfig.pack(side=LEFT)
         self.GEN_SaveConfig = Button(self.save_frame, text="Save")
         self.GEN_SaveConfig.pack(side=LEFT)
-        self.GEN_SaveConfig.bind("<ButtonRelease-1>", self.write_config_file)
+        self.GEN_SaveConfig.bind("<ButtonRelease-1>", self.Ctrl_write_config_file)
 
         self.button_frame = Frame(general_settings)
 
@@ -325,7 +325,7 @@ class GeneralSettings(object):
 
         self.GEN_Recalculate = Button(self.button_frame, text="Re-Load Image")
         self.GEN_Recalculate.pack(side=LEFT, padx=padx, pady=pady, anchor=CENTER)
-        self.GEN_Recalculate.bind("<ButtonRelease-1>", self.Settings_ReLoad_Click)
+        self.GEN_Recalculate.bind("<ButtonRelease-1>", self.Ctrl_reload)
 
         self.GEN_Close = Button(self.button_frame, text="Close", command=self.Close_Current_Window_Click)
         self.GEN_Close.pack(side=LEFT, padx=padx, pady=pady, anchor=CENTER)
@@ -384,14 +384,14 @@ class GeneralSettings(object):
         self.accuracy.set('%.3g' % self.settings.get('accuracy'))
         self.boxgap.set('%.3g' % self.settings.get('boxgap'))
 
-        self.Ctrl_Scale_Linear_Inputs(factor)
+        self.Ctrl_scale_changed(factor)
 
     def check_all_variables(self, new=1):
-        error_cnt = self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), new) + \
-                    self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), new) + \
-                    self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), new) + \
-                    self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), new) + \
-                    self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), new)
+        error_cnt = self.Ctrl_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), new) + \
+                    self.Ctrl_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), new) + \
+                    self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), new) + \
+                    self.Ctrl_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), new) + \
+                    self.Ctrl_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), new)
         return error_cnt
 
     def configure_boxgap(self):
@@ -408,7 +408,7 @@ class GeneralSettings(object):
 
     def recalculate_click(self, event):
         self.check_all_variables()
-        self.Ctrl_Recalculate_Click(event)
+        self.Ctrl_recalculate(event)
 
     def Entry_units_var_Callback(self):
 
@@ -423,8 +423,8 @@ class GeneralSettings(object):
         self.settings.set('units', self.units.get())
         self.settings.set('feed_units', self.funits.get())
 
-        self.Ctrl_Entry_units_var_Callback()
-        self.Recalc_RQD()
+        self.Ctrl_units_changed()
+        self.Ctrl_recalculation_required()
 
     def Entry_Xoffset_Check(self):
         try:
@@ -434,7 +434,7 @@ class GeneralSettings(object):
         return NOR
 
     def Entry_Xoffset_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xorigin')
+        self.Ctrl_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xorigin')
 
     def Entry_Yoffset_Check(self):
         try:
@@ -444,7 +444,7 @@ class GeneralSettings(object):
         return NOR
 
     def Entry_Yoffset_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yorigin')
+        self.Ctrl_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yorigin')
 
     def Entry_ArcAngle_Check(self):
         try:
@@ -454,7 +454,7 @@ class GeneralSettings(object):
         return OK
 
     def Entry_ArcAngle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='segarc')
+        self.Ctrl_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='segarc')
 
     def Entry_Accuracy_Check(self):
         try:
@@ -464,11 +464,11 @@ class GeneralSettings(object):
         return OK
 
     def Entry_Accuracy_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy')
+        self.Ctrl_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy')
 
     def Entry_ext_char_Callback(self, varName, index, mode):
         self.settings.set('ext_char', self.ext_char.get())
-        self.Settings_ReLoad_Click
+        self.Ctrl_reload()
 
     def Entry_no_comments_Callback(self, varName, index, mode):
         self.settings.set('no_comments', self.no_comments.get())
@@ -485,23 +485,27 @@ class GeneralSettings(object):
     def Checkbutton_var_dis_Callback(self, varName, index, mode):
         self.settings.set('var_dis', self.var_dis.get())
 
+    def Checkbutton_H_CALC_Callback(self, varName, index, mode):
+        self.settings.set('height_calculation', self.H_CALC.get())
+        self.Ctrl_recalculation_required()
+
     def Entry_BoxGap_Check(self):
         try:
             value = float(self.boxgap.get())
             if value <= 0.0:
-                self.statusMessage.set(" Gap should be greater than zero.")
+                self.Ctrl_status_message.set(" Gap should be greater than zero.")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_BoxGap_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
+        self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
         self.configure_boxgap()
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
-        self.refresh_v_pplot()  # TODO only needed when plotting
+        self.Ctrl_v_pplot_changed()  # TODO only needed when plotting
 
     def Entry_Box_Callback(self, varName, index, mode):
         self.settings.set('plotbox', self.plotbox.get())
@@ -509,14 +513,14 @@ class GeneralSettings(object):
             self.Entry_BoxGap_Callback(varName, index, mode)
         except:
             pass
-        self.Recalc_RQD()
+        self.Ctrl_recalculation_required()
 
     def Fontdir_Click(self, event):
         newfontdir = askdirectory(mustexist=1, initialdir=self.fontdir.get())
         if newfontdir != "" and newfontdir != ():
             self.fontdir.set(newfontdir.encode("utf-8"))
             self.settings.set('fontdir', self.fontdir.get())
-            self.Ctrl_Fontdir_Click()
+            self.Ctrl_font_selected()
 
     def create_icon(self):
         try:

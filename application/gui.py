@@ -11,6 +11,7 @@ from main_window import MenuBar, MainWindowTextLeft, MainWindowTextRight, MainWi
 
 from geometry.coords import MyImage, MyText
 from geometry.engrave import Engrave
+# from vCarve import v_carve as v_carve_cpp
 
 from readers import *
 from writers import *
@@ -1437,6 +1438,10 @@ class Gui(Frame):
         self.text.set_coords_from_strokes()
         self.engrave.set_image(self.text)
 
+        # TEST Python C-API
+        # retcoords = v_carve_cpp(self.text.coords, self.settings.get_dict())
+        # print "len(retcoords):%d" % len(retcoords)
+
         font_line_height = self.font.line_height()
         if font_line_height <= -1e10:
 
@@ -1544,26 +1549,8 @@ class Gui(Frame):
             self.statusMessage.set("No Image Loaded")
             return
 
-        font_line_height = self.font.line_height()
-        if font_line_height <= -1e10:
-
-            if not self.batch.get():
-                self.statusbar.configure(bg='red')
-
-            if self.settings.get('height_calculation') == "max_all":
-                if not self.batch.get():
-                    self.statusMessage.set("No Font Characters Found")
-                else:
-                    fmessage("(No Font Characters Found)")
-
-            elif self.settings.get('height_calculation') == "max_use":
-                error_text = "Image contains no design information. (Empty DXF File)"
-                if not self.batch.get():
-                    self.statusMessage.set(error_text)
-                else:
-                    fmessage("(" + error_text + ")")
-
         # reset the image coords (to avoid corruption, e.g. from a previous transformation)
+        self.image.set_thickness(self.settings.get('line_thickness'))
         self.image.set_coords_from_strokes()
         self.engrave.set_image(self.image)
 
@@ -1572,7 +1559,15 @@ class Gui(Frame):
         flip = self.settings.get('flip')
         angle = self.settings.get('text_angle')
 
-        y_scale = self.settings.get('yscale') / 100
+        half = self.settings.get('line_thickness') / 2
+        y_scale_in = self.settings.get('yscale')
+        if self.settings.get('useIMGsize'):
+            y_scale = y_scale_in / 100
+        else:
+            if self.image.get_height() > 0:
+                y_scale = (y_scale_in - half) / self.image.get_height()
+            else:
+                y_scale = 0.1
         x_scale = self.settings.get('xscale') * y_scale / 100
 
         self.image.transform_scale(x_scale, y_scale)
@@ -1696,17 +1691,16 @@ class Gui(Frame):
         x_scale_in = self.settings.get('xscale')
         y_scale_in = self.settings.get('yscale')
 
+        # max_all
         font_line_height = self.font.line_height()
         font_line_depth = self.font.line_depth()
-        try:
-            y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
-        except:
-            y_scale = .1
+        if self.settings.get('height_calculation') == "max_use":
+            font_line_height = self.text.get_font_used_height()
+            font_line_depth = self.text.get_font_used_depth()
 
+        y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
         if y_scale <= Zero:
             y_scale = .1
-
-        # y_scale = y_scale_in / 100
         x_scale = x_scale_in * y_scale / 100
 
         return (x_scale, y_scale)

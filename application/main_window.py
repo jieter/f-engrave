@@ -29,35 +29,34 @@ class MenuBar(object):
         self.input_type = StringVar()
 
         # Gui callbacks
-        self.menu_File_Save_Settings_File = gui.menu_File_Save_Settings_File
-        self.menu_File_Open_G_Code_File = gui.menu_File_Open_G_Code_File
-        self.menu_File_Open_DXF_File = gui.menu_File_Open_DXF_File
-        self.menu_File_Save_G_Code_File = gui.menu_File_Save_G_Code_File
-        self.menu_File_Save_SVG_File = gui.menu_File_Save_SVG_File
-        self.menu_File_Save_SVG_File = gui.menu_File_Save_SVG_File
-        self.menu_File_Save_DXF_File = gui.menu_File_Save_DXF_File
-        self.menu_File_Save_DXF_File_close_loops = gui.menu_File_Save_DXF_File_close_loops
+        self.Ctrl_save_settings_file = gui.menu_File_Save_Settings_File
+        self.Ctrl_open_g_code_file = gui.menu_File_Open_G_Code_File
+        self.Ctrl_open_dxf_file = gui.menu_File_Open_DXF_File
+        self.Ctrl_save_g_code_file = gui.menu_File_Save_G_Code_File
+        self.Ctrl_save_svg_file = gui.menu_File_Save_SVG_File
+        self.Ctrl_save_dxf_file = gui.menu_File_Save_DXF_File
+        self.Ctrl_save_dxf_file_close_loops = gui.menu_File_Save_DXF_File_close_loops
 
-        self.WriteToAxis = gui.WriteToAxis
-        self.menu_File_Quit = gui.menu_File_Quit
+        self.Ctrl_write_to_axis = gui.WriteToAxis
+        self.Ctrl_quit = gui.menu_File_Quit
 
-        self.CopyClipboard_GCode = gui.CopyClipboard_GCode
-        self.CopyClipboard_SVG = gui.CopyClipboard_SVG
-        self.menu_View_Recalculate = gui.menu_View_Recalculate
+        self.Ctrl_copy_g_code = gui.CopyClipboard_GCode
+        self.Ctrl_copy_svg = gui.CopyClipboard_SVG
+        self.Ctrl_recalculate = gui.menu_View_Recalculate
 
-        self.menu_View_Zoom_in = gui.menu_View_Zoom_in
-        self.menu_View_Zoom_out = gui.menu_View_Zoom_out
-        self.menu_View_Refresh = gui.menu_View_Refresh
+        self.Ctrl_zoom_in = gui.menu_View_Zoom_in
+        self.Ctrl_zoom_out = gui.menu_View_Zoom_out
+        self.Ctrl_refresh = gui.menu_View_Refresh
 
-        self.general_settings_window = gui.general_settings_window
-        self.vcarve_settings_window = gui.vcarve_settings_window
-        self.bitmap_settings_window = gui.bitmap_settings_window
+        self.Ctrl_general_settings = gui.general_settings_window
+        self.Ctrl_vcarve_settings = gui.vcarve_settings_window
+        self.Ctrl_bitmap_settings = gui.bitmap_settings_window
 
-        self.menu_Help_About = gui.menu_Help_About
-        self.menu_Help_Web = gui.menu_Help_Web
+        self.Ctrl_about = gui.menu_Help_About
+        self.Ctrl_webpage = gui.menu_Help_Web
 
-        self.Ctrl_set_cut_type = gui.Ctrl_set_cut_type
-        self.Ctrl_mode_change = gui.Ctrl_mode_change
+        self.Ctrl_cut_type_changed = gui.Ctrl_set_cut_type
+        self.Ctrl_mode_changed = gui.Ctrl_mode_change
 
         self.initialise_variables()
         self.create_widgets()
@@ -73,53 +72,53 @@ class MenuBar(object):
     def create_widgets(self):
 
         top_File = Menu(self.menuBar, tearoff=0)
-        top_File.add("command", label="Save Settings to File", command=self.menu_File_Save_Settings_File)
-        top_File.add("command", label="Read Settings from File", command=self.menu_File_Open_G_Code_File)
+        top_File.add("command", label="Save Settings to File", command=self.Ctrl_save_settings_file)
+        top_File.add("command", label="Read Settings from File", command=self.Ctrl_open_g_code_file)
         top_File.add_separator()
         if POTRACE_AVAILABLE:
-            top_File.add("command", label="Open DXF/Bitmap", command=self.menu_File_Open_DXF_File)
+            top_File.add("command", label="Open DXF/Bitmap", command=self.Ctrl_open_dxf_file)
         else:
-            top_File.add("command", label="Open DXF", command=self.menu_File_Open_DXF_File)
+            top_File.add("command", label="Open DXF", command=self.Ctrl_open_dxf_file)
         top_File.add_separator()
-        top_File.add("command", label="Save G-Code", command=self.menu_File_Save_G_Code_File)
+        top_File.add("command", label="Save G-Code", command=self.Ctrl_save_g_code_file)
         top_File.add_separator()
-        top_File.add("command", label="Export SVG", command=self.menu_File_Save_SVG_File)
-        top_File.add("command", label="Export DXF", command=self.menu_File_Save_DXF_File)
-        top_File.add("command", label="Export DXF (close loops)", command=self.menu_File_Save_DXF_File_close_loops)
+        top_File.add("command", label="Export SVG", command=self.Ctrl_save_svg_file)
+        top_File.add("command", label="Export DXF", command=self.Ctrl_save_dxf_file)
+        top_File.add("command", label="Export DXF (close loops)", command=self.Ctrl_save_dxf_file_close_loops)
         if IN_AXIS:
-            top_File.add("command", label="Write To Axis and Exit", command=self.WriteToAxis)
+            top_File.add("command", label="Write To Axis and Exit", command=self.Ctrl_write_to_axis)
         else:
-            top_File.add("command", label="Exit", command=self.menu_File_Quit)
+            top_File.add("command", label="Exit", command=self.Ctrl_quit)
         self.menuBar.add("cascade", label="File", menu=top_File)
 
         top_Edit = Menu(self.menuBar, tearoff=0)
-        top_Edit.add("command", label="Copy G-Code Data to Clipboard", command=self.CopyClipboard_GCode)
-        top_Edit.add("command", label="Copy SVG Data to Clipboard", command=self.CopyClipboard_SVG)
+        top_Edit.add("command", label="Copy G-Code Data to Clipboard", command=self.Ctrl_copy_g_code)
+        top_Edit.add("command", label="Copy SVG Data to Clipboard", command=self.Ctrl_copy_svg)
         self.menuBar.add("cascade", label="Edit", menu=top_Edit)
 
         top_View = Menu(self.menuBar, tearoff=0)
-        top_View.add("command", label="Recalculate", command=self.menu_View_Recalculate)
+        top_View.add("command", label="Recalculate", command=self.Ctrl_recalculate)
         top_View.add_separator()
 
-        top_View.add("command", label="Zoom In <Page Up>", command=self.menu_View_Zoom_in)
-        top_View.add("command", label="Zoom Out <Page Down>", command=self.menu_View_Zoom_out)
-        top_View.add("command", label="Zoom Fit <F5>", command=self.menu_View_Refresh)
+        top_View.add("command", label="Zoom In <Page Up>", command=self.Ctrl_zoom_in)
+        top_View.add("command", label="Zoom Out <Page Down>", command=self.Ctrl_zoom_out)
+        top_View.add("command", label="Zoom Fit <F5>", command=self.Ctrl_refresh)
 
         top_View.add_separator()
 
-        top_View.add_checkbutton(label="Show Thickness", variable=self.show_thick, command=self.menu_View_Refresh)
-        top_View.add_checkbutton(label="Show Origin Axis", variable=self.show_axis, command=self.menu_View_Refresh)
-        top_View.add_checkbutton(label="Show Bounding Box", variable=self.show_box, command=self.menu_View_Refresh)
+        top_View.add_checkbutton(label="Show Thickness", variable=self.show_thick, command=self.Ctrl_refresh)
+        top_View.add_checkbutton(label="Show Origin Axis", variable=self.show_axis, command=self.Ctrl_refresh)
+        top_View.add_checkbutton(label="Show Bounding Box", variable=self.show_box, command=self.Ctrl_refresh)
         self.menuBar.add("cascade", label="View", menu=top_View)
         self.show_thick.trace_variable("w", self.Entry_show_thick_Callback)
         self.show_axis.trace_variable("w", self.Entry_show_axis_Callback)
         self.show_box.trace_variable("w", self.Entry_show_box_Callback)
 
         top_Settings = Menu(self.menuBar, tearoff=0)
-        top_Settings.add("command", label="General Settings", command=self.general_settings_window)
-        top_Settings.add("command", label="V-Carve Settings", command=self.vcarve_settings_window)
+        top_Settings.add("command", label="General Settings", command=self.Ctrl_general_settings)
+        top_Settings.add("command", label="V-Carve Settings", command=self.Ctrl_vcarve_settings)
         if POTRACE_AVAILABLE:
-            top_Settings.add("command", label="Bitmap Import Settings", command=self.bitmap_settings_window)
+            top_Settings.add("command", label="Bitmap Import Settings", command=self.Ctrl_bitmap_settings)
 
         top_Settings.add_separator()
         top_Settings.add_radiobutton(label="Engrave Mode", variable=self.cut_type, value="engrave")
@@ -135,8 +134,8 @@ class MenuBar(object):
         self.menuBar.add("cascade", label="Settings", menu=top_Settings)
 
         top_Help = Menu(self.menuBar, tearoff=0)
-        top_Help.add("command", label="About (E-Mail)", command=self.menu_Help_About)
-        top_Help.add("command", label="Help (Web Page)", command=self.menu_Help_Web)
+        top_Help.add("command", label="About (E-Mail)", command=self.Ctrl_about)
+        top_Help.add("command", label="Help (Web Page)", command=self.Ctrl_webpage)
         self.menuBar.add("cascade", label="Help", menu=top_Help)
 
         self.master.config(menu=self.menuBar)
@@ -152,11 +151,11 @@ class MenuBar(object):
 
     def Entry_cut_type_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
-        self.Ctrl_set_cut_type()
+        self.Ctrl_cut_type_changed()
 
     def Entry_menu_mode_change_Callback(self):
         self.settings.set('input_type', self.input_type.get())
-        self.Ctrl_mode_change()
+        self.Ctrl_mode_changed()
 
     def set_cut_type(self):
         # only when changed (to avoid recursion due to trace_variable callback)

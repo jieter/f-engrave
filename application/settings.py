@@ -287,6 +287,10 @@ class Settings(object):
     def get(self, name):
         return self._settings[name]
 
+    # only for use in C-API calls
+    def get_dict(self):
+        return self._settings
+
     def reset(self, name=None):
         if name is None:
             self._settings = self._defaults.copy()

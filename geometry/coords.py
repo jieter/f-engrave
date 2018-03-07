@@ -15,12 +15,18 @@ class MyImage(object):
         self.init_coords()
         self.bbox = BoundingBox()
 
+        # TODO use settings?
+        self.thickness = 0.25
+
     def __len__(self):
         return len(self.coords)
 
     def init_coords(self):
         # Loop coordinates, format: ([x1, y1, x2, y2, line_cnt, char_cnt])
         self.coords = []
+
+    def set_thickness(self, thickness):
+        self.thickness = thickness
 
     def set_coords_from_strokes(self, strokes=[]):
 
@@ -118,7 +124,8 @@ class MyImage(object):
             xmin = min(line[0], line[2], xmin)
             ymin = min(line[1], line[3], ymin)
 
-        self.bbox = BoundingBox(xmin, xmax, ymin, ymax)
+        half = self.thickness / 2
+        self.bbox = BoundingBox(xmin - half, xmax + half, ymin - half, ymax + half)
 
     def add_box(self, delta, mirror, flip):
         """
@@ -160,7 +167,6 @@ class MyText(MyImage):
         self.line_space = 1.1
         self.char_space = 25
         self.word_space = 1.0
-        self.thickness = 0.25
 
     def __str__(self):
         ascii_text = self.text.encode('ascii', 'replace')
@@ -181,8 +187,23 @@ class MyText(MyImage):
     def set_word_space(self, word_space):
         self.word_space = word_space
 
-    def set_thickness(self, thickness):
-        self.thickness = thickness
+    def get_font_used_height(self):
+        font_used_height = -1e5
+        for char in self.text:
+            font_used_height = max(self.font[ord(char)].get_ymax(), font_used_height)
+        return font_used_height
+
+    def get_font_used_width(self):
+        font_used_width = -1e5
+        for char in self.text:
+            font_used_width = max(self.font[ord(char)].get_xmax(), font_used_width)
+        return font_used_width
+
+    def get_font_used_depth(self):
+        font_used_depth = 1e5
+        for char in self.text:
+            font_used_depth = min(self.font[ord(char)].get_ymin(), font_used_depth)
+        return font_used_depth
 
     def set_coords_from_strokes(self):
         """
