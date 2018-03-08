@@ -186,16 +186,12 @@ class MainWindowWidget(Frame):
 
         # TODO rename callbacks and reduce widgets' dependency on Gui internals
         # Gui callbacks
-        self.entry_set = gui.entry_set
-        self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
-        self.recalculate_RQD_Nocalc = gui.recalculate_RQD_Nocalc
-        self.V_Carve_Calc_Click = gui.V_Carve_Calc_Click
-        self.Recalc_RQD = gui.Recalc_RQD
-        self.menu_View_Refresh = gui.menu_View_Refresh
-        self.statusMessage = gui.statusMessage
-        self.do_it = gui.do_it
-
-        self.Recalculate_Click = gui.Recalculate_Click
+        self.Ctrl_entry_set = gui.entry_set
+        self.Ctrl_recalculate = gui.Recalculate_Click
+        self.Ctrl_recalculate_required = gui.Recalc_RQD
+        self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
+        self.Ctrl_refresh = gui.menu_View_Refresh
+        self.Ctrl_status_message = gui.statusMessage
 
         self._initialise_variables()
 
@@ -272,7 +268,7 @@ class TextFontProperties(MainWindowWidget):
         self.Label_Yscale_pct = Label(self.yscale_frame, text="%", width=w_units, anchor=W)
         self.Entry_Yscale = Entry(self.yscale_frame, width=w_entry)
         self.Entry_Yscale.configure(textvariable=self.YSCALE)
-        self.Entry_Yscale.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Yscale.bind('<Return>', self.Ctrl_recalculate)
         self.YSCALE.trace_variable("w", self.Entry_Yscale_Callback)
         self.Label_Yscale_ToolTip = ToolTip(self.Label_Yscale,
                                             text='Character height of a single line of text.')
@@ -282,7 +278,7 @@ class TextFontProperties(MainWindowWidget):
         self.Label_Sthick_u = Label(self.sthick_frame, textvariable=self.units, anchor=W)
         self.Entry_Sthick = Entry(self.sthick_frame, width=w_entry)
         self.Entry_Sthick.configure(textvariable=self.STHICK)
-        self.Entry_Sthick.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Sthick.bind('<Return>', self.Ctrl_recalculate)
         self.STHICK.trace_variable("w", self.Entry_Sthick_Callback)
         self.Label_Sthick_ToolTip = ToolTip(self.Label_Sthick,
                                             text='Thickness or width of engraved lines. \
@@ -294,7 +290,7 @@ class TextFontProperties(MainWindowWidget):
         self.Label_Xscale_u = Label(self.xscale_frame, text="%", width=w_units, anchor=W)
         self.Entry_Xscale = Entry(self.xscale_frame, width=w_entry)
         self.Entry_Xscale.configure(textvariable=self.XSCALE)
-        self.Entry_Xscale.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Xscale.bind('<Return>', self.Ctrl_recalculate)
         self.XSCALE.trace_variable("w", self.Entry_Xscale_Callback)
         self.Label_Xscale_ToolTip = ToolTip(self.Label_Xscale,
                                             text='Scaling factor for the width of characters.')
@@ -304,7 +300,7 @@ class TextFontProperties(MainWindowWidget):
         self.Label_Cspace_u = Label(self.cspace_frame, text="%", width=w_units, anchor=W)
         self.Entry_Cspace = Entry(self.cspace_frame, width=w_entry)
         self.Entry_Cspace.configure(textvariable=self.CSPACE)
-        self.Entry_Cspace.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Cspace.bind('<Return>', self.Ctrl_recalculate)
         self.CSPACE.trace_variable("w", self.Entry_Cspace_Callback)
         self.Label_Cspace_ToolTip = ToolTip(self.Label_Cspace,
                                             text='Character spacing as a percent of character width.')
@@ -314,7 +310,7 @@ class TextFontProperties(MainWindowWidget):
         self.Label_Wspace_u = Label(self.wspace_frame, text="%", width=w_units, anchor=W)
         self.Entry_Wspace = Entry(self.wspace_frame, width=w_entry)
         self.Entry_Wspace.configure(textvariable=self.WSPACE)
-        self.Entry_Wspace.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Wspace.bind('<Return>', self.Ctrl_recalculate)
         self.WSPACE.trace_variable("w", self.Entry_Wspace_Callback)
         self.Label_Wspace_ToolTip = ToolTip(self.Label_Wspace,
                                             text='Width of the space character. \
@@ -324,7 +320,7 @@ class TextFontProperties(MainWindowWidget):
         self.Label_Lspace = Label(self.lspace_frame, text="Line Spacing", width=w_label, anchor=E)
         self.Entry_Lspace = Entry(self.lspace_frame, width=w_entry)
         self.Entry_Lspace.configure(textvariable=self.LSPACE)
-        self.Entry_Lspace.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Lspace.bind('<Return>', self.Ctrl_recalculate)
         self.LSPACE.trace_variable("w", self.Entry_Lspace_Callback)
         self.Label_Lspace_ToolTip = ToolTip(self.Label_Lspace,
                                             text='The vertical spacing between lines of text. This is a multiple of the text height previously input. \
@@ -385,12 +381,12 @@ class TextFontProperties(MainWindowWidget):
 
     def check_all_variables(self, new):
         error_cnt = \
-            self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
-            self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
-            self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new) + \
-            self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), new) + \
-            self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), new) + \
-            self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), new)
+            self.Ctrl_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
+            self.Ctrl_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
+            self.Ctrl_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new) + \
+            self.Ctrl_entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), new) + \
+            self.Ctrl_entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), new) + \
+            self.Ctrl_entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self):
@@ -404,79 +400,79 @@ class TextFontProperties(MainWindowWidget):
         try:
             value = float(self.YSCALE.get())
             if value <= 0.0:
-                self.statusMessage.set(" Height should be greater than 0 ")
+                self.Ctrl_status_message.set(" Height should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Yscale_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale')
+        self.Ctrl_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale')
 
     def Entry_Xscale_Check(self):
         try:
             value = float(self.XSCALE.get())
             if value <= 0.0:
-                self.statusMessage.set(" Width should be greater than 0 ")
+                self.Ctrl_status_message.set(" Width should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Xscale_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale')
+        self.Ctrl_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale')
 
     def Entry_Sthick_Check(self):
         try:
             value = float(self.STHICK.get())
             if value < 0.0:
-                self.statusMessage.set(" Thickness should be greater than 0 ")
+                self.Ctrl_status_message.set(" Thickness should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Sthick_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness')
+        self.Ctrl_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness')
 
     def Entry_Lspace_Check(self):
         try:
             value = float(self.LSPACE.get())
             if value < 0.0:
-                self.statusMessage.set(" Line space should be greater than or equal to 0 ")
+                self.Ctrl_status_message.set(" Line space should be greater than or equal to 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Lspace_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), setting='line_space')
+        self.Ctrl_entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), setting='line_space')
 
     def Entry_Cspace_Check(self):
         try:
             value = float(self.CSPACE.get())
             if value < 0.0:
-                self.statusMessage.set(" Character space should be greater than or equal to 0 ")
+                self.Ctrl_status_message.set(" Character space should be greater than or equal to 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Cspace_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), setting='char_space')
+        self.Ctrl_entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), setting='char_space')
 
     def Entry_Wspace_Check(self):
         try:
             value = float(self.WSPACE.get())
             if value < 0.0:
-                self.statusMessage.set(" Word space should be greater than or equal to 0 ")
+                self.Ctrl_status_message.set(" Word space should be greater than or equal to 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Wspace_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), setting='word_space')
+        self.Ctrl_entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), setting='word_space')
 
 
 class TextPosition(MainWindowWidget):
@@ -514,14 +510,14 @@ class TextPosition(MainWindowWidget):
         self.Label_Tangle_u = Label(self.tangle_frame, text="deg", width=w_units)
         self.Entry_Tangle = Entry(self.tangle_frame, width=w_entry)
         self.Entry_Tangle.configure(textvariable=self.TANGLE)
-        self.Entry_Tangle.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Tangle.bind('<Return>', self.Ctrl_recalculate)
         self.TANGLE.trace_variable("w", self.Entry_Tangle_Callback)
         self.Label_Tangle_ToolTip = ToolTip(self.Label_Tangle, text='Rotation of the text from horizontal.')
 
         self.justify_frame = Frame(self)
         self.Label_Justify = Label(self.justify_frame, text="Justify", width=w_label, anchor=E)
         self.Justify_OptionMenu = OptionMenu(self.justify_frame, self.justify, "Left", "Center",
-                                             "Right", command=self.Recalculate_RQD_Click)
+                                             "Right", command=self.Ctrl_recalculate_required)
         self.Label_Justify_ToolTip = ToolTip(self.Label_Justify,
                                              text='Justify determins how to align multiple lines of text. Left side, Right side or Centered.')
         self.justify.trace_variable("w", self.Entry_justify_Callback)
@@ -530,7 +526,7 @@ class TextPosition(MainWindowWidget):
         self.Label_Origin = Label(self.origin_frame, text="Origin", width=w_label, anchor=E)
         self.Origin_OptionMenu = OptionMenu(self.origin_frame, self.origin, "Top-Left", "Top-Center", "Top-Right", "Mid-Left",
                                             "Mid-Center", "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default",
-                                            command=self.Recalculate_RQD_Click)
+                                            command=self.Ctrl_recalculate_required)
         self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
                                             text='Origin determins where the X and Y zero position is located relative to the engraving.')
         self.origin.trace_variable("w", self.Entry_origin_Callback)
@@ -580,7 +576,7 @@ class TextPosition(MainWindowWidget):
 
     def check_all_variables(self, new):
         error_cnt = \
-            self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), new)
+            self.Ctrl_entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), new)
         return error_cnt
 
     # Text Position and Orientation callbacks
@@ -589,31 +585,31 @@ class TextPosition(MainWindowWidget):
         try:
             value = float(self.TANGLE.get())
             if value <= -360.0 or value >= 360.0:
-                self.statusMessage.set(" Angle should be between -360 and 360 ")
+                self.Ctrl_status_message.set(" Angle should be between -360 and 360 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Tangle_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), setting='text_angle')
-        self.Recalc_RQD()
+        self.Ctrl_entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), setting='text_angle')
+        self.Ctrl_recalculate_required()
 
     def Entry_justify_Callback(self, varName, index, mode):
         self.settings.set('justify', self.justify.get())
-        self.Recalc_RQD()
+        self.Ctrl_recalculate_required()
 
     def Entry_origin_Callback(self, varName, index, mode):
         self.settings.set('origin', self.origin.get())
-        self.Recalc_RQD()
+        self.Ctrl_recalculate_required()
 
     def Entry_flip_Callback(self, varName, index, mode):
         self.settings.set('flip', self.flip.get())
-        self.Recalc_RQD()
+        self.Ctrl_recalculate_required()
 
     def Entry_mirror_Callback(self, varName, index, mode):
         self.settings.set('mirror', self.mirror.get())
-        self.Recalc_RQD()
+        self.Ctrl_recalculate_required()
 
 
 class TextOnCircle(MainWindowWidget):
@@ -646,7 +642,7 @@ class TextOnCircle(MainWindowWidget):
         self.Label_Tradius_u = Label(self.tradius_frame, textvariable=self.units, anchor=W)
         self.Entry_Tradius = Entry(self.tradius_frame, width=w_entry)
         self.Entry_Tradius.configure(textvariable=self.TRADIUS)
-        self.Entry_Tradius.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Tradius.bind('<Return>', self.Ctrl_recalculate)
         self.TRADIUS.trace_variable("w", self.Entry_Tradius_Callback)
         self.Label_Tradius_ToolTip = ToolTip(self.Label_Tradius,
                                              text='Circle radius is the radius of the circle that the text in the input box is placed on. \
@@ -696,7 +692,7 @@ class TextOnCircle(MainWindowWidget):
 
     def check_all_variables(self, new):
         error_cnt = \
-            self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), new)
+            self.Ctrl_entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
@@ -708,22 +704,22 @@ class TextOnCircle(MainWindowWidget):
         try:
             value = float(self.TRADIUS.get())
             if value < 0.0:
-                self.statusMessage.set(" Radius should be greater than or equal to 0 ")
+                self.Ctrl_status_message.set(" Radius should be greater than or equal to 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Tradius_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), setting='text_radius')
+        self.Ctrl_entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), setting='text_radius')
 
     def Entry_outer_Callback(self, varName, index, mode):
         self.settings.set('outer', self.outer.get())
-        self.Recalc_RQD()
+        self.Ctrl_recalculate_required()
 
     def Entry_upper_Callback(self, varName, index, mode):
         self.settings.set('upper', self.upper.get())
-        self.Recalc_RQD()
+        self.Ctrl_recalculate_required()
 
 
 class GCodeProperties(MainWindowWidget):
@@ -763,7 +759,7 @@ class GCodeProperties(MainWindowWidget):
         self.Label_Feed_u = Label(self.feed_frame, textvariable=self.funits, width=w_units, anchor=W)
         self.Entry_Feed = Entry(self.feed_frame, width=w_entry)
         self.Entry_Feed.configure(textvariable=self.FEED)
-        self.Entry_Feed.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Feed.bind('<Return>', self.Ctrl_recalculate)
         self.FEED.trace_variable("w", self.Entry_Feed_Callback)
         self.Label_Feed_ToolTip = ToolTip(self.Label_Feed,
                                           text='Specify the tool feed rate that is output in the g-code output file.')
@@ -773,7 +769,7 @@ class GCodeProperties(MainWindowWidget):
         self.Label_Plunge_u = Label(self.plunge_frame, textvariable=self.funits, width=w_units, anchor=W)
         self.Entry_Plunge = Entry(self.plunge_frame, width=w_entry)
         self.Entry_Plunge.configure(textvariable=self.PLUNGE)
-        self.Entry_Plunge.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Plunge.bind('<Return>', self.Ctrl_recalculate)
         self.PLUNGE.trace_variable("w", self.Entry_Plunge_Callback)
         self.Label_Plunge_ToolTip = ToolTip(self.Label_Plunge,
                                             text='Plunge Rate sets the feed rate for vertical moves into the material being cut.\n \
@@ -784,7 +780,7 @@ class GCodeProperties(MainWindowWidget):
         self.Label_Zsafe_u = Label(self.zsafe_frame, textvariable=self.units, width=w_units, anchor=W)
         self.Entry_Zsafe = Entry(self.zsafe_frame, width=w_entry)
         self.Entry_Zsafe.configure(textvariable=self.ZSAFE)
-        self.Entry_Zsafe.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Zsafe.bind('<Return>', self.Ctrl_recalculate)
         self.ZSAFE.trace_variable("w", self.Entry_Zsafe_Callback)
         self.Label_Zsafe_ToolTip = ToolTip(self.Label_Zsafe,
                                            text='Z location that the tool will be sent to prior to any rapid moves.')
@@ -794,7 +790,7 @@ class GCodeProperties(MainWindowWidget):
         self.Label_Zcut_u = Label(self.zcut_frame, textvariable=self.units, width=w_units, anchor=W)
         self.Entry_Zcut = Entry(self.zcut_frame, width=w_entry)
         self.Entry_Zcut.configure(textvariable=self.ZCUT)
-        self.Entry_Zcut.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Zcut.bind('<Return>', self.Ctrl_recalculate)
         self.ZCUT.trace_variable("w", self.Entry_Zcut_Callback)
         self.Label_Zcut_ToolTip = ToolTip(self.Label_Zcut,
                                           text='Depth of the engraving cut. This setting has no effect when the v-carve option is selected.')
@@ -843,10 +839,10 @@ class GCodeProperties(MainWindowWidget):
             self.funits.set('mm/min')
 
     def check_all_variables(self, new):
-        error_cnt = self.entry_set(self.Entry_Feed, self.Entry_Feed_Check(), new) + \
-            self.entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), new) + \
-            self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), new) + \
-            self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), new)
+        error_cnt = self.Ctrl_entry_set(self.Entry_Feed, self.Entry_Feed_Check(), new) + \
+                    self.Ctrl_entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), new) + \
+                    self.Ctrl_entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), new) + \
+                    self.Ctrl_entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
@@ -861,27 +857,27 @@ class GCodeProperties(MainWindowWidget):
         try:
             value = float(self.FEED.get())
             if value <= 0.0:
-                self.statusMessage.set(" Feed should be greater than 0.0 ")
+                self.Ctrl_status_message.set(" Feed should be greater than 0.0 ")
                 return INV
         except:
             return NAN
         return NOR
 
     def Entry_Feed_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Feed, self.Entry_Feed_Check(), setting='feedrate')
+        self.Ctrl_entry_set(self.Entry_Feed, self.Entry_Feed_Check(), setting='feedrate')
 
     def Entry_Plunge_Check(self):
         try:
             value = float(self.PLUNGE.get())
             if value < 0.0:
-                self.statusMessage.set(" Plunge rate should be greater than or equal to 0.0 ")
+                self.Ctrl_status_message.set(" Plunge rate should be greater than or equal to 0.0 ")
                 return INV
         except:
             return NAN
         return NOR
 
     def Entry_Plunge_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), setting='plunge_rate')
+        self.Ctrl_entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), setting='plunge_rate')
 
     def Entry_Zsafe_Check(self):
         try:
@@ -891,7 +887,7 @@ class GCodeProperties(MainWindowWidget):
         return NOR
 
     def Entry_Zsafe_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), setting='zsafe')
+        self.Ctrl_entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), setting='zsafe')
 
     def Entry_Zcut_Check(self):
         try:
@@ -901,13 +897,13 @@ class GCodeProperties(MainWindowWidget):
         return NOR
 
     def Entry_Zcut_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
+        self.Ctrl_entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
 
     def Entry_cut_type_Callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
         self.configure_cut_type()
-        self.Ctrl_set_menu_cut_type()
-        self.Recalc_RQD()
+        self.Ctrl_cut_type_changed()
+        self.Ctrl_recalculate_required()
 
 
 class FontFiles(MainWindowWidget):
@@ -921,7 +917,7 @@ class FontFiles(MainWindowWidget):
         self.current_input_file = StringVar()
 
         # Gui callback
-        self.readFontFile = gui.readFontFile
+        self.Ctrl_read_font_file = gui.readFontFile
 
         self.initialise_variables()
         self.create_widgets()
@@ -993,7 +989,7 @@ class FontFiles(MainWindowWidget):
 
     def Entry_fontdex_Callback(self, varName, index, mode):
         self.settings.set('fontdex', self.fontdex.get())
-        self.Recalc_RQD()
+        self.Ctrl_recalculate_required()
 
     def Entry_fontdir_Callback(self, varName, index, mode):
         self.Listbox_1.delete(0, END)
@@ -1015,8 +1011,8 @@ class FontFiles(MainWindowWidget):
 
         self.settings.set('fontfile', self.fontfile.get())
         self.current_input_file.set(self.fontfile.get())
-        self.readFontFile()
-        self.Recalc_RQD()
+        self.Ctrl_read_font_file()
+        self.Ctrl_recalculate_required()
 
     def Fontdir_Click(self):
         win_id = self.grab_current()
@@ -1035,8 +1031,8 @@ class FontFiles(MainWindowWidget):
 
         self.settings.set('fontfile', self.fontfile.get())
         self.current_input_file.set(self.fontfile.get())
-        self.readFontFile()
-        self.do_it()
+        self.Ctrl_read_font_file()
+        self.Ctrl_recalculate()
 
     def Listbox_Key_Up(self, event):
         try:
@@ -1052,8 +1048,8 @@ class FontFiles(MainWindowWidget):
 
         self.settings.set('fontfile', self.fontfile.get())
         self.current_input_file.set(self.fontfile.get())
-        self.readFontFile()
-        self.do_it()
+        self.Ctrl_read_font_file()
+        self.Ctrl_recalculate()
 
     def Listbox_Key_Down(self, event):
         try:
@@ -1069,8 +1065,8 @@ class FontFiles(MainWindowWidget):
 
         self.settings.set('fontfile', self.fontfile.get())
         self.current_input_file.set(self.fontfile.get())
-        self.readFontFile()
-        self.do_it()
+        self.Ctrl_read_font_file()
+        self.Ctrl_recalculate()
 
 
 class ImageProperties(MainWindowWidget):
@@ -1119,7 +1115,7 @@ class ImageProperties(MainWindowWidget):
         self.Label_Yscale_pct = Label(self.yscale_frame, text="%", width=w_units, anchor=W)
         self.Entry_Yscale = Entry(self.yscale_frame, width=w_entry)
         self.Entry_Yscale.configure(textvariable=self.YSCALE)
-        self.Entry_Yscale.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Yscale.bind('<Return>', self.Ctrl_recalculate)
         self.YSCALE.trace_variable("w", self.Entry_Yscale_Callback)
 
         self.sthick_frame = Frame(self)
@@ -1127,7 +1123,7 @@ class ImageProperties(MainWindowWidget):
         self.Label_Sthick_u = Label(self.sthick_frame, textvariable=self.units, width=w_units, anchor=W)
         self.Entry_Sthick = Entry(self.sthick_frame, width=w_entry)
         self.Entry_Sthick.configure(textvariable=self.STHICK)
-        self.Entry_Sthick.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Sthick.bind('<Return>', self.Ctrl_recalculate)
         self.STHICK.trace_variable("w", self.Entry_Sthick_Callback)
         self.Label_Sthick_ToolTip = ToolTip(self.Label_Sthick,
                                             text='Thickness or width of engraved lines. \
@@ -1139,7 +1135,7 @@ class ImageProperties(MainWindowWidget):
         self.Label_Xscale_u = Label(self.xscale_frame, text="%", width=w_units, anchor=W)
         self.Entry_Xscale = Entry(self.xscale_frame, width=w_entry)
         self.Entry_Xscale.configure(textvariable=self.XSCALE)
-        self.Entry_Xscale.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Xscale.bind('<Return>', self.Ctrl_recalculate)
         self.XSCALE.trace_variable("w", self.Entry_Xscale_Callback)
         self.Label_Xscale_ToolTip = ToolTip(self.Label_Xscale,
                                             text='Scaling factor for the image width.')
@@ -1191,12 +1187,12 @@ class ImageProperties(MainWindowWidget):
 
     def check_all_variables(self, new):
         error_cnt = \
-            self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
-            self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
-            self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new)
+            self.Ctrl_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
+            self.Ctrl_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
+            self.Ctrl_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new)
         return error_cnt
 
-    def scale_linear_inputs(self):
+    def scale_linear_inputs(self, factor=1):
         self.YSCALE.set('%.3g' % self.settings.get('yscale'))
         self.STHICK.set('%.3g' % self.settings.get('line_thickness'))
 
@@ -1221,57 +1217,47 @@ class ImageProperties(MainWindowWidget):
 
         self.settings.set('yscale', self.YSCALE.get())
 
-        self.menu_View_Refresh()
-        self.Recalc_RQD()
+        self.Ctrl_refresh()
+        self.Ctrl_recalculate_required()
 
     def Entry_Yscale_Check(self):
         try:
             value = float(self.YSCALE.get())
             if value <= 0.0:
-                self.statusMessage.set(" Height should be greater than 0 ")
+                self.Ctrl_status_message.set(" Height should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Yscale_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale')
+        self.Ctrl_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale')
 
     def Entry_Xscale_Check(self):
         try:
             value = float(self.XSCALE.get())
             if value <= 0.0:
-                self.statusMessage.set(" Width should be greater than 0 ")
+                self.Ctrl_status_message.set(" Width should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Xscale_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale')
+        self.Ctrl_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale')
 
     def Entry_Sthick_Check(self):
         try:
             value = float(self.STHICK.get())
             if value < 0.0:
-                self.statusMessage.set(" Thickness should be greater than 0 ")
+                self.Ctrl_status_message.set(" Thickness should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Sthick_Callback(self, varName, index, mode):
-        self.entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness')
-
-    def Entry_Tangle_Check(self):
-        try:
-            value = float(self.TANGLE.get())
-            if value <= -360.0 or value >= 360.0:
-                self.statusMessage.set(" Angle should be between -360 and 360 ")
-                return INV
-        except:
-            return NAN
-        return OK
+        self.Ctrl_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness')
 
 
 class ImagePosition(TextPosition):
@@ -1292,7 +1278,7 @@ class ImagePosition(TextPosition):
         self.Label_Tangle_u = Label(self.tangle_frame, text="deg", width=w_units, anchor=W)
         self.Entry_Tangle = Entry(self.tangle_frame, width=w_entry)
         self.Entry_Tangle.configure(textvariable=self.TANGLE)
-        self.Entry_Tangle.bind('<Return>', self.Recalculate_Click)
+        self.Entry_Tangle.bind('<Return>', self.Ctrl_recalculate)
         self.TANGLE.trace_variable("w", self.Entry_Tangle_Callback)
         self.Label_Tangle_ToolTip = ToolTip(self.Label_Tangle,
                                             text='Rotation of the image from horizontal.')
@@ -1301,7 +1287,7 @@ class ImagePosition(TextPosition):
         self.Label_Origin = Label(self.origin_frame, text="Origin", width=w_label, anchor=E)
         self.Origin_OptionMenu = OptionMenu(self.origin_frame, self.origin, "Top-Left", "Top-Center", "Top-Right", "Mid-Left",
                                             "Mid-Center", "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default",
-                                            command=self.Recalculate_RQD_Click)
+                                            command=self.Ctrl_recalculate_required)
         self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
                                             text='Origin determines where the X and Y zero position is located relative to the engraving.')
         self.origin.trace_variable("w", self.Entry_origin_Callback)
@@ -1451,16 +1437,12 @@ class MainWindowTextRight(Frame):
 
         # GUI callbacks
         self.entry_set = gui.entry_set
-        self.Recalculate_Click = gui.Recalculate_Click
-        self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
-        self.recalculate_RQD_Nocalc = gui.recalculate_RQD_Nocalc
-        self.V_Carve_Calc_Click = gui.V_Carve_Calc_Click
-        self.Recalc_RQD = gui.Recalc_RQD
-        self.menu_View_Refresh = gui.menu_View_Refresh
-        self.readFontFile = gui.readFontFile
-        self.do_it = gui.do_it
-
-        self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
+        self.Ctrl_recalculate = gui.Recalc_RQD
+        self.Ctrl_recalculate_required = gui.Recalc_RQD
+        self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
+        self.Ctrl_refresh = gui.menu_View_Refresh
+        self.CTrl_read_font_file = gui.readFontFile
+        self.Ctrl_cut_type_changed = gui.Ctrl_set_menu_cut_type
 
         self._initialise_variables()
         self.create_widgets(gui, settings)
@@ -1481,7 +1463,7 @@ class MainWindowTextRight(Frame):
         self.separator2 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
         self.separator3 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
 
-        self.V_Carve_Calc = Button(self, text="Calc V-Carve", command=self.V_Carve_Calc_Click)
+        self.V_Carve_Calc = Button(self, text="Calc V-Carve", command=self.Ctrl_calculate_v_carve)
 
         self.Radio_Cut_E = Radiobutton(self, text="Engrave", value="engrave", anchor=W)
         self.Radio_Cut_E.configure(variable=self.cut_type)
@@ -1533,7 +1515,7 @@ class MainWindowTextRight(Frame):
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
         self.configure_cut_type()
-        self.set_menu_cut_type()
+        self.Ctrl_cut_type_changed()
 
 
 class MainWindowImageLeft(Frame):
@@ -1551,12 +1533,11 @@ class MainWindowImageLeft(Frame):
 
         # GUI callbacks
         self.entry_set = gui.entry_set
-        self.Recalculate_Click = gui.Recalculate_Click
-        self.Recalculate_RQD_Click = gui.Recalculate_RQD_Click
-        self.V_Carve_Calc_Click = gui.V_Carve_Calc_Click
-        self.Recalc_RQD = gui.Recalc_RQD
-        self.menu_View_Refresh = gui.menu_View_Refresh
-        self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
+        self.Ctrl_recalculate = gui.Recalculate_Click
+        self.Ctrl_recalculate_required = gui.Recalc_RQD
+        self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
+        self.Ctrl_refresh = gui.menu_View_Refresh
+        self.CTrl_cut_type_changed = gui.Ctrl_set_menu_cut_type
 
         self.initialise_variables()
         self.create_widgets(gui, settings)
@@ -1582,8 +1563,8 @@ class MainWindowImageLeft(Frame):
 
         self.button_frame = Frame(self)
         self.Recalculate = Button(self.button_frame, text="Recalculate")
-        self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
-        self.V_Carve_Calc = Button(self.button_frame, text="Calc V-Carve", command=self.V_Carve_Calc_Click)
+        self.Recalculate.bind("<ButtonRelease-1>", self.Ctrl_recalculate)
+        self.V_Carve_Calc = Button(self.button_frame, text="Calc V-Carve", command=self.Ctrl_calculate_v_carve)
 
         self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
@@ -1644,4 +1625,4 @@ class MainWindowImageLeft(Frame):
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
         self.configure_cut_type()
-        self.set_menu_cut_type()
+        self.CTrl_cut_type_changed()

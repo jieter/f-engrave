@@ -405,7 +405,7 @@ class Gui(Frame):
                 pass
         self.Quit_Click(None)
 
-    def Recalculate_Click(self, event):
+    def Recalculate_Click(self, event=None):
         self.do_it()
 
     def Settings_ReLoad_Click(self, event, arg1="", arg2=""):
@@ -1190,19 +1190,13 @@ class Gui(Frame):
         else:
             self.segID.append(self.PreviewCanvas.create_oval(x1, y1, x2, y2, outline=color, fill=color, width=0))
 
-    def recalculate_RQD_Nocalc(self, event):
+    def recalculate_RQD_Nocalc(self, event=None):
         self.statusbar.configure(bg='yellow')
         self.input.configure(bg='yellow')
         self.statusMessage.set(" Recalculation required.")
 
-    def Recalculate_RQD_Click(self, event):
-        self.statusbar.configure(bg='yellow')
-        self.statusMessage.set(" Recalculation required.")
-        self.do_it()
-
-    def Recalc_RQD(self):
-        self.statusbar.configure(bg='yellow')
-        self.statusMessage.set(" Recalculation required.")
+    def Recalc_RQD(self, event=None):
+        self.recalculate_RQD_Nocalc(event)
         self.do_it()
 
     def plot_toolpath(self):
