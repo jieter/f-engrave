@@ -389,7 +389,7 @@ class TextFontProperties(MainWindowWidget):
             self.Ctrl_entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), new)
         return error_cnt
 
-    def scale_linear_inputs(self):
+    def scale_linear_inputs(self, factor=1):
         self.YSCALE.set('%.3g' % self.settings.get('yscale'))
         self.STHICK.set('%.3g' % self.settings.get('line_thickness'))
         self.TRADIUS.set('%.3g' % self.settings.get('text_radius'))
@@ -1351,7 +1351,7 @@ class MainWindowTextLeft(Frame):
 
         self._initialise_variables()
         self.create_widgets(gui, settings)
-        self.configure()
+        self.master_configure()
 
     def _initialise_variables(self):
         self.units.set(self.settings.get('units'))
@@ -1372,7 +1372,7 @@ class MainWindowTextLeft(Frame):
 
         self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
-    def configure(self):
+    def master_configure(self):
         self.text_font_properties.master_configure()
         self.text_position.master_configure()
         self.text_on_circle.master_configure()

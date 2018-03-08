@@ -172,7 +172,7 @@ class Engrave(object):
         v_inc = 1
         v_start = 0
         v_end = self.number_of_segments()
-        v_flop, i_x1, i_y1, i_x2, i_y2 = self.get_v_flop()
+        v_flop = self.get_v_flop()
         if v_flop:
             # reverse order
             v_inc = -1
@@ -184,11 +184,14 @@ class Engrave(object):
         for v_index in xrange(v_start, v_end, v_inc):
             curr_cnt += 1
             line = self.coords[v_index]
-            x1 = line[i_x1]
-            y1 = line[i_y1]
-            x2 = line[i_x2]
-            y2 = line[i_y2]
-            length = hypot((x2 - x1), (y2 - y1))
+            x1 = line[0]
+            y1 = line[1]
+            x2 = line[2]
+            y2 = line[3]
+            if v_flop:
+                length = hypot((x1 - x2), (y1 - y2))
+            else:
+                length = hypot((x2 - x1), (y2 - y1))
             if clean:
                 if self.clean_segment[curr_cnt] != 0:
                     total_length += length
@@ -200,13 +203,9 @@ class Engrave(object):
     def v_carve(self, clean=False):
 
         xN, yN, xPartitionLength, yPartitionLength = self.setup_grid_partitions(clean)
-        # TODO pass as parameter (e.g. to find_max_circle) instead
-        self.xPartitionLength = xPartitionLength
-        self.yPartitionLength = yPartitionLength
+        self.determine_active_partitions(xN, yN, xPartitionLength, yPartitionLength, clean)
 
-        self.determine_active_partitions(xN, yN, clean)
-
-        return self.make_vcarve_toolpath(clean)
+        return self.make_vcarve_toolpath(xPartitionLength, yPartitionLength, clean)
 
     def _calc_rmax(self, rbit, clean):
         clean_dia = self.settings.get('clean_dia')
@@ -215,7 +214,7 @@ class Engrave(object):
         else:
             return rbit
 
-    def make_vcarve_toolpath(self, clean):
+    def make_vcarve_toolpath(self, xPartitionLength, yPartitionLength, clean):
 
         # set variable for first point in loop
         xa = 9999
@@ -268,7 +267,7 @@ class Engrave(object):
         calc_flag = 1
         v_index = -1
         v_inc = 1
-        v_flop, i_x1, i_y1, i_x2, i_y2 = self.get_v_flop()
+        v_flop = self.get_v_flop()
         if v_flop:
             v_index = self.number_of_segments()
             v_inc = -1
@@ -307,11 +306,19 @@ class Engrave(object):
                 break
 
             v_index += v_inc
-            New_Loop = 0
-            x1 = self.coords[v_index][i_x1]
-            y1 = self.coords[v_index][i_y1]
-            x2 = self.coords[v_index][i_x2]
-            y2 = self.coords[v_index][i_y2]
+            new_loop = False
+
+            if v_flop:
+                x1 = self.coords[v_index][2]  # x2
+                y1 = self.coords[v_index][3]  # y2
+                x2 = self.coords[v_index][0]  # x1
+                y2 = self.coords[v_index][1]  # y1
+            else:
+                x1 = self.coords[v_index][0]
+                y1 = self.coords[v_index][1]
+                x2 = self.coords[v_index][2]
+                y2 = self.coords[v_index][3]
+
             char_num = int(self.coords[v_index][5])
             dx = x2 - x1
             dy = y2 - y1
@@ -339,7 +346,7 @@ class Engrave(object):
 
             # another loop, or another character
             if fabs(x1 - x0) > Zero or fabs(y1 - y0) > Zero or char_num != char_num0:
-                New_Loop = 1
+                new_loop = True
                 loop_cnt += 1
 
                 xa = float(x1)
@@ -366,7 +373,7 @@ class Engrave(object):
 
             if delta > float(v_step_corner):
                 # add sub-steps around corner
-                self.add_substeps(CHK_STRING, char_num, clean, curr, dangle, delta, loop_cnt, rbit, rmax, theta, x1, y1)
+                self.add_substeps(CHK_STRING, char_num, clean, curr, dangle, delta, loop_cnt, rbit, rmax, theta, x1, y1, xPartitionLength, yPartitionLength)
 
             theta = phi
             x0 = x2
@@ -383,7 +390,7 @@ class Engrave(object):
 
             # this makes sure the first cut start at the begining of the first segment
             cnt = 0
-            if New_Loop == 1 and bit_angle != 0 and not_b_carve:
+            if new_loop and bit_angle != 0 and not_b_carve:
                 cnt = -1
 
             seg_sin = dy / Lseg
@@ -395,7 +402,7 @@ class Engrave(object):
                 xpt = x1 + dxpt * cnt
                 ypt = y1 + dypt * cnt
 
-                rout = self.find_max_circle(xpt, ypt, rmax, char_num, seg_sin, seg_cos, 0, CHK_STRING)
+                rout = self.find_max_circle(xPartitionLength, yPartitionLength, xpt, ypt, rmax, char_num, seg_sin, seg_cos, 0, CHK_STRING)
                 # make the first cut drive down at an angle instead of straight down plunge
                 if cnt == 0 and not_b_carve:
                     rout = 0.0
@@ -405,7 +412,7 @@ class Engrave(object):
                 if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
                     self.plot_progress_callback(normv, "blue", rv)
 
-                if New_Loop == 1 and cnt == 1:
+                if new_loop and cnt == 1:
                     xpta = xpt
                     ypta = ypt
                     phi2a = phi2
@@ -426,7 +433,7 @@ class Engrave(object):
                 elif delta > v_step_corner:
                     # add substeps around corner
                     self.add_substeps(CHK_STRING, char_num, clean, curr, dangle, delta, loop_cnt, rbit, rmax, theta,
-                                      xa, ya)
+                                      xa, ya, xPartitionLength, yPartitionLength)
                     normv, rv, clean_seg = self.record_v_carve_data(xpta, ypta, phi2a, rbit, routa, loop_cnt, clean)
                     self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
@@ -437,7 +444,7 @@ class Engrave(object):
 
         return done
 
-    def add_substeps(self, CHK_STRING, char_num, clean, curr, dangle, delta, loop_cnt, rbit, rmax, theta, x1, y1):
+    def add_substeps(self, CHK_STRING, char_num, clean, curr, dangle, delta, loop_cnt, rbit, rmax, theta, x1, y1, xPartitionLength, yPartitionLength):
         phisteps = max(int(floor((delta - 180) / dangle)), 2)
         step_phi = (delta - 180) / phisteps
         for pcnt in range(phisteps - 1):
@@ -445,23 +452,22 @@ class Engrave(object):
             sub_seg_cos = cos(sub_phi)
             sub_seg_sin = sin(sub_phi)
 
-            rout = self.find_max_circle(x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
+            rout = self.find_max_circle(xPartitionLength, yPartitionLength, x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, 1, CHK_STRING)
             normv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rbit, rout, loop_cnt, clean)
             self.clean_segment[curr] = bool(self.clean_segment[curr]) or bool(clean_seg)
 
             if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
                 self.plot_progress_callback(normv, "blue", rv)
 
-    def determine_active_partitions(self, xN, yN, clean):
+    def determine_active_partitions(self, xN, yN, xPartitionLength, yPartitionLength, clean):
         """
         Determine active partitions for each line segment
         """
-        xPartitionLength = self.xPartitionLength
-        yPartitionLength = self.yPartitionLength
-
         rbit = self.calc_vbit_radius()
         rmax = self._calc_rmax(rbit, clean)
+        minx, maxx, miny, maxy = self.image.get_bbox().tuple()
 
+        # for XY_R in self.coords:
         for curr, coords in enumerate(self.coords):
 
             XY_R = self.coords[curr][:]
@@ -469,8 +475,8 @@ class Engrave(object):
             y1_R = XY_R[1]
             x2_R = XY_R[2]
             y2_R = XY_R[3]
-            length = hypot((x2_R - x1_R), (y2_R - y1_R))
 
+            length = hypot((x2_R - x1_R), (y2_R - y1_R))
             R_R = length / 2 + rmax
             X_R = (x1_R + x2_R) / 2
             Y_R = (y1_R + y2_R) / 2
@@ -478,35 +484,33 @@ class Engrave(object):
             coded_index = []
 
             # find the local coordinates of the line segment ends
-            minx, maxx, miny, maxy = self.image.get_bbox().tuple()
-
-            x1_G = XY_R[0] - minx
-            y1_G = XY_R[1] - miny
-            x2_G = XY_R[2] - minx
-            y2_G = XY_R[3] - miny
+            x1_g = XY_R[0] - minx
+            y1_g = XY_R[1] - miny
+            x2_g = XY_R[2] - minx
+            y2_g = XY_R[3] - miny
 
             # find the grid box index for each line segment end
-            X1i = int(x1_G / xPartitionLength)
-            X2i = int(x2_G / xPartitionLength)
-            Y1i = int(y1_G / yPartitionLength)
-            Y2i = int(y2_G / yPartitionLength)
+            x1_i = int(x1_g / xPartitionLength)
+            x2_i = int(x2_g / xPartitionLength)
+            y1_i = int(y1_g / yPartitionLength)
+            y2_i = int(y2_g / yPartitionLength)
 
             # find the max/min grid box locations
-            Xindex_min = min(X1i, X2i)
-            Xindex_max = max(X1i, X2i)
-            Yindex_min = min(Y1i, Y2i)
-            Yindex_max = max(Y1i, Y2i)
+            Xindex_min = min(x1_i, x2_i)
+            Xindex_max = max(x1_i, x2_i)
+            Yindex_min = min(y1_i, y2_i)
+            Yindex_max = max(y1_i, y2_i)
 
             check_points = []
-            if Xindex_max > Xindex_min and abs(x2_G - x1_G) > Zero:
+            if Xindex_max > Xindex_min and abs(x2_g - x1_g) > Zero:
 
-                if Yindex_max > Yindex_min and abs(y2_G - y1_G) > Zero:
-                    check_points.append([X1i, Y1i])
-                    check_points.append([X2i, Y2i])
+                if Yindex_max > Yindex_min and abs(y2_g - y1_g) > Zero:
+                    check_points.append([x1_i, y1_i])
+                    check_points.append([x2_i, y2_i])
 
                     # Establish line equation variables: y=m*x+b
-                    m_G = (y2_G - y1_G) / (x2_G - x1_G)
-                    b_G = y1_G - m_G * x1_G
+                    m_G = (y2_g - y1_g) / (x2_g - x1_g)
+                    b_G = y1_g - m_G * x1_g
 
                     # Add check point in each partition in the range of X values
                     x_ind_check = Xindex_min + 1
@@ -547,15 +551,13 @@ class Engrave(object):
                     for j in range(max(yIndex - 1, 0), min(yN, yIndex + 2)):
                         coded_index.append(int(i + j * xN))
 
-            codedIndexSet = set(coded_index)
-
-            for thisCode in codedIndexSet:
-                thisIndex = thisCode
+            for thisIndex in coded_index:
                 line_R_appended = XY_R
                 line_R_appended.append(X_R)
                 line_R_appended.append(Y_R)
                 line_R_appended.append(R_R)
-                self.partition_list[int(thisIndex % xN)][int(thisIndex / xN)].append(line_R_appended)
+                idxq, idxr = divmod(thisIndex, xN)
+                self.partition_list[idxr][idxq].append(line_R_appended)
 
     def setup_grid_partitions(self, clean):
         """
@@ -623,7 +625,6 @@ class Engrave(object):
                         pass
 
                 elif self.settings.get('bit_shape') == "FLAT":
-                    # R = vbit_dia / 2.0
                     pass
 
                 else:
@@ -631,16 +632,15 @@ class Engrave(object):
 
         return vbit_dia / 2
 
-    # TODO refactor
-    def find_max_circle(self, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
+    def find_max_circle(self, xPartitionLength, yPartitionLength, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
         """
         Routine finds the maximum radius that can be placed in the position
         xpt,ypt without interfering with other line segments (rmin is max R LOL)
         """
         minx, maxx, miny, maxy = self.image.get_bbox().tuple()
 
-        xIndex = int((xpt - minx) / self.xPartitionLength)
-        yIndex = int((ypt - miny) / self.yPartitionLength)
+        xIndex = int((xpt - minx) / xPartitionLength)
+        yIndex = int((ypt - miny) / yPartitionLength)
 
         coords_check = []
         R_A = abs(rmin)
@@ -1147,7 +1147,7 @@ class Engrave(object):
 
     def clean_path_calc(self, bit_type="straight"):
 
-        v_flop = self.get_flop_status(clean=True)
+        v_flop = self.get_v_flop(clean=True)
         if v_flop:
             edge = 1
         else:
@@ -1271,6 +1271,8 @@ class Engrave(object):
                 x_old = x1
                 y_old = y1
                 loop_old = loop
+
+        return loop_cnt_out
 
     def vbit_toolpath(self, MAXD, Radjust, check_coords, clean_dia,
                       clean_step, loop_cnt_out, skip):
@@ -1472,7 +1474,7 @@ class Engrave(object):
 
         return Xclean_coords, Yclean_coords, clean_coords_out, loop_cnt_out
 
-    def get_flop_status(self, clean=False):
+    def get_v_flop(self, clean=False):
 
         v_flop = self.settings.get('v_flop')
 
@@ -1485,26 +1487,3 @@ class Engrave(object):
                 v_flop = not v_flop
 
         return v_flop
-
-    def get_v_flop(self, clean=False):
-        """
-        In case of reversed normals, some iterations traverse the coordinate list in reverse order,
-        with the indexes for x and y changed accordingly
-        :param clean: True indicates we are making a clean path
-        :return: v_flop: True indicates reverse order,
-         x_n and y_n are the applicable indices for the segments start and end point
-        """
-        v_flop = self.get_flop_status(clean)
-
-        if v_flop:
-            i_x1 = 2
-            i_y1 = 3
-            i_x2 = 0
-            i_y2 = 1
-        else:
-            i_x1 = 0
-            i_y1 = 1
-            i_x2 = 2
-            i_y2 = 3
-
-        return (v_flop, i_x1, i_y1, i_x2, i_y2)

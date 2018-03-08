@@ -540,14 +540,14 @@ class Gui(Frame):
             else:
                 bit_depth = 0
 
-            if settings.get('bit_shape') != "FLAT":
+            if settings.get('bit_shape') == "FLAT":
                 if depth_lim_in < 0.0:
-                    depth_limit = max(bit_depth, depth_lim_in)
+                    depth_limit = depth_lim_in
                 else:
                     depth_limit = bit_depth
             else:
                 if depth_lim_in < 0.0:
-                    depth_limit = depth_lim_in
+                    depth_limit = max(bit_depth, depth_lim_in)
                 else:
                     depth_limit = bit_depth
 
@@ -583,29 +583,31 @@ class Gui(Frame):
         if self.Check_All_Variables() > 0:
             return
 
-        width = 525
+        width = 600
         height = 60
         vcalc_status = Toplevel(width=width, height=height)
         # Use grab_set to prevent user input in the main window during calculations
         vcalc_status.grab_set()
-
-        self.statusbar2 = Label(vcalc_status, textvariable=self.statusMessage, bd=1, relief=FLAT, height=1, anchor=W)
-        self.statusbar2.place(x=130 + 12 + 12, y=6, width=350, height=30)
-        self.statusMessage.set("Starting Calculation")
-        self.statusbar.configure(bg='yellow')
-
-        self.stop_button = Button(vcalc_status, text="Stop Calculation")
-        self.stop_button.place(x=12, y=17, width=130, height=30)
-        self.stop_button.bind("<ButtonRelease-1>", self.Stop_Click)
-
-        self.Checkbutton_v_pplot = Checkbutton(vcalc_status, text="Plot During V-Carve Calculation", anchor=W)
-        self.Checkbutton_v_pplot.place(x=130 + 12 + 12, y=34, width=300, height=23)
-        self.Checkbutton_v_pplot.configure(variable=self.v_pplot)
-        self.Checkbutton_v_pplot.bind("<ButtonRelease-1>", self.v_pplot_Click)
-
         vcalc_status.resizable(0, 0)
         vcalc_status.title('Executing V-Carve')
         vcalc_status.iconname("F-Engrave")
+
+        self.stop_button = Button(vcalc_status, text="Stop Calculation")
+        self.stop_button.pack(side=LEFT, padx=10, pady=10)
+        self.stop_button.bind("<ButtonRelease-1>", self.Stop_Click)
+
+        status_frame = Frame(vcalc_status)
+        self.statusbar2 = Label(status_frame, textvariable=self.statusMessage, bd=1, relief=FLAT, anchor=W)
+        self.statusbar2.pack(side=TOP)
+        self.statusMessage.set("Starting Calculation")
+        self.statusbar.configure(bg='yellow')
+
+        self.Checkbutton_v_pplot = Checkbutton(status_frame, text="Plot During V-Carve Calculation", anchor=W)
+        self.Checkbutton_v_pplot.pack(side=TOP, fill=BOTH)
+        self.Checkbutton_v_pplot.configure(variable=self.v_pplot)
+        self.Checkbutton_v_pplot.bind("<ButtonRelease-1>", self.v_pplot_Click)
+
+        status_frame.pack(side=LEFT, padx=10, pady=10)
 
         try:
             vcalc_status.iconbitmap(bitmap="@emblem64")
@@ -635,25 +637,24 @@ class Gui(Frame):
 
         if self.engrave.number_of_clean_coords() == 0:
 
-            width = 525
-            height = 50
+            width = 550
+            height = 60
             vcalc_status = Toplevel(width=525, height=50)
+            vcalc_status.resizable(0, 0)
 
             # Use grab_set to prevent user input in the main window during calculations
             vcalc_status.grab_set()
-
-            self.statusbar2 = Label(vcalc_status, textvariable=self.statusMessage, bd=1, relief=FLAT, height=1)
-            self.statusbar2.place(x=130 + 12 + 12, y=12, width=350, height=30)
-            self.statusMessage.set("Starting Clean Calculation")
-            self.statusbar.configure(bg='yellow')
-
-            self.stop_button = Button(vcalc_status, text="Stop Calculation")
-            self.stop_button.place(x=12, y=12, width=130, height=30)
-            self.stop_button.bind("<ButtonRelease-1>", self.Stop_Click)
-
-            vcalc_status.resizable(0, 0)
             vcalc_status.title('Executing Clean Area Calculation')
             vcalc_status.iconname("F-Engrave")
+
+            self.stop_button = Button(vcalc_status, text="Stop Calculation")
+            self.stop_button.pack(side=LEFT, padx=10, pady=10)
+            self.stop_button.bind("<ButtonRelease-1>", self.Stop_Click)
+
+            self.statusbar2 = Label(vcalc_status, textvariable=self.statusMessage, bd=1, relief=FLAT)
+            self.statusbar2.pack(side=LEFT)
+            self.statusMessage.set("Starting Clean Calculation")
+            self.statusbar.configure(bg='yellow')
 
             try:
                 vcalc_status.iconbitmap(bitmap="@emblem64")
@@ -762,8 +763,8 @@ class Gui(Frame):
 
         if TYPE != '.CXF' and TYPE != '.TTF' and TYPE != '':
             if os.path.isfile(file_full):
-                self.input_type.set("image")
-                self.settings.set('input_type', self.input_type.get())
+                self.settings.set('input_type', "image")
+                self.Ctrl_set_menu_input_type()
 
         # TODO is this for backward compatibility?
         # if self.arc_fit.get() == "0":
@@ -796,7 +797,7 @@ class Gui(Frame):
 
         if self.initComplete:
             self.NGC_FILE = filename
-            self.menu_mode_change()
+            self.Ctrl_mode_change()
 
     def menu_File_Save_Settings_File(self):
 
@@ -1111,7 +1112,7 @@ class Gui(Frame):
         self.Ctrl_Fontdir_Click = self.mainwindow_text_right.fontdir_click
         self.Ctrl_check_all_variables = self.Ctrl_check_all_variables_text
 
-        self.mainwindow_text_left.configure()
+        self.mainwindow_text_left.master_configure()
         self.mainwindow_text_right.master_configure()
 
     # callbacks (wherein this Gui/App is the Controller)
@@ -1316,6 +1317,7 @@ class Gui(Frame):
                     else:
                         self.plot_circle((x1, y1), midx, midy, cszw, cszh, color, r, 1)
 
+            old = (0.0, 0.0)
             loop_old = -1
             rold = -1
             for XY in self.engrave.v_coords:
