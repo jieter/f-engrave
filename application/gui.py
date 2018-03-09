@@ -509,7 +509,7 @@ class Gui(Frame):
         win_id.destroy()
 
     def Stop_Click(self, event):
-        self.engrave.stop_calc()
+        self.engrave.stop_calculation()
 
     def v_pplot_Click(self, event):
         self.settings.set('v_pplot', self.v_pplot.get())
@@ -1416,11 +1416,16 @@ class Gui(Frame):
             self.statusMessage.set("No Font Characters Loaded")
             return
 
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+        else:
+            thickness = self.settings.get('line_thickness')
+
         self.text.set_font(self.font)
         self.text.set_char_space(self.settings.get('char_space'))
         self.text.set_line_space(self.settings.get('line_space'))
         self.text.set_word_space(self.settings.get('word_space'))
-        self.text.set_thickness(self.settings.get('line_thickness'))
+        self.text.set_thickness(thickness)
 
         # the text to be carved or engraved
         if self.batch.get():
@@ -1499,7 +1504,7 @@ class Gui(Frame):
                 # a G-code circle command is generated later (when not v-carving)
                 # For the circle to fit later on, the plot bounding box is adjusted with its radius
                 maxr = max(radius_in, self.text.get_max_radius())
-                thickness = self.settings.get('line_thickness')
+                # thickness = self.settings.get('line_thickness')
                 radius_plot = maxr + thickness / 2
                 minx = miny = -radius_plot
                 maxx = maxy = -minx
@@ -1545,8 +1550,13 @@ class Gui(Frame):
             self.statusMessage.set("No Image Loaded")
             return
 
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+        else:
+            thickness = self.settings.get('line_thickness')
+
         # reset the image coords (to avoid corruption, e.g. from a previous transformation)
-        self.image.set_thickness(self.settings.get('line_thickness'))
+        self.image.set_thickness(thickness)
         self.image.set_coords_from_strokes()
         self.engrave.set_image(self.image)
 
@@ -1555,13 +1565,12 @@ class Gui(Frame):
         flip = self.settings.get('flip')
         angle = self.settings.get('text_angle')
 
-        half = self.settings.get('line_thickness') / 2
         y_scale_in = self.settings.get('yscale')
         if self.settings.get('useIMGsize'):
             y_scale = y_scale_in / 100
         else:
             if self.image.get_height() > 0:
-                y_scale = (y_scale_in - half) / self.image.get_height()
+                y_scale = (y_scale_in - thickness) / (self.image.get_height() - thickness)
             else:
                 y_scale = 0.1
         x_scale = self.settings.get('xscale') * y_scale / 100

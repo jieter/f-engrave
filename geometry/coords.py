@@ -27,6 +27,7 @@ class MyImage(object):
 
     def set_thickness(self, thickness):
         self.thickness = thickness
+        self._set_bbox()
 
     def set_coords_from_strokes(self, strokes=[]):
 
