@@ -27,9 +27,7 @@ class GeneralSettings(object):
         self.Ctrl_recalculate = master.Recalculate_Click
         self.Ctrl_units_changed = master.Ctrl_Entry_units_var_Callback
         self.Ctrl_scale_changed = master.Ctrl_Scale_Linear_Inputs
-
-        # GUI Engraver callbacks
-        self.Ctrl_v_pplot_changed = master.engrave.refresh_v_pplot
+        self.Ctrl_v_pplot_changed = master.Ctrl_v_pplot_changed
 
         # General settings window
         self.width = 600
@@ -505,7 +503,7 @@ class GeneralSettings(object):
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
         self.settings.set('v_pplot', self.v_pplot.get())
-        self.Ctrl_v_pplot_changed()  # TODO only needed when plotting
+        self.Ctrl_v_pplot_changed()
 
     def Entry_Box_Callback(self, varName, index, mode):
         self.settings.set('plotbox', self.plotbox.get())

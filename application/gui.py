@@ -513,6 +513,11 @@ class Gui(Frame):
 
     def v_pplot_Click(self, event):
         self.settings.set('v_pplot', self.v_pplot.get())
+        self.Ctrl_v_pplot_changed()
+
+    def Ctrl_v_pplot_changed(self):
+        if self.v_pplot.get() != self.settings.get('v_pplot'):
+            self.v_pplot.set(self.settings.get('v_pplot'))
         self.engrave.refresh_v_pplot()
 
     # TODO calc_depth_limit in GCode writer too

@@ -5,13 +5,36 @@ from util import fmessage
 from geometry import *
 from geometry.pathsorter import sort_paths
 # from sortPaths import sort_paths
+# from findMaxCircle import find_max_circle as find_max_circle_CPP
 
 from writers import douglas
 # TODO How to import higher level package:
 # from settings import CUT_TYPE_VCARVE
 
-# TODO Use Toolbit objects
+# Python Performance profiling
+# https://zapier.com/engineering/profiling-python-boss/
+import cProfile
 
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        profile = cProfile.Profile()
+        try:
+            profile.enable()
+            result = func(*args, **kwargs)
+            profile.disable()
+            return result
+        finally:
+            profile.print_stats()
+    return profiled_func
+
+
+def get_number():
+    for x in xrange(5000000):
+        yield x
+
+
+# TODO Use Toolbit objects
 
 class Toolbit(object):
 
@@ -65,6 +88,7 @@ class Engrave(object):
 
         self.plot_progress_callback = None
         self.status_callback = None
+        self.callback_counter = 0
 
         self.settings = settings
         self.image = image
@@ -216,6 +240,7 @@ class Engrave(object):
         else:
             return rbit
 
+    # @do_cprofile
     def make_vcarve_toolpath(self, xPartitionLength, yPartitionLength, clean):
 
         # set variable for first point in loop
@@ -298,8 +323,10 @@ class Engrave(object):
                 MIN_TOTAL = -1
 
             if self.status_callback is not None:
-                msg = '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL)
-                self.status_callback(msg)
+                self.callback_counter += 1
+                if (self.v_pplot and not clean) or (self.callback_counter % 100) == 0:
+                    msg = '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL)
+                    self.status_callback(msg)
 
             if self.stop_calc:
                 self.stop_calc = False
@@ -655,6 +682,10 @@ class Engrave(object):
 
         return vbit_dia / 2
 
+    # def find_max_circle_CPP(self, xIndex, yIndex, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
+    #     rmax = find_max_circle_CPP(self.partition_list, xIndex, yIndex, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING)
+    #     return rmax
+
     def find_max_circle(self, xIndex, yIndex, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
         """
         Routine finds the maximum radius that can be placed in the position
@@ -662,6 +693,8 @@ class Engrave(object):
         """
         coords_check = []
         R_A = abs(rmin)
+        logic_full = False
+
         # Loop over active partitions for the current line segment
         for line_B in self.partition_list[xIndex][yIndex]:
             X_B = line_B[len(line_B) - 3]
@@ -1166,6 +1199,7 @@ class Engrave(object):
                                         0])
         return path_coords_out
 
+    # @do_cprofile
     def clean_path_calc(self, bit_type="straight"):
 
         v_flop = self.get_v_flop(clean=True)
