@@ -934,6 +934,6 @@ class Gcode:
         self.cuts.append([x, y, z])
 
     def safety(self):
-        '''Go to the 'safety' height at rapid speed'''
+        """Go to the 'safety' height at rapid speed"""
         self.flush()
         self.rapid(z=self.safetyheight)

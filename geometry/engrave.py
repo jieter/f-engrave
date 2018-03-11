@@ -107,7 +107,7 @@ class Engrave(object):
         self.stop_calc = False
 
     def init_coords(self):
-        # Path coords format: (x1, y1, x2, y2, line_cnt, char_cnt)
+        # Path coords format: (x1, y1, x2, y2, line_num, char_num)
         self.refresh_coords()
         self.v_coords = []
         self.clean_segment = []
@@ -131,7 +131,6 @@ class Engrave(object):
     def set_image(self, image):
         self.image = image
         self.init_coords()
-        # self.move_origin()
 
     def set_offset(self, x_offset=0, y_offset=0):
         self.xzero = x_offset
@@ -1269,8 +1268,7 @@ class Engrave(object):
             if bit_type == "straight":
                 MAXD = clean_dia
             else:
-                # MAXD = clean_dia * clean_step * 1.1  # fudge factor
-                MAXD = hypot(DX, DY) * 1.1  # fudge factor
+                MAXD = hypot(DX, DY) * 1.1  # fudge factor  # TODO
 
             if bit_type == "straight":
                 Xclean_coords, Yclean_coords, clean_coords_out, loop_cnt_out = \

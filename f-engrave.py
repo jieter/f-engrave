@@ -306,7 +306,7 @@ else:
     app = Gui(root, settings)
     app.master.title("F-Engrave v" + f_engrave_version())
     app.master.iconname("F-Engrave")
-    app.master.minsize(780, 540)
+    app.master.minsize(900, 600)
 
     app.f_engrave_init()
 

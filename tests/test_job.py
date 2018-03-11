@@ -115,7 +115,9 @@ class JobTest(unittest.TestCase):
     def test_vcarve(self):
         job = self._job_with_settings(
             ('default_text', 'V-Carve'),
+            ('fontfile', 'kochimincho.cxf'),
             ('cut_type', 'v-carve'),
+            ('yscale', '50'),
         )
         self._save_testfiles(job, 'vcarve')
 

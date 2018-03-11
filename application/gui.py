@@ -192,13 +192,12 @@ class Gui(Frame):
                     fileName, fileExtension = os.path.splitext(value)
                     TYPE = fileExtension.upper()
                     if TYPE == '.CXF' or TYPE == '.TTF':
-                        self.input_type.set('text')
+                        self.settings.set('input_type', 'text')
                         self.settings.set('fontdir', dirname)
                         self.settings.set('fontfile', os.path.basename(fileName) + fileExtension)
                     else:
-                        self.input_type.set('image')
+                        self.settings.set('input_type', 'image')
                         self.IMAGE_FILE = value
-                    self.settings.set('input_type', self.input_type.get())
                 else:
                     fmessage("File/Directory Not Found:\t%s" % value)
 
@@ -211,8 +210,8 @@ class Gui(Frame):
 
             if option in ('-t', '--text'):
                 value = value.replace('|', '\n')
-
                 self.default_text = value
+
             if option in ('-b', '--batch'):
                 self.batch.set(True)
                 self.settings.set('batch', True)
@@ -249,7 +248,6 @@ class Gui(Frame):
 
     def create_previewcanvas(self):
         self.PreviewCanvas = Canvas(self.master, background="grey")
-
         self.PreviewCanvas.bind("<Button-4>", self._mouseZoomIn)
         self.PreviewCanvas.bind("<Button-5>", self._mouseZoomOut)
         self.PreviewCanvas.bind("<2>", self.mousePanStart)
@@ -761,7 +759,6 @@ class Gui(Frame):
         self.settings.from_configfile(filename)
         self.initialise_settings()
 
-        text_codes = []
         file_full = self.settings.get_fontfile()
         fileName, fileExtension = os.path.splitext(file_full)
         TYPE = fileExtension.upper()
@@ -780,24 +777,12 @@ class Gui(Frame):
         if not self.settings.get('arc_fit') in ['none', 'center', 'radius']:
             self.settings.set('arc_fit', 'center')
 
-        if text_codes != []:
-            try:
-                self.input.delete(1.0, END)
-                for Ch in text_codes:
-                    try:
-                        self.input.insert(END, "%c" % (unichr(int(Ch))))
-                    except:
-                        self.input.insert(END, "%c" % (chr(int(Ch))))
-            except:
-                self.default_text = ''
-                for Ch in text_codes:
-                    try:
-                        self.default_text = self.default_text + "%c" % (unichr(int(Ch)))
-                    except:
-                        self.default_text = self.default_text + "%c" % (chr(int(Ch)))
+        text_code = self.settings.get_text_code()
+        if text_code != '':
+            self.input.delete(1.0, END)
+            self.input.insert(END, "%s" % text_code)
 
         self.calc_depth_limit()
-
         self.delay_calc = False
 
         if self.initComplete:
@@ -812,12 +797,12 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        fileName, fileExtension = os.path.splitext(self.NGC_FILE)
         if self.settings.get('input_type') == "image":
-            fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
-            init_file = os.path.basename(fileName)
+            filename, file_extension = os.path.splitext(self.IMAGE_FILE)
+            init_file = os.path.basename(filename)
         else:
-            init_file = "text"
+            filename, file_extension = os.path.splitext(self.NGC_FILE)
+            init_file = os.path.basename(filename)
 
         filename = asksaveasfilename(defaultextension='.txt',
                                      filetypes=[("Settings File", "*.txt"), ("All Files", "*")],
@@ -837,6 +822,7 @@ class Gui(Frame):
                 except:
                     fout.write('(skipping line)\n')
             fout.close()
+
             self.statusMessage.set("File Saved: %s" % (filename))
             self.statusbar.configure(bg='white')
 
@@ -1708,7 +1694,9 @@ class Gui(Frame):
             font_line_height = self.text.get_font_used_height()
             font_line_depth = self.text.get_font_used_depth()
 
-        y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
+        y_scale = 0.0
+        if (font_line_height - font_line_depth) > Zero:
+            y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
         if y_scale <= Zero:
             y_scale = .1
         x_scale = x_scale_in * y_scale / 100

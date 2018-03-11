@@ -62,7 +62,10 @@ class Font(object):
         if key in (32, 10):
             return Character(' ', [])
 
-        return self.characters[key]
+        try:
+            return self.characters[key]
+        except:  # return a question mark for chars missing in this characterset
+            return self.characters[63]
 
     def __iter__(self):
         for char in self.characters:

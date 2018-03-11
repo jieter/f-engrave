@@ -433,10 +433,6 @@ class VCarveSettings(object):
         vcarve_settings_upper = self.vcarve_settings_upper
         vcarve_settings_lower = self.vcarve_settings_lower
 
-        # vcarve_settings_frame.columnconfigure(1, weight=1, minsize=400)
-        # vcarve_settings_frame.rowconfigure(0, weight=1, minsize=400)
-        # vcarve_settings_frame.rowconfigure(2, minsize=20)
-
         padx = 10
         pady = 10
 
@@ -481,15 +477,17 @@ class VCarveSettings(object):
         self.configure_inlay()
         self.configure_plotbox()
         self.configure_rough_stk()
-
-        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            self.VCARVE_Recalculate.configure(state="normal", command=None)
-        else:
-            self.VCARVE_Recalculate.configure(state="disabled", command=None)
+        self.configure_cut_type()
 
         vcarve_settings_upper.grid(row=0, column=0)
         self.Label_photo.grid(row=0, column=1)
         vcarve_settings_lower.grid(row=1, column=0, columnspan=2)
+
+    def configure_cut_type(self):
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            self.VCARVE_Recalculate.configure(state="normal", command=None)
+        else:
+            self.VCARVE_Recalculate.configure(state="disabled", command=None)
 
     def configure_rough_stk(self):
         if float(self.v_rough_stk.get()) == 0.0:

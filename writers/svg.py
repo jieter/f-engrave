@@ -56,7 +56,6 @@ def svg(job):
 
         x_origin = settings.get('xorigin')
         y_origin = settings.get('yorigin')
-        # code.append(FORMAT % (xorigin - job.xzero - plot_radius, yorigin - job.yzero))
 
         svgcode.append(circle_template % (
             (x_origin - job.xzero - minx) * dpi,

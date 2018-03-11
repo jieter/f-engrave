@@ -899,12 +899,6 @@ class GCodeProperties(MainWindowWidget):
     def Entry_Zcut_Callback(self, varName, index, mode):
         self.Ctrl_entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
 
-    def Entry_cut_type_Callback(self, varName, index, mode):
-        self.settings.set('cut_type', self.cut_type.get())
-        self.configure_cut_type()
-        self.Ctrl_cut_type_changed()
-        self.Ctrl_recalculate_required()
-
 
 class FontFiles(MainWindowWidget):
 

@@ -67,12 +67,4 @@ def read_image_file(settings):
     else:
         fmessage("Unknown filetype: " + fileExtension)
 
-    # Reset Entry Fields in Bitmap Settings
-    # if not settings.get('batch'):
-    #     self.entry_set(self.Entry_BMPoptTolerance,self.Entry_BMPoptTolerance_Check(),1)
-    #     self.entry_set(self.Entry_BMPturdsize,    self.Entry_BMPturdsize_Check()    ,1)
-    #     self.entry_set(self.Entry_BMPalphamax,    self.Entry_BMPalphamax_Check()    ,1)
-    #     self.entry_set(self.Entry_ArcAngle,       self.Entry_ArcAngle_Check()       ,1)
-    #     self.menu_View_Refresh()
-
     return font

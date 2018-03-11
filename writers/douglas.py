@@ -72,7 +72,7 @@ def douglas(st, tolerance=.001, plane=None, _first=True):
             for i, (x, y, z) in enumerate(st):
                 if plane == 17:
                     dist1 = abs(hypot(c1 - x, c2 - y) - min_rad)
-                    dist = sqrt(worst_distz ** 2 + dist1 ** 2)  # added to fix out of plane inacuracy problem
+                    dist = sqrt(worst_distz ** 2 + dist1 ** 2)  # added to fix out of plane inaccuracy problem
                 elif plane == 18:
                     dist = abs(hypot(c1 - x, c2 - z) - min_rad)
                 elif plane == 19:
