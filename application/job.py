@@ -35,17 +35,24 @@ class Job(object):
 
     def job_text(self):
         self.text = MyText()
-        self.text.set_font(self.font)
-        self.text.set_word_space(self.settings.get('word_space'))
-        self.text.set_line_space(self.settings.get('line_space'))
-        self.text.set_char_space(self.settings.get('char_space'))
 
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+        else:
+            thickness = self.settings.get('line_thickness')
+
+        self.text.set_font(self.font)
+        self.text.set_char_space(self.settings.get('char_space'))
+        self.text.set_line_space(self.settings.get('line_space'))
+        self.text.set_word_space(self.settings.get('word_space'))
+        self.text.set_thickness(thickness)
+
+        # the text to be carved or engraved
         if len(self.settings.get('default_text')) > 0:
             self.text.set_text(self.settings.get('default_text'))
         else:
             self.text.set_text(self.settings.get_text_code())
 
-        self.text.set_thickness(self.settings.get('line_thickness'))
         self.text.set_coords_from_strokes()
         self.engrave.set_image(self.text)
 
@@ -92,7 +99,7 @@ class Job(object):
                 # a G-code circle command is generated later (when not v-carving)
                 # For the circle to fit later on, the plot bounding box is adjusted with its radius
                 maxr = max(radius_in, self.text.get_max_radius())
-                thickness = self.settings.get('line_thickness')
+                # thickness = self.settings.get('line_thickness')
                 radius_plot = maxr + thickness / 2
                 minx = miny = -radius_plot
                 maxx = maxy = -minx
@@ -111,23 +118,43 @@ class Job(object):
         self.load_image()
         self.engrave.set_image(self.image)
 
-        # TODO image calculation
-        # if self.settings.get('useIMGsize'):
-
-        x_scale_in = self.settings.get('xscale')
-        y_scale_in = self.settings.get('yscale')
-        y_scale = y_scale_in / 100
-        x_scale = x_scale_in * y_scale / 100
-
-        angle = self.settings.get('text_angle')
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            thickness = 0.0
+        else:
+            thickness = self.settings.get('line_thickness')
 
         # Image transformations
+        mirror = self.settings.get('mirror')
+        flip = self.settings.get('flip')
+        angle = self.settings.get('text_angle')
+
+        y_scale_in = self.settings.get('yscale')
+        if self.settings.get('useIMGsize'):
+            y_scale = y_scale_in / 100
+        else:
+            if self.image.get_height() > 0:
+                y_scale = (y_scale_in - thickness) / (self.image.get_height() - thickness)
+            else:
+                y_scale = 0.1
+        x_scale = self.settings.get('xscale') * y_scale / 100
+
         self.image.transform_scale(x_scale, y_scale)
         self.image.transform_angle(angle)
-        if self.settings.get('mirror'):
+        if mirror:
             self.image.transform_mirror()
-        if self.settings.get('flip'):
+        if flip:
             self.image.transform_flip()
+
+        x_origin, y_origin = self.get_origin()
+        x_zero, y_zero = self.move_origin(self.image.bbox)
+        x_offset = x_origin - x_zero
+        y_offset = y_origin - y_zero
+        self.image.transform_translate(x_offset, y_offset)
+
+        # engrave box or circle
+        if self.settings.get('plotbox'):
+            delta = self.get_delta()
+            self.image.add_box(delta, mirror, flip)
 
     def get_svg(self):
         return '\n'.join(writers.svg(self.engrave)).strip()
@@ -209,17 +236,18 @@ class Job(object):
         x_scale_in = self.settings.get('xscale')
         y_scale_in = self.settings.get('yscale')
 
+        # max_all
         font_line_height = self.font.line_height()
         font_line_depth = self.font.line_depth()
-        try:
-            y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
-        except:
-            y_scale = .1
+        if self.settings.get('height_calculation') == "max_use":
+            font_line_height = self.text.get_font_used_height()
+            font_line_depth = self.text.get_font_used_depth()
 
+        y_scale = 0.0
+        if (font_line_height - font_line_depth) > Zero:
+            y_scale = (y_scale_in - thickness) / (font_line_height - font_line_depth)
         if y_scale <= Zero:
             y_scale = .1
-
-        y_scale = y_scale_in / 100
         x_scale = x_scale_in * y_scale / 100
 
         return (x_scale, y_scale)

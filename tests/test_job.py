@@ -31,7 +31,7 @@ class JobTest(unittest.TestCase):
             # ('fontfile', 'unicode.cxf'),
             # ('fontfile', 'ttf/LucidaBright.ttf'),
             # ('text_code', '116  101  115  116'),  # "test"
-            ('text_code', '070 045 069 110 103 114 097 118 101'),  # "F-Engrave"
+            ('text_code', '070 045 069 110 103 114 097 118 130'),  # "F-Engrav&eacute;"
             ('default_text', ''),
         )
         self._save_testfiles(job, 'text_code')
@@ -42,8 +42,8 @@ class JobTest(unittest.TestCase):
 
     def test_text_radius(self):
         job = self._job_with_settings(
-            ('default_text', 'radius=100'),
-            ('text_radius', 100),
+            ('default_text', 'radius=150'),
+            ('text_radius', 150),
         )
         self._save_testfiles(job, 'radius')
 
@@ -97,7 +97,7 @@ class JobTest(unittest.TestCase):
         job = self._job_with_settings(
             ('default_text', 'plotcircle\nboxgap=5mm\n'),
             ('plotbox', 'True'),
-            ('text_radius', '30.0'),
+            ('text_radius', '150.0'),
             ('boxgap', 5),
         )
         self._save_testfiles(job, 'circle')
@@ -106,7 +106,7 @@ class JobTest(unittest.TestCase):
         job = self._job_with_settings(
             ('default_text', 'plotcircle\nboxgap=5\nmidleft\n'),
             ('plotbox', 'True'),
-            ('text_radius', '30.0'),
+            ('text_radius', '150.0'),
             ('boxgap', 5),
             ('origin', 'Mid-Left'),
         )
@@ -117,7 +117,6 @@ class JobTest(unittest.TestCase):
             ('default_text', 'V-Carve'),
             ('fontfile', 'kochimincho.cxf'),
             ('cut_type', 'v-carve'),
-            ('yscale', '50'),
         )
         self._save_testfiles(job, 'vcarve')
 
@@ -129,7 +128,6 @@ class JobTest(unittest.TestCase):
             ('cut_type', 'v-carve'),
             ('plotbox', 'True'),
             ('boxgap', '5'),
-            ('yscale', '500'),
         )
         self._save_testfiles(job, 'vcarve_box')
 
@@ -147,7 +145,6 @@ class JobTest(unittest.TestCase):
             ('IMAGE_FILE', 'tests/files/ring.dxf'),
             ('accuracy', '0.001'),
             ('useIMGsize', 'True'),
-            ('yscale', '100'),
             ('arc_fit', 'none'),
         )
         self._save_testfiles(job, 'dxf')
