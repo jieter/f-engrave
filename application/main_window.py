@@ -502,6 +502,7 @@ class TextPosition(MainWindowWidget):
         w_label = self.w_label
         w_entry = self.w_entry
         w_units = self.w_units
+        w_option = 8
 
         self.Label_pos_orient = Label(self, text="Text Position and Orientation:")
 
@@ -516,20 +517,20 @@ class TextPosition(MainWindowWidget):
 
         self.justify_frame = Frame(self)
         self.Label_Justify = Label(self.justify_frame, text="Justify", width=w_label, anchor=E)
-        self.Justify_OptionMenu = OptionMenu(self.justify_frame, self.justify, "Left", "Center",
-                                             "Right", command=self.Ctrl_recalculate_required)
-        self.Label_Justify_ToolTip = ToolTip(self.Label_Justify,
-                                             text='Justify determins how to align multiple lines of text. Left side, Right side or Centered.')
+        self.Justify_OptionMenu = OptionMenu(self.justify_frame, self.justify, "Left", "Center", "Right")
+        self.Justify_OptionMenu.config(width=w_option, anchor=W)
         self.justify.trace_variable("w", self.Entry_justify_Callback)
+        self.Label_Justify_ToolTip = ToolTip(self.Label_Justify,
+                                             text='Justify determines how to align multiple lines of text. Left side, Right side or Centered.')
 
         self.origin_frame = Frame(self)
         self.Label_Origin = Label(self.origin_frame, text="Origin", width=w_label, anchor=E)
         self.Origin_OptionMenu = OptionMenu(self.origin_frame, self.origin, "Top-Left", "Top-Center", "Top-Right", "Mid-Left",
-                                            "Mid-Center", "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default",
-                                            command=self.Ctrl_recalculate_required)
-        self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
-                                            text='Origin determins where the X and Y zero position is located relative to the engraving.')
+                                            "Mid-Center", "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default")
+        self.Origin_OptionMenu.config(width=w_option, anchor=W)
         self.origin.trace_variable("w", self.Entry_origin_Callback)
+        self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
+                                            text='Origin determines where the X and Y zero position is located relative to the engraving.')
 
         self.flip_frame = Frame(self)
         self.Label_flip = Label(self.flip_frame, text="Flip Text", width=w_label, anchor=E)
@@ -1266,6 +1267,7 @@ class ImagePosition(TextPosition):
         w_label = self.w_label
         w_entry = self.w_entry
         w_units = self.w_units
+        w_option = 8
 
         self.tangle_frame = Frame(self)
         self.Label_Tangle = Label(self.tangle_frame, text="Image Angle", width=w_label, anchor=E)
@@ -1280,11 +1282,11 @@ class ImagePosition(TextPosition):
         self.origin_frame = Frame(self)
         self.Label_Origin = Label(self.origin_frame, text="Origin", width=w_label, anchor=E)
         self.Origin_OptionMenu = OptionMenu(self.origin_frame, self.origin, "Top-Left", "Top-Center", "Top-Right", "Mid-Left",
-                                            "Mid-Center", "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default",
-                                            command=self.Ctrl_recalculate_required)
+                                            "Mid-Center", "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default")
+        self.Origin_OptionMenu.config(width=w_option, anchor=W)
+        self.origin.trace_variable("w", self.Entry_origin_Callback)
         self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
                                             text='Origin determines where the X and Y zero position is located relative to the engraving.')
-        self.origin.trace_variable("w", self.Entry_origin_Callback)
 
         self.flip_frame = Frame(self)
         self.Label_flip = Label(self.flip_frame, text="Flip Image", width=w_label, anchor=E)
@@ -1329,9 +1331,7 @@ class MainWindowTextLeft(Frame):
 
     def __init__(self, parent, gui, settings):
 
-        self.w = 250
-        self.h = 490
-        Frame.__init__(self, parent, width=self.w, height=self.h)
+        Frame.__init__(self, parent)
 
         self.settings = settings
 
@@ -1420,9 +1420,7 @@ class MainWindowTextRight(Frame):
 
     def __init__(self, parent, gui, settings):
 
-        self.w = 250
-        self.h = 490
-        Frame.__init__(self, parent, width=self.w)
+        Frame.__init__(self, parent)
 
         self.settings = settings
 
@@ -1516,9 +1514,7 @@ class MainWindowImageLeft(Frame):
 
     def __init__(self, parent, gui, settings):
 
-        self.w = 250
-        self.h = 540
-        Frame.__init__(self, parent, width=self.w, height=self.h)
+        Frame.__init__(self, parent)
 
         self.settings = settings
 

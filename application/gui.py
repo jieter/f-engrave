@@ -46,8 +46,10 @@ class Gui(Frame):
 
         # the main window consists of three rows and three columns
         self.grid()
-        self.master.columnconfigure(1, weight=1, minsize=400)
-        self.master.rowconfigure(0, weight=1, minsize=400)
+        self.master.columnconfigure(0, uniform="column")
+        self.master.columnconfigure(1, weight=1)
+        self.master.columnconfigure(2, uniform="column")
+        self.master.rowconfigure(0, weight=1)
         self.master.rowconfigure(2, minsize=20)
 
         self.engrave = Engrave(self.settings)
