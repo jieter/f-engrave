@@ -1,6 +1,5 @@
 from util import VERSION, OK, NOR, INV, NAN, position_window
 from tooltip import ToolTip
-import gui
 
 if VERSION == 3:
     from tkinter import *
@@ -427,7 +426,7 @@ class GeneralSettings(object):
     def Entry_Xoffset_Check(self):
         try:
             float(self.xorigin.get())
-        except:
+        except ValueError:
             return NAN
         return NOR
 
@@ -437,7 +436,7 @@ class GeneralSettings(object):
     def Entry_Yoffset_Check(self):
         try:
             float(self.yorigin.get())
-        except:
+        except ValueError:
             return NAN
         return NOR
 
@@ -447,7 +446,7 @@ class GeneralSettings(object):
     def Entry_ArcAngle_Check(self):
         try:
             float(self.segarc.get())
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -457,7 +456,7 @@ class GeneralSettings(object):
     def Entry_Accuracy_Check(self):
         try:
             float(self.accuracy.get())
-        except:
+        except ValueError:
             return NAN
         return OK
 

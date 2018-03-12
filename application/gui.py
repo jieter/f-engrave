@@ -161,8 +161,8 @@ class Gui(Frame):
         try:
             opts, args = getopt.getopt(sys.argv[1:], "hbg:f:d:t:",
                                        ["help", "batch", "gcode_file", "fontdir=", "defdir=", "text="])
-        except:
-            fmessage('Unable interpret command line options')
+        except GetoptError:
+            fmessage('Unable to interpret the command line options')
             sys.exit()
 
         for option, value in opts:
@@ -352,7 +352,7 @@ class Gui(Frame):
 
         try:
             fout = open(configname_full, 'w')
-        except:
+        except IOError:
             self.statusMessage.set("Unable to open file for writing: %s" % (configname_full))
             self.statusbar.configure(bg='red')
             return
@@ -748,7 +748,7 @@ class Gui(Frame):
         self.delay_calc = True
         try:
             fin = open(filename, 'r')
-        except:
+        except IOError:
             fmessage("Unable to open file: %s" % (filename))
             return
         fin.close()
@@ -809,7 +809,7 @@ class Gui(Frame):
         if filename != '' and filename != ():
             try:
                 fout = open(filename, 'w')
-            except:
+            except IOError:
                 self.statusMessage.set("Unable to open file for writing: %s" % (filename))
                 self.statusbar.configure(bg='red')
                 return
@@ -858,7 +858,7 @@ class Gui(Frame):
             self.NGC_FILE = filename
             try:
                 fout = open(filename, 'w')
-            except:
+            except IOError:
                 self.statusMessage.set("Unable to open file for writing: %s" % filename)
                 self.statusbar.configure(bg='red')
                 return
@@ -903,7 +903,7 @@ class Gui(Frame):
         if filename != '' and filename != ():
             try:
                 fout = open(filename, 'w')
-            except:
+            except IOError:
                 self.statusMessage.set("Unable to open file for writing: %s" % (filename))
                 self.statusbar.configure(bg='red')
                 return
@@ -939,7 +939,7 @@ class Gui(Frame):
         if filename != '' and filename != ():
             try:
                 fout = open(filename, 'w')
-            except:
+            except IOError:
                 self.statusMessage.set("Unable to open file for writing: %s" % (filename))
                 self.statusbar.configure(bg='red')
                 return
@@ -978,7 +978,7 @@ class Gui(Frame):
         if filename != '' and filename != ():
             try:
                 fout = open(filename, 'w')
-            except:
+            except IOError:
                 self.statusMessage.set("Unable to open file for writing: %s" % (filename))
                 self.statusbar.configure(bg='red')
                 return
@@ -1889,4 +1889,3 @@ def center_screen(win):
     win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
     win.deiconify()
-

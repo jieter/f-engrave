@@ -1,6 +1,4 @@
 from util import VERSION, OK, INV, NAN, position_window
-import gui
-# from tooltip import ToolTip
 
 if VERSION == 3:
     from tkinter import *
@@ -164,7 +162,7 @@ class BitmapSettings(object):
             if value < 1.0:
                 self.Ctrl_status_message.set(" Step size should be greater or equal to 1.0 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -177,7 +175,7 @@ class BitmapSettings(object):
             if value < 0.0 or value > 4.0 / 3.0:
                 self.Ctrl_status_message.set(" Alpha Max should be between 0.0 and 1.333 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -196,7 +194,7 @@ class BitmapSettings(object):
             if value < 0.0:
                 self.Ctrl_status_message.set(" Alpha Max should be between 0.0 and 1.333 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 

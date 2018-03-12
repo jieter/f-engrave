@@ -1,6 +1,6 @@
 from util import *
 from tooltip import ToolTip
-from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE
+from settings import CUT_TYPE_VCARVE  # , CUT_TYPE_ENGRAVE
 
 if VERSION == 3:
     from tkinter import *
@@ -496,6 +496,9 @@ class TextPosition(MainWindowWidget):
         self.justify.set(self.settings.get('justify'))
         self.flip.set(self.settings.get('flip'))
         self.mirror.set(self.settings.get('mirror'))
+        self.Justify_OptionList = ["Left", "Center", "Right"]
+        self.Origin_OptionList = ["Top-Left", "Top-Center", "Top-Right", "Mid-Left", "Mid-Center",
+                                  "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default"]
 
     def create_widgets(self):
 
@@ -517,7 +520,7 @@ class TextPosition(MainWindowWidget):
 
         self.justify_frame = Frame(self)
         self.Label_Justify = Label(self.justify_frame, text="Justify", width=w_label, anchor=E)
-        self.Justify_OptionMenu = OptionMenu(self.justify_frame, self.justify, "Left", "Center", "Right")
+        self.Justify_OptionMenu = OptionMenu(self.justify_frame, self.justify, *self.Justify_OptionList)
         self.Justify_OptionMenu.config(width=w_option, anchor=W)
         self.justify.trace_variable("w", self.Entry_justify_Callback)
         self.Label_Justify_ToolTip = ToolTip(self.Label_Justify,
@@ -525,8 +528,7 @@ class TextPosition(MainWindowWidget):
 
         self.origin_frame = Frame(self)
         self.Label_Origin = Label(self.origin_frame, text="Origin", width=w_label, anchor=E)
-        self.Origin_OptionMenu = OptionMenu(self.origin_frame, self.origin, "Top-Left", "Top-Center", "Top-Right", "Mid-Left",
-                                            "Mid-Center", "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default")
+        self.Origin_OptionMenu = OptionMenu(self.origin_frame, self.origin, *self.Origin_OptionList)
         self.Origin_OptionMenu.config(width=w_option, anchor=W)
         self.origin.trace_variable("w", self.Entry_origin_Callback)
         self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,
@@ -1281,8 +1283,7 @@ class ImagePosition(TextPosition):
 
         self.origin_frame = Frame(self)
         self.Label_Origin = Label(self.origin_frame, text="Origin", width=w_label, anchor=E)
-        self.Origin_OptionMenu = OptionMenu(self.origin_frame, self.origin, "Top-Left", "Top-Center", "Top-Right", "Mid-Left",
-                                            "Mid-Center", "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default")
+        self.Origin_OptionMenu = OptionMenu(self.origin_frame, self.origin, *self.Origin_OptionList)
         self.Origin_OptionMenu.config(width=w_option, anchor=W)
         self.origin.trace_variable("w", self.Entry_origin_Callback)
         self.Label_Origin_ToolTip = ToolTip(self.Label_Origin,

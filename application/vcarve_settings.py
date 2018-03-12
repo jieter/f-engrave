@@ -1,7 +1,6 @@
 from util import VERSION, OK, NOR, INV, NAN, position_window
 from tooltip import ToolTip
 from settings import CUT_TYPE_VCARVE
-import gui
 
 if VERSION == 3:
     from tkinter import *
@@ -563,7 +562,7 @@ class VCarveSettings(object):
             if value < 0.0 or value > 180.0:
                 self.Ctrl_status_message.set(" Angle should be between 0 and 180 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return NOR
 
@@ -580,7 +579,7 @@ class VCarveSettings(object):
             if value <= 0.0:
                 self.Ctrl_status_message.set(" Diameter should be greater than 0 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -597,7 +596,7 @@ class VCarveSettings(object):
             if value > 0.0:
                 self.Ctrl_status_message.set(" Depth should be less than 0 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -614,7 +613,7 @@ class VCarveSettings(object):
             if value <= 0.0:
                 self.Ctrl_status_message.set(" Step size should be greater than 0 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -631,7 +630,7 @@ class VCarveSettings(object):
             if value > 0.0:
                 self.Ctrl_status_message.set(" Allowance should be less than or equal to 0 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -650,7 +649,7 @@ class VCarveSettings(object):
             if float(self.v_rough_stk.get()) != 0 and value >= 0.0:
                 self.Ctrl_status_message.set(" Max Depth per Pass should be less than 0.0 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return NOR
 
@@ -663,7 +662,7 @@ class VCarveSettings(object):
             if value < 0.0:
                 self.Ctrl_status_message.set(" Finish Pass Stock should be positive or zero (Zero disables multi-pass)")
                 return INV
-        except:
+        except ValueError:
             return NAN
         self.configure_rough_stk()
         return NOR
@@ -678,7 +677,7 @@ class VCarveSettings(object):
             if value < 0.0:
                 self.Ctrl_status_message.set(" Angle should be greater than 0.0 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -691,7 +690,7 @@ class VCarveSettings(object):
             if value <= 0.0:
                 self.Ctrl_status_message.set(" Angle should be greater than 0.0 ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
@@ -705,7 +704,7 @@ class VCarveSettings(object):
             if value <= 0.0:
                 self.Ctrl_status_message.set(" Step Over should be between 0% and 100% ")
                 return INV
-        except:
+        except ValueError:
             return NAN
         return OK
 
