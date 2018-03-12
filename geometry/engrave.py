@@ -29,11 +29,6 @@ def do_cprofile(func):
     return profiled_func
 
 
-def get_number():
-    for x in xrange(5000000):
-        yield x
-
-
 # TODO Use Toolbit objects
 
 class Toolbit(object):

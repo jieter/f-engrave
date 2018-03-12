@@ -1,4 +1,4 @@
-from util import VERSION, OK, NOR, INV, NAN
+from util import VERSION, OK, NOR, INV, NAN, position_window
 from tooltip import ToolTip
 from settings import CUT_TYPE_VCARVE
 import gui
@@ -94,7 +94,7 @@ class VCarveSettings(object):
         self.create_widgets()
         self.create_icon()
 
-        gui.left_window(self.vcarve_settings, self.width, self.height)
+        position_window(self.vcarve_settings, self.width, self.height)
         self.vcarve_settings.deiconify()
 
     def initialise_variables(self):

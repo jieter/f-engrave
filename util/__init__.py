@@ -78,3 +78,23 @@ def message_ask_ok_cancel(title, message):
     else:
         result = tkMessageBox.askokcancel(title, message)
     return result
+
+
+def position_window(win, width, height):
+    """
+    centers a tkinter Toplevel window to its master
+    Source: https://stackoverflow.com/questions/36050192/how-to-position-toplevel-widget-relative-to-root-window
+    :param width: the Toplevel window width
+    :param height: the Toplevel window height
+    :param win: the Toplevel window to center
+    """
+    win.update_idletasks()
+
+    master = win.master
+    x = master.winfo_x()
+    y = master.winfo_y()
+
+    x -= width
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
+    win.deiconify()

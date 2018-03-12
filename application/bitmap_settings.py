@@ -1,4 +1,4 @@
-from util import VERSION, OK, INV, NAN
+from util import VERSION, OK, INV, NAN, position_window
 import gui
 # from tooltip import ToolTip
 
@@ -54,7 +54,7 @@ class BitmapSettings(object):
         self.create_widgets()
         self.create_icon()
 
-        gui.left_window(self.bmp_settings, self.width, self.height)
+        position_window(self.bmp_settings, self.width, self.height)
         self.bmp_settings.deiconify()
 
     def initialise_variables(self):

@@ -1,7 +1,6 @@
 import getopt
 import webbrowser
 
-# from util import (VERSION, POTRACE_AVAILABLE, PIL, OK, NOR, INV, NAN, message_ask_ok_cancel)
 from util import *
 
 from bitmap_settings import BitmapSettings
@@ -11,7 +10,6 @@ from main_window import MenuBar, MainWindowTextLeft, MainWindowTextRight, MainWi
 
 from geometry.coords import MyImage, MyText
 from geometry.engrave import Engrave
-# from vCarve import v_carve as v_carve_cpp
 
 from readers import *
 from writers import *
@@ -86,9 +84,9 @@ class Gui(Frame):
         """
         Engrave progress callback
         """
+        self.PreviewCanvas.update_idletasks()
         cszw = int(self.PreviewCanvas.winfo_width())
         cszh = int(self.PreviewCanvas.winfo_height())
-
         midx, midy = self.engrave.image.get_midxy()
 
         self.plot_circle(normv, midx, midy, cszw, cszh, color, radius, False)
@@ -130,12 +128,9 @@ class Gui(Frame):
 
         self.initialise_settings()
 
-        self.segID = []
         self.font = Font()
-
         self.current_input_file.set(" ")
         self.bounding_box.set(" ")
-
         self.plot_scale = 0
 
         # PAN and ZOOM STUFF
@@ -625,7 +620,7 @@ class Gui(Frame):
             except:
                 pass
 
-        left_window(vcalc_status, width, height)
+        position_window(vcalc_status, width, height)
 
         self.v_carve_it()
         self.menu_View_Refresh()
@@ -671,7 +666,7 @@ class Gui(Frame):
                 except:
                     pass
 
-            left_window(vcalc_status, width, height)
+            position_window(vcalc_status, width, height)
 
             self.v_carve_it(clean=True)
             vcalc_status.grab_release()
@@ -1007,19 +1002,6 @@ class Gui(Frame):
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, True)
 
-    def Ctrl_mode_change(self):
-
-        self.delay_calc = True
-
-        self.create_mainwindow_widgets()
-
-        dummy_event = Event()
-        dummy_event.widget = self.master
-        self.Master_Configure(dummy_event, True)
-
-        self.delay_calc = False
-        self.do_it()
-
     def menu_View_Recalculate(self):
         self.do_it()
 
@@ -1141,6 +1123,19 @@ class Gui(Frame):
         self.mainwindow_text_left.scale_linear_inputs(factor)
         self.mainwindow_text_right.scale_linear_inputs(factor)
 
+    def Ctrl_mode_change(self):
+
+        self.delay_calc = True
+
+        self.create_mainwindow_widgets()
+
+        dummy_event = Event()
+        dummy_event.widget = self.master
+        self.Master_Configure(dummy_event, True)
+
+        self.delay_calc = False
+        self.do_it()
+
     def Master_Configure_image(self):
         self.PreviewCanvas.grid_forget()
         self.input_frame.grid_forget()
@@ -1171,7 +1166,7 @@ class Gui(Frame):
             thick = 0
         else:
             thick = radius * 2 / self.plot_scale
-        self.segID.append(self.PreviewCanvas.create_line(x1, y1, x2, y2, fill=color, capstyle="round", width=thick))
+        self.PreviewCanvas.create_line(x1, y1, x2, y2, fill=color, capstyle="round", width=thick)
 
     def plot_circle(self, normv, midx, midy, cszw, cszh, color, rad, fill):
         XX, YY = normv
@@ -1180,9 +1175,9 @@ class Gui(Frame):
         y1 = cszh / 2 - (YY - rad - midy) / self.plot_scale
         y2 = cszh / 2 - (YY + rad - midy) / self.plot_scale
         if fill == 0:
-            self.segID.append(self.PreviewCanvas.create_oval(x1, y1, x2, y2, outline=color, fill=None, width=1))
+            self.PreviewCanvas.create_oval(x1, y1, x2, y2, outline=color, fill=None, width=1)
         else:
-            self.segID.append(self.PreviewCanvas.create_oval(x1, y1, x2, y2, outline=color, fill=color, width=0))
+            self.PreviewCanvas.create_oval(x1, y1, x2, y2, outline=color, fill=color, width=0)
 
     def recalculate_RQD_Nocalc(self, event=None):
         self.statusbar.configure(bg='yellow')
@@ -1204,7 +1199,6 @@ class Gui(Frame):
 
         # erase old segments/display objects
         self.PreviewCanvas.delete(ALL)
-        self.segID = []
 
         # origin
         cszw = int(self.PreviewCanvas.winfo_width())
@@ -1240,10 +1234,9 @@ class Gui(Frame):
             y_bot = cszh / 2 + (maxy - midy) / plot_scale
             y_top = cszh / 2 + (miny - midy) / plot_scale
             if self.settings.get('show_box'):
-                self.segID.append(
-                    self.PreviewCanvas.create_rectangle(x_lft, y_bot, x_rgt, y_top, fill="gray80",
-                                                        outline="gray80",
-                                                        width=0))
+                self.PreviewCanvas.create_rectangle(x_lft, y_bot, x_rgt, y_top, fill="gray80",
+                                                    outline="gray80",
+                                                    width=0)
         # plot circle
         text_radius = self.get_text_radius()
         x_zero, y_zero = self.engrave.get_offset()
@@ -1253,8 +1246,7 @@ class Gui(Frame):
             Rpx_rgt = cszw / 2 + (text_radius - midx - x_zero) / plot_scale
             Rpy_bot = cszh / 2 + (text_radius + midy + y_zero) / plot_scale
             Rpy_top = cszh / 2 + (-text_radius + midy + y_zero) / plot_scale
-            self.segID.append(
-                self.PreviewCanvas.create_oval(Rpx_lft, Rpy_bot, Rpx_rgt, Rpy_top, outline="black", width=plot_width))
+            self.PreviewCanvas.create_oval(Rpx_lft, Rpy_bot, Rpx_rgt, Rpy_top, outline="black", width=plot_width)
 
         # plot the original lines
         scaled_coords = []
@@ -1278,8 +1270,7 @@ class Gui(Frame):
 
         for XY in scaled_coords:
             x1, y1, x2, y2 = XY[0], XY[1], XY[2], XY[3]
-            self.segID.append(
-                self.PreviewCanvas.create_line(x1, y1, x2, y2, fill='black', width=plot_width, capstyle='round'))
+            self.PreviewCanvas.create_line(x1, y1, x2, y2, fill='black', width=plot_width, capstyle='round')
 
         # draw coordinate axis
         axis_length = (maxx - minx) / 4
@@ -1369,12 +1360,12 @@ class Gui(Frame):
 
         if self.settings.get('show_axis'):
             # Plot coordinate system origin
-            self.segID.append(self.PreviewCanvas.create_line(axis_x1, axis_y1,
-                                                             axis_x2, axis_y1,
-                                                             fill='red', width=0))
-            self.segID.append(self.PreviewCanvas.create_line(axis_x1, axis_y1,
-                                                             axis_x1, axis_y2,
-                                                             fill='green', width=0))
+            self.PreviewCanvas.create_line(axis_x1, axis_y1,
+                                           axis_x2, axis_y1,
+                                           fill='red', width=0)
+            self.PreviewCanvas.create_line(axis_x1, axis_y1,
+                                           axis_x1, axis_y2,
+                                           fill='green', width=0)
 
     def do_it(self):
         """
@@ -1757,6 +1748,7 @@ class Gui(Frame):
     def v_carve_it(self, clean=False):
 
         self.master.unbind("<Configure>")
+        self.master.resizable(False, False)
 
         # step length value floor
         v_step_len = self.settings.get('v_step_len')
@@ -1799,6 +1791,7 @@ class Gui(Frame):
                 self.statusMessage.set('Done -- ' + self.bounding_box.get())
                 self.statusbar.configure(bg='white')
 
+        self.master.resizable(True, True)
         self.master.bind("<Configure>", self.Master_Configure)
 
     def ZOOM_ITEMS(self, x0, y0, z_factor):
@@ -1897,26 +1890,3 @@ def center_screen(win):
 
     win.deiconify()
 
-
-def left_window(win, width, height):
-    """
-    centers a tkinter Toplevel window to its master
-    Source: https://stackoverflow.com/questions/36050192/how-to-position-toplevel-widget-relative-to-root-window
-    :param width: the Toplevel window width
-    :param height: the Toplevel window height
-    :param win: the Toplevel window to center
-    """
-    win.update_idletasks()
-    # width = win.winfo_width()
-    # height = win.winfo_height()
-    # print 'w:', width, ' h:', height  # TEST
-
-    master = win.master
-    x = master.winfo_x()
-    y = master.winfo_y()
-
-    x -= width
-    # win.geometry("%dx%d+%d+%d" % (w, h, x + dx, y + dy)))
-    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
-
-    win.deiconify()

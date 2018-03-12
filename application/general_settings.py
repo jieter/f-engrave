@@ -1,4 +1,4 @@
-from util import VERSION, OK, NOR, INV, NAN
+from util import VERSION, OK, NOR, INV, NAN, position_window
 from tooltip import ToolTip
 import gui
 
@@ -77,7 +77,7 @@ class GeneralSettings(object):
         self.configure_boxgap()
         self.create_icon()
 
-        gui.left_window(self.general_settings, self.width, self.height)
+        position_window(self.general_settings, self.width, self.height)
         self.general_settings.deiconify()
 
     def initialise_variables(self):
