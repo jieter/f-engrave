@@ -470,7 +470,7 @@ class VCarveSettings(object):
         self.clean_directions_frame.pack(side=TOP, anchor=W)
         self.v_cleanup_step_frame.pack(side=TOP, anchor=W)
         self.v_clean_directions_frame.pack(side=TOP, anchor=W)
-        self.button_frame.pack(side=TOP, padx=padx, pady=pady, anchor=W)
+        self.button_frame.pack(side=TOP, padx=padx, pady=pady, anchor=CENTER)
 
         self.configure_Bit_Shape()
         self.configure_inlay()

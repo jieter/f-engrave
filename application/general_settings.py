@@ -257,12 +257,12 @@ class GeneralSettings(object):
         self.Label_Hcalc.pack(side=LEFT)
 
         self.Radio_Hcalc_USE = Radiobutton(self.hcalc_frame, text="Max Used",
-                                           value="max_use", width=w_radio, anchor=W)
+                                           value="max_use", width=8, anchor=W)
         self.Radio_Hcalc_USE.pack(side=LEFT, anchor=W)
         self.Radio_Hcalc_USE.configure(variable=self.H_CALC)
 
         self.Radio_Hcalc_ALL = Radiobutton(self.hcalc_frame, text="Max All",
-                                           value="max_all", width=w_radio, anchor=W)
+                                           value="max_all", width=8, anchor=W)
         self.Radio_Hcalc_ALL.pack(side=LEFT, anchor=W)
         self.Radio_Hcalc_ALL.configure(variable=self.H_CALC)
         self.H_CALC.trace_variable("w", self.Checkbutton_H_CALC_Callback)
@@ -349,7 +349,7 @@ class GeneralSettings(object):
         self.vpplot_frame.pack(side=TOP, padx=padx, anchor=W)
 
         self.save_frame.pack(side=TOP, padx=padx, anchor=W)
-        self.button_frame.pack(side=TOP, padx=padx, anchor=W)
+        self.button_frame.pack(side=TOP, padx=padx, anchor=CENTER)
 
     def Scale_Linear_Inputs(self, factor=1.0):
         # All settings are scaled here, the values in the individual frames are refreshed (w the settings here scaled)
