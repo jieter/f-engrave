@@ -682,7 +682,7 @@ class Engrave(object):
 
     def find_max_circle(self, xIndex, yIndex, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
         """
-        Routine finds the maximum radius that can be placed in the position
+        Find the maximum radius that can be placed in the position
         xpt,ypt without interfering with other line segments (rmin is max R)
         """
         coords_check = []
@@ -1076,15 +1076,30 @@ class Engrave(object):
 
         return temp_coords
 
-    def _find_paths(self, check_coords_in, clean_dia, Radjust, clean_step, skip, direction):
+    def _find_paths_X(self, check_coords, clean_dia, Radjust, clean_step, skip):
+        return self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip)
+
+    def _find_paths_Y(self, check_coords_in, clean_dia, Radjust, clean_step, skip):
 
         check_coords = []
+        for XY in check_coords_in:
+            check_coords.append([XY[1], XY[0], XY[2]])
 
-        if direction == "Y":
-            for XY in check_coords_in:
-                check_coords.append([XY[1], XY[0], XY[2]])
-        else:
-            check_coords = check_coords_in
+        Xclean_coords, Xclean_coords_short = \
+            self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip)
+
+        Xclean_coords_out = []
+        Xclean_coords_short_out = []
+
+        for XY in Xclean_coords:
+            Xclean_coords_out.append([XY[1], XY[0], XY[2]])
+
+        for XY in Xclean_coords_short:
+            Xclean_coords_short_out.append([XY[1], XY[0], XY[2]])
+
+        return Xclean_coords_out, Xclean_coords_short_out
+
+    def _find_paths(self, check_coords, clean_dia, Radjust, clean_step, skip):
 
         minx_c = 0.0
         maxx_c = 0.0
@@ -1109,75 +1124,61 @@ class Engrave(object):
         Xclean_coords = []
         Xclean_coords_short = []
 
-        if direction != "None":
+        # Find ends of horizontal lines for carving clean-up
+        loop_cnt = 0
+        Y = miny_c
+        line_cnt = skip - 1
+        while Y <= maxy_c:
+            line_cnt += 1
+            X = minx_c
+            x1 = x2 = X
+            x1_old = x1
+            x2_old = x2
 
-            # Find ends of horizontal lines for carving clean-up
-            loop_cnt = 0
-            Y = miny_c
-            line_cnt = skip - 1
-            while Y <= maxy_c:
-                line_cnt += 1
-                X = minx_c
-                x1 = x2 = X
+            # Find relevant clean_coord_data
+            temp_coords = []
+            for XY in check_coords:
+                if Y < (XY[1] + XY[2]) and Y > (XY[1] - XY[2]):
+                    temp_coords.append(XY)
+
+            while X <= maxx_c:
+                for XY in temp_coords:
+                    h = XY[0]
+                    k = XY[1]
+                    R = XY[2] - Radjust
+                    dist = hypot((X - h), (Y - k))
+                    if dist <= R:
+                        Root = sqrt(R ** 2 - (Y - k) ** 2)
+                        XL = h - Root
+                        XR = h + Root
+                        if XL < x1:
+                            x1 = XL
+                        if XR > x2:
+                            x2 = XR
+                if x1 == x2:
+                    X += DX
+                    x1 = x2 = X
+                elif x1 == x1_old and x2 == x2_old:
+                    loop_cnt += 1
+                    Xclean_coords.append([x1, Y, loop_cnt])
+                    Xclean_coords.append([x2, Y, loop_cnt])
+                    if line_cnt == skip:
+                        Xclean_coords_short.append([x1, Y, loop_cnt])
+                        Xclean_coords_short.append([x2, Y, loop_cnt])
+                    X += DX
+                    x1 = x2 = X
+                else:
+                    X = x2
+
                 x1_old = x1
                 x2_old = x2
 
-                # Find relevant clean_coord_data
-                temp_coords = []
-                for XY in check_coords:
-                    if Y < (XY[1] + XY[2]) and Y > (XY[1] - XY[2]):
-                        temp_coords.append(XY)
+            if line_cnt == skip:
+                line_cnt = 0
 
-                while X <= maxx_c:
-                    for XY in temp_coords:
-                        h = XY[0]
-                        k = XY[1]
-                        R = XY[2] - Radjust
-                        dist = hypot((X - h), (Y - k))
-                        if dist <= R:
-                            Root = sqrt(R ** 2 - (Y - k) ** 2)
-                            XL = h - Root
-                            XR = h + Root
-                            if XL < x1:
-                                x1 = XL
-                            if XR > x2:
-                                x2 = XR
-                    if x1 == x2:
-                        X += DX
-                        x1 = x2 = X
-                    elif x1 == x1_old and x2 == x2_old:
-                        loop_cnt += 1
-                        Xclean_coords.append([x1, Y, loop_cnt])
-                        Xclean_coords.append([x2, Y, loop_cnt])
-                        if line_cnt == skip:
-                            Xclean_coords_short.append([x1, Y, loop_cnt])
-                            Xclean_coords_short.append([x2, Y, loop_cnt])
-                        X += DX
-                        x1 = x2 = X
-                    else:
-                        X = x2
+            Y += DY
 
-                    x1_old = x1
-                    x2_old = x2
-
-                if line_cnt == skip:
-                    line_cnt = 0
-
-                Y += DY
-
-        Xclean_coords_out = []
-        Xclean_coords_short_out = []
-
-        if direction == "Y":
-            for XY in Xclean_coords:
-                Xclean_coords_out.append([XY[1], XY[0], XY[2]])
-            for XY in Xclean_coords_short:
-                Xclean_coords_short_out.append([XY[1], XY[0], XY[2]])
-        else:
-            Xclean_coords_out = Xclean_coords
-            Xclean_coords_short_out = Xclean_coords_short
-
-        return Xclean_coords_out, Xclean_coords_short_out
+        return Xclean_coords, Xclean_coords_short
 
     def _clean_coords_to_path_coords(self, clean_coords_in):
         path_coords_out = []
@@ -1335,11 +1336,11 @@ class Engrave(object):
 
         # Find ends of horizontal lines for carving clean-up
         Xclean_perimeter, Xclean_coords = \
-            self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip, "X")
+            self._find_paths_X(check_coords, clean_dia, Radjust, clean_step, skip)
 
         # Find ends of Vertical lines for carving clean-up
         Yclean_perimeter, Yclean_coords = \
-            self._find_paths(check_coords, clean_dia, Radjust, clean_step, skip, "Y")
+            self._find_paths_Y(check_coords, clean_dia, Radjust, clean_step, skip)
 
         # Find new order based on distance
         if self.settings.get('v_clean_P') == 1:
