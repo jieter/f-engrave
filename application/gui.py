@@ -91,9 +91,6 @@ class Gui(Frame):
 
         self.plot_circle(normv, midx, midy, cszw, cszh, color, radius, False)
 
-    def readFontFile(self):
-        self.font = readFontFile(self.settings)
-
     def f_engrave_init(self):
         self.master.update()
 
@@ -1123,6 +1120,10 @@ class Gui(Frame):
     def Ctrl_Scale_Linear_Inputs_Text(self, factor):
         self.mainwindow_text_left.scale_linear_inputs(factor)
         self.mainwindow_text_right.scale_linear_inputs(factor)
+
+    def Ctrl_font_file_changed(self):
+        self.font = readFontFile(self.settings)
+        self.Recalc_RQD()
 
     def Ctrl_mode_change(self):
 

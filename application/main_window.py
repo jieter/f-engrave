@@ -189,7 +189,6 @@ class MainWindowWidget(Frame):
         self.Ctrl_entry_set = gui.entry_set
         self.Ctrl_recalculate = gui.Recalculate_Click
         self.Ctrl_recalculate_required = gui.Recalc_RQD
-        self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
         self.Ctrl_refresh = gui.menu_View_Refresh
         self.Ctrl_status_message = gui.statusMessage
 
@@ -914,7 +913,7 @@ class FontFiles(MainWindowWidget):
         self.current_input_file = StringVar()
 
         # Gui callback
-        self.Ctrl_read_font_file = gui.readFontFile
+        self.Ctrl_font_file_changed = gui.Ctrl_font_file_changed
 
         self.initialise_variables()
         self.create_widgets()
@@ -1008,8 +1007,7 @@ class FontFiles(MainWindowWidget):
 
         self.settings.set('fontfile', self.fontfile.get())
         self.current_input_file.set(self.fontfile.get())
-        self.Ctrl_read_font_file()
-        self.Ctrl_recalculate_required()
+        self.Ctrl_font_file_changed()
 
     def Fontdir_Click(self):
         win_id = self.grab_current()
@@ -1028,8 +1026,7 @@ class FontFiles(MainWindowWidget):
 
         self.settings.set('fontfile', self.fontfile.get())
         self.current_input_file.set(self.fontfile.get())
-        self.Ctrl_read_font_file()
-        self.Ctrl_recalculate()
+        self.Ctrl_font_file_changed()
 
     def Listbox_Key_Up(self, event):
         try:
@@ -1045,8 +1042,7 @@ class FontFiles(MainWindowWidget):
 
         self.settings.set('fontfile', self.fontfile.get())
         self.current_input_file.set(self.fontfile.get())
-        self.Ctrl_read_font_file()
-        self.Ctrl_recalculate()
+        self.Ctrl_font_file_changed()
 
     def Listbox_Key_Down(self, event):
         try:
@@ -1062,8 +1058,7 @@ class FontFiles(MainWindowWidget):
 
         self.settings.set('fontfile', self.fontfile.get())
         self.current_input_file.set(self.fontfile.get())
-        self.Ctrl_read_font_file()
-        self.Ctrl_recalculate()
+        self.Ctrl_font_file_changed()
 
 
 class ImageProperties(MainWindowWidget):
@@ -1430,11 +1425,7 @@ class MainWindowTextRight(Frame):
 
         # GUI callbacks
         self.entry_set = gui.entry_set
-        self.Ctrl_recalculate = gui.Recalc_RQD
-        self.Ctrl_recalculate_required = gui.Recalc_RQD
         self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
-        self.Ctrl_refresh = gui.menu_View_Refresh
-        self.CTrl_read_font_file = gui.readFontFile
         self.Ctrl_cut_type_changed = gui.Ctrl_set_menu_cut_type
 
         self._initialise_variables()
@@ -1519,6 +1510,7 @@ class MainWindowImageLeft(Frame):
 
         self.settings = settings
 
+        self.current_input_file = StringVar()
         self.cut_type = StringVar()
         self.units = StringVar()
 
@@ -1535,6 +1527,7 @@ class MainWindowImageLeft(Frame):
         self.master_configure()
 
     def initialise_variables(self):
+        self.current_input_file.set(os.path.basename(self.settings.get('IMAGE_FILE')))
         self.units.set(self.settings.get('units'))
         self.cut_type.set(self.settings.get('cut_type'))
 
@@ -1546,6 +1539,8 @@ class MainWindowImageLeft(Frame):
         self.separator1 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
         self.separator2 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
         self.separator3 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
+
+        self.Label_fontfile = Label(self, textvariable=self.current_input_file, foreground='grey50')
 
         self.Radio_Cut_E = Radiobutton(self, text="Engrave", value="engrave", width=10, anchor=W)
         self.Radio_Cut_E.configure(variable=self.cut_type)
@@ -1572,6 +1567,7 @@ class MainWindowImageLeft(Frame):
 
         self.separator2.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
         self.gcode_properties.pack(side=TOP, anchor=W)
+        self.Label_fontfile.pack(side=BOTTOM, padx=15, anchor=W)
 
         # Buttons
         self.separator3.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
