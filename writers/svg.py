@@ -9,7 +9,7 @@ header_template = '''
 <svg width="%(width_in)f%(units)s" height="%(height_in)f%(units)s" \
 viewBox="0 0 %(width)f %(height)f" xmlns="http://www.w3.org/2000/svg" version="1.1">
     <title>F-engrave Output</title>
-    <desc>SVG File Created By F-Engrave</desc>'''
+    <desc>SVG File Created By OOF-Engrave</desc>'''
 
 path_template = '<path d="M %f %f L %f %f" fill="none" stroke="' + color + '" ' + \
     'stroke-width="%f" stroke-linecap="round" stroke-linejoin="round" />'

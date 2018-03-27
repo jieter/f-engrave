@@ -134,8 +134,8 @@ class MenuBar(object):
         self.menuBar.add("cascade", label="Settings", menu=top_Settings)
 
         top_Help = Menu(self.menuBar, tearoff=0)
-        top_Help.add("command", label="About (E-Mail)", command=self.Ctrl_about)
-        top_Help.add("command", label="Help (Web Page)", command=self.Ctrl_webpage)
+        top_Help.add("command", label="About", command=self.Ctrl_about)
+        top_Help.add("command", label="Help (original)", command=self.Ctrl_webpage)
         self.menuBar.add("cascade", label="Help", menu=top_Help)
 
         self.master.config(menu=self.menuBar)

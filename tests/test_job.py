@@ -31,7 +31,7 @@ class JobTest(unittest.TestCase):
             # ('fontfile', 'unicode.cxf'),
             # ('fontfile', 'ttf/LucidaBright.ttf'),
             # ('text_code', '116  101  115  116'),  # "test"
-            ('text_code', '070 045 069 110 103 114 097 118 130'),  # "F-Engrav&eacute;"
+            ('text_code', '079 079 070 045 069 110 103 114 097 118 130'),  # "OOF-Engrav&eacute;"
             ('default_text', ''),
         )
         self._save_testfiles(job, 'text_code')

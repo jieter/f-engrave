@@ -168,7 +168,7 @@ class Gui(Frame):
         for option, value in opts:
             if option in ('-h', '--help'):
                 fmessage(' ')
-                fmessage('Usage: python f-engrave.py [-g file | -f fontdir | -d directory | -t text | -b ]')
+                fmessage('Usage: python oof-engrave.py [-g file | -f fontdir | -d directory | -t text | -b ]')
                 fmessage('-g    : f-engrave gcode output file to read (also --gcode_file)')
                 fmessage('-f    : path to font file, directory or image file (also --fontdir)')
                 fmessage('-d    : default directory (also --defdir)')
@@ -215,7 +215,7 @@ class Gui(Frame):
 
         if self.batch.get() is True:
 
-            fmessage('(F-Engrave Batch Mode)')
+            fmessage('(OOF-Engrave Batch Mode)')
 
             if self.settings.get('input_type') == "text":
                 self.font = readFontFile(self.settings)
@@ -993,7 +993,7 @@ class Gui(Frame):
             self.statusbar.configure(bg='white')
 
     def menu_File_Quit(self):
-        if message_ask_ok_cancel("Exit", "Exiting F-Engrave...."):
+        if message_ask_ok_cancel("Exit", "Exiting OOF-Engrave...."):
             self.Quit_Click(None)
 
     def menu_View_Refresh(self):
@@ -1006,11 +1006,12 @@ class Gui(Frame):
         self.do_it()
 
     def menu_Help_About(self):
-        about = "F-Engrave by Scorch.\n\n"
-        about = about + "\163\143\157\162\143\150\100\163\143\157\162"
-        about = about + "\143\150\167\157\162\153\163\056\143\157\155\n"
-        about = about + "http://www.scorchworks.com/"
-        message_box("About F-Engrave", about)
+        about = "OOF-Engrave, refactored from the original F-Engrave.\n\n"
+        # about = about + "\163\143\157\162\143\150\100\163\143\157\162"
+        # about = about + "\143\150\167\157\162\153\163\056\143\157\155\n"
+        about = about + "http://github.com/Blokkendoos/OOF-Engrave\n"
+        about = about + "http://www.scorchworks.com"
+        message_box("About OOF-Engrave", about)
 
     def menu_Help_Web(self):
         webbrowser.open_new(r"http://www.scorchworks.com/Fengrave/fengrave_doc.html")

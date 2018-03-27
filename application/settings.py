@@ -250,7 +250,7 @@ class Settings(object):
         # M2 : End Program
         'gcode_postamble': 'M5 M9 M2',
 
-        'default_text': 'F-Engrave',
+        'default_text': 'OOF-Engrave',
         'text_code': '',
     }
 

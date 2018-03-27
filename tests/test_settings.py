@@ -68,7 +68,7 @@ class SettingsTest(unittest.TestCase):
         # test strings
         self.assertEquals(s.get('fontfile'), 'courier.cxf')
         self.assertEquals(s.get('gcode_preamble'), 'G17 G64 P0.003 M3 S3000 M7')
-        self.assertEquals(s.get('default_text'), 'F-Engrave')
+        self.assertEquals(s.get('default_text'), 'OOF-Engrave')
 
     def test_casting(self):
         s = Settings()
