@@ -5,8 +5,6 @@ from util import fmessage, VERSION, TTF_AVAILABLE
 from . import cxf as parse_cxf
 
 
-# TODO Add Unicode support
-
 def readFontFile(settings):
     """
     Read a (.cxf, .ttf) font file
@@ -17,8 +15,6 @@ def readFontFile(settings):
         return
 
     fileName, fileExtension = os.path.splitext(filename)
-    # TODO update the current input file
-    # self.current_input_file.set( os.path.basename(filename) )
 
     segarc = settings.get('segarc')
     TYPE = fileExtension.upper()

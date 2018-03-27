@@ -71,24 +71,6 @@ class DXF_CLASS(object):
     def read_none(self, data):
         return None
 
-    # def read_dxf_file(self, name, data):
-    #     fd = file(name)
-    #     Skip = True
-    #     for line in fd:
-    #         group_code = int(line)
-    #
-    #         value = fd.next().replace('\r', '')
-    #         value = value.replace('\n', '')
-    #         value = value.lstrip(' ')
-    #         value = value.rstrip(' ')
-    #         value = self.funs[group_code](value)
-    #         if (value != "SECTION") and Skip:
-    #             continue
-    #         else:
-    #             Skip = False
-    #         data.append((group_code, value))
-    #     fd.close()
-
     def read_dxf_data(self, fd, data):
         self.comment = "None"
         Skip = True

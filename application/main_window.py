@@ -184,7 +184,6 @@ class MainWindowWidget(Frame):
         self.units = StringVar()
         self.cut_type = StringVar()
 
-        # TODO rename callbacks and reduce widgets' dependency on Gui internals
         # Gui callbacks
         self.Ctrl_entry_set = gui.entry_set
         self.Ctrl_recalculate = gui.Recalculate_Click
@@ -236,10 +235,7 @@ class TextFontProperties(MainWindowWidget):
         self.LSPACE = StringVar()
         self.CSPACE = StringVar()
         self.WSPACE = StringVar()
-        self.TANGLE = StringVar()
         self.TRADIUS = StringVar()
-        self.ZSAFE = StringVar()
-        self.ZCUT = StringVar()
         self.STHICK = StringVar()
 
         self.initialise_variables()
@@ -253,6 +249,8 @@ class TextFontProperties(MainWindowWidget):
         self.LSPACE.set(self.settings.get('line_space'))
         self.CSPACE.set(self.settings.get('char_space'))
         self.WSPACE.set(self.settings.get('word_space'))
+        self.STHICK.set(self.settings.get('line_thickness'))
+        self.TRADIUS.set(self.settings.get('text_radius'))
 
     def create_widgets(self):
         self.Label_font_prop = Label(self, text="Text Font Properties:")
@@ -491,10 +489,11 @@ class TextPosition(MainWindowWidget):
 
     def initialise_variables(self):
         self.TANGLE.set(self.settings.get('text_angle'))
-        self.origin.set(self.settings.get('origin'))
         self.justify.set(self.settings.get('justify'))
+        self.origin.set(self.settings.get('origin'))
         self.flip.set(self.settings.get('flip'))
         self.mirror.set(self.settings.get('mirror'))
+
         self.Justify_OptionList = ["Left", "Center", "Right"]
         self.Origin_OptionList = ["Top-Left", "Top-Center", "Top-Right", "Mid-Left", "Mid-Center",
                                   "Mid-Right", "Bot-Left", "Bot-Center", "Bot-Right", "Default"]
@@ -1335,15 +1334,14 @@ class MainWindowTextLeft(Frame):
         self.units = StringVar()
 
         # Gui callback
-        self.Recalculate_Click = gui.Recalculate_Click
+        self.recalculate_click = gui.Recalculate_Click
         self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
-        self.Recalc_RQD = gui.Recalc_RQD
 
-        self._initialise_variables()
+        self.initialise_variables()
         self.create_widgets(gui, settings)
         self.master_configure()
 
-    def _initialise_variables(self):
+    def initialise_variables(self):
         self.units.set(self.settings.get('units'))
         self.cut_type.set(self.settings.get('cut_type'))
 
@@ -1358,7 +1356,7 @@ class MainWindowTextLeft(Frame):
 
         # Buttons
         self.Recalculate = Button(self, text="Recalculate")
-        self.Recalculate.bind("<ButtonRelease-1>", self.Recalculate_Click)
+        self.Recalculate.bind("<ButtonRelease-1>", self.recalculate_click)
 
         self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
@@ -1428,14 +1426,14 @@ class MainWindowTextRight(Frame):
         self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
         self.Ctrl_cut_type_changed = gui.Ctrl_set_menu_cut_type
 
-        self._initialise_variables()
+        self.initialise_variables()
         self.create_widgets(gui, settings)
         self.master_configure()
 
         # Callback
         self.fontdir_click = self.font_files.Fontdir_Click
 
-    def _initialise_variables(self):
+    def initialise_variables(self):
         self.units.set(self.settings.get('units'))
         self.cut_type.set(self.settings.get('cut_type'))
 
@@ -1520,7 +1518,7 @@ class MainWindowImageLeft(Frame):
         self.Ctrl_recalculate_required = gui.Recalc_RQD
         self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
         self.Ctrl_refresh = gui.menu_View_Refresh
-        self.CTrl_cut_type_changed = gui.Ctrl_set_menu_cut_type
+        self.Ctrl_cut_type_changed = gui.Ctrl_set_menu_cut_type
 
         self.initialise_variables()
         self.create_widgets(gui, settings)
@@ -1612,4 +1610,4 @@ class MainWindowImageLeft(Frame):
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
         self.configure_cut_type()
-        self.CTrl_cut_type_changed()
+        self.Ctrl_cut_type_changed()

@@ -16,10 +16,10 @@ def read_image_file(settings):
 
     fileName, fileExtension = os.path.splitext(file_full)
 
-    # if (self.useIMGsize.get()):
-    new_origin = False
-    # else:
-    #    new_origin = True
+    if settings.get('useIMGsize'):
+        new_origin = False
+    else:
+        new_origin = True
 
     segarc = settings.get('segarc')
 
