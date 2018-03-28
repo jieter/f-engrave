@@ -42,6 +42,7 @@ def fmessage(text, newline=True):
 
 try:
     PIL = externals.check_pil()
+    OVD_AVAILABLE = externals.check_ovd()
     TTF_AVAILABLE = externals.check_ttf()
     POTRACE_AVAILABLE = externals.check_potrace()
 except Exception, e:

@@ -13,6 +13,7 @@ The repo name was changed into OOF-Engrave to avoid confusion with the original.
  - automated testing (using [nose](http://pythontesting.net/framework/nose/nose-introduction))
  - clean, consistent coding style (using [flake](http://flake8.pycqa.org/en/latest/user/index.html))
  - document settings in settings file and use more descriptive names
+ - provide [openvoronoi](https://github.com/Blokkendoos/openvoronoi) as an alternative toolpath strategy
  
 ## TODO's
  - Circle around

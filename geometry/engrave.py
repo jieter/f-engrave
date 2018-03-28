@@ -1,9 +1,10 @@
 from time import time
 from math import (ceil, fabs, floor, tan)
 
-from util import fmessage
+from util import fmessage, OVD_AVAILABLE
 from geometry import *
 from geometry.pathsorter import sort_paths
+
 # from sortPaths import sort_paths
 # from findMaxCircle import find_max_circle as find_max_circle_CPP
 
@@ -218,12 +219,36 @@ class Engrave(object):
 
         return total_length
 
+    def get_loops_from_coords(self):
+        """return a list of (closed) loops"""
+        loops = []
+        segments = []
+        next_loop = True
+        for segment in self.coords:
+            seg_begin = segment[0:2]
+            seg_end = segment[2:4]
+            if next_loop:
+                first_vertex = seg_begin
+                next_loop = False
+            segments.append(seg_begin)
+            if abs(seg_end[0] - first_vertex[0]) < Zero and abs(seg_end[1] - first_vertex[1]) < Zero:
+                loops.append(segments)
+                next_loop = True
+                segments = []
+        return loops
+
     def v_carve(self, clean=False):
+        if OVD_AVAILABLE and self.settings.get('v_strategy') == 'voronoi':
+            # experimental toolpath strategy, using Anders Wallin's openvoronoi library
+            import voronoi
+            segs = self.get_loops_from_coords()
+            voronoi.medial_axis(segs, clean)
+        else:
+            self.v_carve_scorch(clean)
 
+    def v_carve_scorch(self, clean=False):
         xN, yN, xPartitionLength, yPartitionLength = self.setup_grid_partitions(clean)
-
         self.determine_active_partitions(xN, yN, xPartitionLength, yPartitionLength, clean)
-
         return self.make_vcarve_toolpath(xPartitionLength, yPartitionLength, clean)
 
     def _calc_rmax(self, clean):

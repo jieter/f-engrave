@@ -193,6 +193,8 @@ class Settings(object):
         # 'input_type': 'image',
 
         # v-cutter parameters
+        # options: 'scorch', 'voronoi'
+        'v_strategy': 'scorch',
         'v_bit_angle': 60,
         'v_bit_dia': 3.0,
         'v_depth_lim': 0.0,

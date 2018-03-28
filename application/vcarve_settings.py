@@ -1,4 +1,4 @@
-from util import VERSION, OK, NOR, INV, NAN, position_window
+from util import VERSION, OVD_AVAILABLE, OK, NOR, INV, NAN, position_window
 from tooltip import ToolTip
 from settings import CUT_TYPE_VCARVE
 
@@ -33,7 +33,7 @@ class VCarveSettings(object):
 
         # V-Carve settings window
         self.width = 600
-        self.height = 700
+        self.height = 750
         self.vcarve_settings = Toplevel(width=self.width, height=self.height)
         self.vcarve_settings.withdraw()
 
@@ -58,6 +58,7 @@ class VCarveSettings(object):
         self.Entry_V_CLEAN = Entry()
 
         # V-Carve variables
+        self.v_strategy = StringVar()
         self.bit_shape = StringVar()
         self.v_bit_angle = StringVar()
         self.v_bit_dia = StringVar()
@@ -93,12 +94,18 @@ class VCarveSettings(object):
         self.create_widgets()
         self.create_icon()
 
+        # self.vcarve_settings_lower.update_idletasks()
+        # self.height = self.vcarve_settings.winfo_height()
+
         position_window(self.vcarve_settings, self.width, self.height)
         self.vcarve_settings.deiconify()
 
     def initialise_variables(self):
         self.units.set(self.settings.get('units'))
         self.max_cut.set('%.3g' % self.settings.get('max_cut'))
+
+        self.v_strategy_OptionList = ["scorch", "voronoi"]
+        self.v_strategy.set(self.settings.get('v_strategy'))
 
         self.bit_shape.set(self.settings.get('bit_shape'))
         self.v_bit_angle.set(self.settings.get('v_bit_angle'))
@@ -161,12 +168,24 @@ class VCarveSettings(object):
 
         w_label = 30
         w_entry = 5
+        w_option = 10
         # w_units = 5
         w_radio = 10
 
         # V-Bit drawing
         self.vbit_picture()
         self.Label_photo = Label(vcarve_settings, image=self.PHOTO)
+
+        # Toolpath strategy
+        self.vstrategy_frame = Frame(vcarve_settings_upper)
+        self.Label_vstrategy = Label(self.vstrategy_frame, text="Toolpath Strategy", width=w_label)
+        self.Label_vstrategy.pack(side=LEFT)
+        self.vstrategy_OptionMenu = OptionMenu(self.vstrategy_frame, self.v_strategy, *self.v_strategy_OptionList)
+        self.vstrategy_OptionMenu.config(width=w_option, anchor=W)
+        self.vstrategy_OptionMenu.pack()
+        self.v_strategy.trace_variable("w", self.Entry_vstrategy_Callback)
+        self.Label_vstrategy_ToolTip = ToolTip(self.Label_vstrategy,
+                                               text='How to plan the toolpath and calculate the maximum inscribed circles.')
 
         # V-Bit shape
         self.cutter_type_frame = Frame(vcarve_settings_upper)
@@ -289,9 +308,6 @@ class VCarveSettings(object):
         self.Entry_Allowance.pack(side=LEFT, anchor=W)
         self.Entry_Allowance.configure(textvariable=self.allowance)
         self.allowance.trace_variable("w", self.Entry_Allowance_Callback)
-
-        # Update Idle tasks before requesting anything from winfo
-        # vcarve_settings_lower.update_idletasks()
 
         # Multipass Settings
 
@@ -434,6 +450,9 @@ class VCarveSettings(object):
 
         padx = 10
         pady = 10
+
+        if OVD_AVAILABLE:
+            self.vstrategy_frame.pack(side=TOP, anchor=W)
 
         self.cutter_type_frame.pack(side=TOP, anchor=W)
         self.vbitangle_frame.pack(side=TOP, anchor=W)
@@ -761,6 +780,9 @@ class VCarveSettings(object):
         self.vcarve_settings.withdraw()
         self.vcarve_settings.deiconify()
         self.vcarve_settings.grab_set()
+
+    def Entry_vstrategy_Callback(self, varName, index, mode):
+        self.settings.set('v_strategy', self.v_strategy.get())
 
     def Entry_Bit_Shape_var_Callback(self, varName, index, mode):
         self.configure_Bit_Shape()

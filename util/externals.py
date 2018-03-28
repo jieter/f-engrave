@@ -4,6 +4,16 @@ import sys
 VERSION = sys.version_info[0]
 
 
+def check_ovd():
+    try:
+        import openvoronoi as ovd
+        return True
+    except:
+        print("openvoronoi module is not found/working...")
+
+    return False
+
+
 def check_ttf():
     cmd = ["ttf2cxf_stream", "TEST", "STDOUT"]
     try:
