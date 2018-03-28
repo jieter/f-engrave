@@ -40,6 +40,11 @@ def fmessage(text, newline=True):
         pass
 
 
+PIL = False
+OVD_AVAILABLE = False
+TTF_AVAILABLE = False
+POTRACE_AVAILABLE = False
+
 try:
     PIL = externals.check_pil()
     OVD_AVAILABLE = externals.check_ovd()

@@ -57,3 +57,5 @@ def check_pil():
     except:
         raise Exception("Python Imaging Library (PIL) was not found...Bummer\n\
         PIL enables more image file formats.")
+
+    return False
