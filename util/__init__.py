@@ -50,8 +50,8 @@ try:
     OVD_AVAILABLE = externals.check_ovd()
     TTF_AVAILABLE = externals.check_ttf()
     POTRACE_AVAILABLE = externals.check_potrace()
-except Exception, e:
-    fmessage(e)
+except Exception as e:
+    fmessage(str(e))
 
 
 def f_engrave_version():
