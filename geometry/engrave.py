@@ -238,13 +238,15 @@ class Engrave(object):
         return loops
 
     def v_carve(self, clean=False):
+        done = False
         if OVD_AVAILABLE and self.settings.get('v_strategy') == 'voronoi':
             # experimental toolpath strategy, using Anders Wallin's openvoronoi library
             import voronoi
             segs = self.get_loops_from_coords()
-            voronoi.medial_axis(segs, clean)
+            voronoi.medial_axis(segs, clean)  # TODO return status
         else:
-            self.v_carve_scorch(clean)
+            done = self.v_carve_scorch(clean)
+        return done
 
     def v_carve_scorch(self, clean=False):
         xN, yN, xPartitionLength, yPartitionLength = self.setup_grid_partitions(clean)
