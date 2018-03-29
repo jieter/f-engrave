@@ -11,21 +11,21 @@ class Batch(object):
 
         if settings.get('input_type') == "text":
             pass
-            # self.Read_font_file()
+            # self.readFontFile(self.settings)
         else:
             pass
-            # self.Read_image_file()
+            # self.read_image_file(self.settings)
 
-        # self.DoIt()
+        # self.do_it()
         # if self.cut_type.get() == "v-carve":
-            # self.V_Carve_It()
+            # self.v_carve_it()
         # self.WriteGCode()
         # self.WriteSVG()
 
-        # for line in self.svgcode:
+        # for line in svgcode:
             # print line
 
-        # for line in self.gcode:
+        # for line in gcode:
         #     try:
         #         sys.stdout.write(line+'\n')
         #     except:

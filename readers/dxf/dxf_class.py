@@ -7,7 +7,7 @@ from math import (
     ceil, floor
 )
 
-from geometry import Get_Angle, Transform, Zero
+from geometry import get_angle, transform, Zero
 from util import fmessage, VERSION
 
 from elements import *
@@ -71,26 +71,6 @@ class DXF_CLASS(object):
     def read_none(self, data):
         return None
 
-# '''
-#     def read_dxf_file(self, name, data):
-#         fd = file(name)
-#         Skip = True
-#         for line in fd:
-#             group_code = int(line)
-
-#             value = fd.next().replace('\r', '')
-#             value = value.replace('\n', '')
-#             value = value.lstrip(' ')
-#             value = value.rstrip(' ')
-#             value = self.funs[group_code](value)
-#             if (value != "SECTION") and Skip:
-#                 continue
-#             else:
-#                 Skip = False
-#             data.append((group_code, value))
-#         fd.close()
-# '''
-
     def read_dxf_data(self, fd, data):
         self.comment = "None"
         Skip = True
@@ -99,8 +79,6 @@ class DXF_CLASS(object):
             try:
                 group_code = int(line)
                 value = next(fd_iter).replace('\r', '')
-                # value = fd_iter.next().replace('\r', '')
-
                 value = value.replace('\n', '')
                 value = value.lstrip(' ')
                 value = value.rstrip(' ')
@@ -116,7 +94,9 @@ class DXF_CLASS(object):
                 pass
 
     def bulge_coords(self, x0, y0, x1, y1, bulge, tol_deg=20):
-        global Zero
+
+        # global Zero
+
         bcoords = []
         if bulge < 0.0:
             sign = 1
@@ -126,13 +106,13 @@ class DXF_CLASS(object):
         else:
             sign = -1
 
-        dx      = x1 - x0
-        dy      = y1 - y0
-        c       = sqrt(dx ** 2 + dy ** 2)
-        alpha   = 2.0 * (atan(bulge))
-        R       = c / (2 * sin(alpha))
-        L       = R * cos(alpha)
-        steps   = ceil(2 * alpha / radians(tol_deg))
+        dx = x1 - x0
+        dy = y1 - y0
+        c = sqrt(dx ** 2 + dy ** 2)
+        alpha = 2.0 * (atan(bulge))
+        R = c / (2 * sin(alpha))
+        L = R * cos(alpha)
+        steps = ceil(2 * alpha / radians(tol_deg))
 
         if abs(c) < Zero:
             phi = 0
@@ -141,7 +121,7 @@ class DXF_CLASS(object):
 
         seg_sin = dy / c
         seg_cos = dx / c
-        phi = Get_Angle(seg_sin, seg_cos)
+        phi = get_angle(seg_sin, seg_cos)
 
         d_theta = 2 * alpha / steps
         theta = alpha - d_theta
@@ -151,7 +131,7 @@ class DXF_CLASS(object):
         for i in range(1, int(steps)):
             xp = c / 2 - R * sin(theta)
             yp = R * cos(theta) - L
-            xb, yb = Transform(xp, yp * sign, radians(phi))
+            xb, yb = transform(xp, yp * sign, radians(phi))
             xb = xb + x0
             yb = yb + y0
 
@@ -169,6 +149,7 @@ class DXF_CLASS(object):
         except:
             fmessage("\nUnable to read input DXF data!")
             return 1
+
         data = iter(data)
         g_code, value = None, None
         sections = dict()
@@ -213,14 +194,12 @@ class DXF_CLASS(object):
                         while True:
                             g_code, value = next(data)
 
-                            ###################################
                             if g_code == 0:
                                 TYPE = value
                             if TYPE == "LWPOLYLINE" and g_code == 10 and g_code_last == 20:
                                 # Add missing code 42
                                 en.update((42, 0.0))
                             g_code_last = g_code
-                            ###################################
 
                             if value == "ENDSEC":
                                 break
@@ -243,19 +222,19 @@ class DXF_CLASS(object):
                 self.coords.append([x0, y0, x1, y1])
             # ARC #############
             elif e.type == "ARC":
-                x     = e.data["10"]
-                y     = e.data["20"]
-                r     = e.data["40"]
+                x = e.data["10"]
+                y = e.data["20"]
+                r = e.data["40"]
                 start = e.data["50"]
-                end   = e.data["51"]
+                end = e.data["51"]
 
                 if end < start:
                     end = end + 360.0
-                delta  = end - start
+                delta = end - start
                 angle_steps = max(floor(delta / tol_deg), 2)
 
                 start_r = radians(start)
-                end_r   = radians(end)
+                end_r = radians(end)
 
                 step_phi = radians(delta / angle_steps)
                 x0 = x + r * cos(start_r)
@@ -295,8 +274,8 @@ class DXF_CLASS(object):
                                 self.coords.append(line)
                         else:
                             self.coords.append([x0, y0, x1, y1])
-                        x0     = x1
-                        y0     = y1
+                        x0 = x1
+                        y0 = y1
                         bulge0 = bulge1
 
                 if e.data["70"] != 0:
@@ -316,14 +295,14 @@ class DXF_CLASS(object):
                 r = e.data["40"]
 
                 start = 0
-                end   = 360
+                end = 360
                 if end < start:
                     end = end + 360.0
-                delta  = end - start
+                delta = end - start
                 angle_steps = max(floor(delta) / tol_deg, 2)
 
                 start_r = radians(start)
-                end_r   = radians(end)
+                end_r = radians(end)
 
                 step_phi = radians(delta / angle_steps)
                 x0 = x + r * cos(start_r)
@@ -347,8 +326,8 @@ class DXF_CLASS(object):
                 self.CPoints = []
 
                 self.Spline_flag = int(e.data["70"])
-                self.degree      = int(e.data["71"])
-                self.Knots       =     e.data["40"]
+                self.degree = int(e.data["71"])
+                self.Knots = e.data["40"]
                 try:
                     self.Weights = e.data["41"]
                 except:
@@ -393,7 +372,7 @@ class DXF_CLASS(object):
 
                 # Start and end angles (in radians 0 and 2pi for full ellipse)
                 start = degrees(e.data["41"])
-                end   = degrees(e.data["42"])
+                end = degrees(e.data["42"])
 
                 rotation = atan2(yma, xma)
                 a = sqrt(xma ** 2 + yma ** 2)
@@ -402,10 +381,10 @@ class DXF_CLASS(object):
                 # #################
                 if end < start:
                     end = end + 360.0
-                delta  = end - start
+                delta = end - start
 
                 start_r = radians(start)
-                end_r   = radians(end)
+                end_r = radians(end)
 
                 tol = radians(tol_deg)
 
@@ -454,7 +433,7 @@ class DXF_CLASS(object):
                 ratio = e.data["40"]
                 # Start and end angles (in radians 0 and 2pi for full ellipse)
                 start = degrees(e.data["41"])
-                end   = degrees(e.data["42"])
+                end = degrees(e.data["42"])
 
                 rotation = atan2(yma, xma)
                 a = sqrt(xma ** 2 + yma ** 2)
@@ -463,11 +442,11 @@ class DXF_CLASS(object):
                 ##################
                 if end < start:
                     end = end + 360.0
-                delta  = end - start
+                delta = end - start
                 angle_steps = max(floor(delta / tol_deg), 2)
 
                 start_r = radians(start)
-                end_r   = radians(end)
+                end_r = radians(end)
 
                 step_phi = radians(delta / angle_steps)
                 x0 = xcp + (a * cos(start_r) * cos(rotation) - b * sin(start_r) * sin(rotation))
@@ -499,8 +478,8 @@ class DXF_CLASS(object):
 
             # POLYLINE ###########
             elif e.type == "POLYLINE":
-                self.POLY_CLOSED =  0
-                self.POLY_FLAG   = -1
+                self.POLY_CLOSED = 0
+                self.POLY_FLAG = -1
                 try:
                     TYPE = e.data["70"]
                     if (TYPE == 0 or TYPE == 8):
@@ -538,8 +517,8 @@ class DXF_CLASS(object):
             elif e.type == "VERTEX":
 
                 if (self.POLY_FLAG == -1):
-                    self.PX  = e.data["10"]
-                    self.PY  = e.data["20"]
+                    self.PX = e.data["10"]
+                    self.PY = e.data["20"]
                     self.PX0 = self.PX
                     self.PY0 = self.PY
                     try:
@@ -582,13 +561,13 @@ class DXF_CLASS(object):
             for line in self.coords:
                 XY = line
                 if XY[0] < xmin:
-                        xmin = XY[0]
+                    xmin = XY[0]
                 if XY[1] < ymin:
-                        ymin = XY[1]
+                    ymin = XY[1]
                 if XY[2] < xmin:
-                        xmin = XY[2]
+                    xmin = XY[2]
                 if XY[3] < ymin:
-                        ymin = XY[3]
+                    ymin = XY[3]
         else:
             xmin = 0
             ymin = 0

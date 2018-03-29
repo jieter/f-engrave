@@ -1,4 +1,11 @@
 def sort_paths(ecoords, i_loop=2):
+    """
+    Sort paths
+    :param ecoords: list of loop segment begin and end position coordinates
+    :param i_loop, loop
+    :return: list of loop x/y indices, ordered by distance
+    """
+
     # find loop ends
     Lbeg = []
     Lend = []
@@ -13,11 +20,12 @@ def sort_paths(ecoords, i_loop=2):
             loop_old = loop
         Lend.append(i)
 
-    # Find new order based on distance to next beg or end #
+    # Find new order based on distance to next beg or end
     order_out = []
     use_beg = 0
     if len(ecoords) > 0:
         order_out.append([Lbeg[0], Lend[0]])
+
     inext = 0
     total = len(Lbeg)
     for i in range(total - 1):
@@ -48,14 +56,14 @@ def sort_paths(ecoords, i_loop=2):
             if dist < min_dist:
                 min_dist = dist
                 inext = j
-            ###
+
             dxe = Xcur - ecoords[Lend[j]][0]
             dye = Ycur - ecoords[Lend[j]][1]
             diste = dxe * dxe + dye * dye
             if diste < min_diste:
                 min_diste = diste
                 inexte = j
-            ###
+
         if min_diste < min_dist:
             inext = inexte
             order_out.append([Lend[inexte], Lbeg[inexte]])

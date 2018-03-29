@@ -6,6 +6,7 @@ import readers.cxf as cxf
 
 
 class DXFReaderTest(unittest.TestCase):
+
     tolerance = 5.0
     key = ord('F')
 

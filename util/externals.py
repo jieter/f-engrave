@@ -4,6 +4,16 @@ import sys
 VERSION = sys.version_info[0]
 
 
+def check_ovd():
+    try:
+        import openvoronoi as ovd
+        return True
+    except:
+        print("openvoronoi module is not found/working...")
+
+    return False
+
+
 def check_ttf():
     cmd = ["ttf2cxf_stream", "TEST", "STDOUT"]
     try:
@@ -29,12 +39,23 @@ def check_potrace():
         if VERSION == 3:
             stdout = bytes.decode(stdout)
         if str.find(stdout.upper(), 'POTRACE') != -1:
-            return True
             if str.find(stdout.upper(), '1.1') == -1:
-                raise Exception("F-Engrave Requires Potrace Version 1.10 or Newer.")
+                raise Exception("Requires Potrace Version 1.10 or newer.")
+            return True
         else:
             raise Exception("potrace is not working...Bummer")
     except:
         raise Exception("potrace executable is not present/working...Bummer")
+
+    return False
+
+
+def check_pil():
+    try:
+        from PIL import Image
+        return True
+    except:
+        raise Exception("Python Imaging Library (PIL) was not found...Bummer\n\
+        PIL enables more image file formats.")
 
     return False
