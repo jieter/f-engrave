@@ -232,18 +232,40 @@ class Engrave(object):
                 next_loop = False
             segments.append(seg_begin)
             if abs(seg_end[0] - first_vertex[0]) < Zero and abs(seg_end[1] - first_vertex[1]) < Zero:
+                # segments.append(seg_end)
+                segments.reverse()
                 loops.append(segments)
                 next_loop = True
                 segments = []
         return loops
 
     def v_carve(self, clean=False):
+
         done = False
+
         if OVD_AVAILABLE and self.settings.get('v_strategy') == 'voronoi':
+
             # experimental toolpath strategy, using Anders Wallin's openvoronoi library
             import voronoi
+
+            def toolpath_to_v_coords(toolpath, scale):
+                for loop_cnt, chain in enumerate(toolpath):
+                    for move in chain:
+                        for point in move:
+                            p = point[0]
+                            z = point[1]
+                            xnormv = scale * p.x
+                            ynormv = scale * p.y
+                            rout = scale * (-z)
+                            self.v_coords.append([xnormv, ynormv, rout, loop_cnt])
+
             segs = self.get_loops_from_coords()
-            voronoi.medial_axis(segs, clean)  # TODO return status
+            self.v_coords = []
+
+            toolpath = voronoi.medial_axis(segs, clean)  # TODO return status
+            toolpath_to_v_coords(toolpath, 1)
+
+            done = True
         else:
             done = self.v_carve_scorch(clean)
         return done

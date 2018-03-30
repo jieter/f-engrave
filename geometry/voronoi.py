@@ -1,5 +1,6 @@
 import openvoronoi as ovd
 # import ngc_writer
+from util import header_text, f_engrave_version
 from math import (sqrt)
 
 import time
@@ -88,6 +89,11 @@ class NgcWriter:
     def __init__(self, filename="output.ngc"):
         self.filename = filename
         self.out = open(filename, 'w')
+        self.write_header()
+
+    def write_header(self):
+        for line in header_text():
+           self.out.write("%s\n" % line)
 
     def write(self, cmd):
         self.out.write("{}\n".format(cmd))
@@ -105,17 +111,15 @@ class NgcWriter:
         self.write("G1 X{} Y{} Z{} F{}".format(x, y, z, self.feed))
 
 
-def printMedial(vd, scale):
-    maw = ovd.MedialAxisWalk(vd.getGraph())
-    toolpath = maw.walk()
+def print_toolpath(toolpath, scale):
     ngc = NgcWriter()
     for chain in toolpath:
-        n = 0
+        first_point = True
         for move in chain:
             for point in move:
-                if n == 0:  # don't draw anything on the first iteration
+                if first_point:  # don't draw anything on the first iteration
                     p = point[0]
-                    zdepth = scale * point[1]
+                    zdepth = scale * point[1]  # derive Z height from MIC
                     ngc.pen_up()
                     ngc.xy_rapid_to(scale * p.x, scale * p.y)
                     ngc.pen_down(z=-zdepth)
@@ -123,7 +127,8 @@ def printMedial(vd, scale):
                     p = point[0]
                     z = point[1]
                     ngc.line_to(scale * p.x, scale * p.y, scale * (-z))
-                n += 1
+                first_point = False
+    ngc.pen_up()  # final engraver up
     return
 
 
@@ -136,9 +141,12 @@ def medial_axis(segs, clean=False):
     # svgr.centerPolys()
 
     # far = svgr.radius * 1.2
-    far = 100.0
+    far = 500.0  # TODO derive far from coords radius or bounding box
     n_bins = int(sqrt(1200))  # approx. sqrt(nr of sites)
     vd = ovd.VoronoiDiagram(far, n_bins)
+    # vd.debug_on()
+
+    # translate(segs, 0.0, 0.5)
 
     times = insert_many_polygons(vd, segs)
     print("all sites inserted: %d " % len(times))
@@ -150,7 +158,12 @@ def medial_axis(segs, clean=False):
     ma = ovd.MedialAxis()
     vd.filter_graph(ma)
 
-    printMedial(vd, 1)  # write ngc to output.ngc
+    maw = ovd.MedialAxisWalk(vd.getGraph())
+    toolpath = maw.walk()
+
+    print_toolpath(toolpath, 1)  # write ngc to output.ngc
 
     # vod.setVDText2(times)
     # vod.setAll()
+
+    return toolpath
