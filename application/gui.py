@@ -1285,23 +1285,22 @@ class Gui(Frame):
 
         # V-carve Plotting Stuff
         if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
-            r_inlay_top = self.calc_r_inlay_top()
 
+            r_inlay_top = self.calc_r_inlay_top()
             for XY in self.engrave.v_coords:
-                x1 = XY[0]
-                y1 = XY[1]
+                new = (XY[0], XY[1])
                 r = XY[2]
                 color = "black"
 
                 rbit = self.engrave.calc_vbit_radius()
                 if self.settings.get('bit_shape') == "FLAT":
                     if r >= rbit:
-                        self.plot_circle((x1, y1), midx, midy, cszw, cszh, color, r, 1)
+                        self.plot_circle(new, midx, midy, cszw, cszh, color, r, 1)
                 else:
                     if self.settings.get('inlay'):
-                        self.plot_circle((x1, y1), midx, midy, cszw, cszh, color, r - r_inlay_top, 1)
+                        self.plot_circle(new, midx, midy, cszw, cszh, color, r - r_inlay_top, 1)
                     else:
-                        self.plot_circle((x1, y1), midx, midy, cszw, cszh, color, r, 1)
+                        self.plot_circle(new, midx, midy, cszw, cszh, color, r, 1)
 
             old = (0.0, 0.0)
             loop_old = -1

@@ -86,14 +86,25 @@ class NgcWriter:
     metric = True
     scale = 1
 
-    def __init__(self, filename="output.ngc"):
+    def __init__(self, settings, filename="output.ngc"):
         self.filename = filename
+        self.settings = settings
         self.out = open(filename, 'w')
         self.write_header()
 
     def write_header(self):
         for line in header_text():
-           self.out.write("%s\n" % line)
+            self.out.write("{}\n".format(line))
+
+    def write_preamble(self):
+        for line in self.settings.get('gcode_preamble').split('|'):
+            # code.append(line)
+            self.out.write("{}\n".format(line))
+
+    def write_postamble(self):
+        for line in self.settings.get('gcode_postamble').split('|'):
+            # code.append(line)
+            self.out.write("{}\n".format(line))
 
     def write(self, cmd):
         self.out.write("{}\n".format(cmd))
@@ -111,13 +122,16 @@ class NgcWriter:
         self.write("G1 X{} Y{} Z{} F{}".format(x, y, z, self.feed))
 
 
-def print_toolpath(toolpath, scale):
-    ngc = NgcWriter()
+def print_toolpath(settings, toolpath, scale=1.0):
+    ngc = NgcWriter(settings)
+    ngc.write_preamble()
+
     for chain in toolpath:
         first_point = True
         for move in chain:
             for point in move:
                 if first_point:  # don't draw anything on the first iteration
+                    first_point = False
                     p = point[0]
                     zdepth = scale * point[1]  # derive Z height from MIC
                     ngc.pen_up()
@@ -127,12 +141,14 @@ def print_toolpath(toolpath, scale):
                     p = point[0]
                     z = point[1]
                     ngc.line_to(scale * p.x, scale * p.y, scale * (-z))
-                first_point = False
+
     ngc.pen_up()  # final engraver up
+    ngc.write_postamble()
+
     return
 
 
-def medial_axis(segs, clean=False):
+def medial_axis(settings, segs, clean=False):
     import sys
 
     # svg = "../samples/Hello_flattened2_rev.svg" if len(sys.argv) < 2 else sys.argv[1]
@@ -146,11 +162,8 @@ def medial_axis(segs, clean=False):
     vd = ovd.VoronoiDiagram(far, n_bins)
     # vd.debug_on()
 
-    # translate(segs, 0.0, 0.5)
-
     times = insert_many_polygons(vd, segs)
-    print("all sites inserted: %d " % len(times))
-    # print("all sites inserted.")
+    # print("all sites inserted: %d " % len(times))
     print("VD check: %s" % vd.check())
 
     pi = ovd.PolygonInterior(True)
@@ -161,7 +174,7 @@ def medial_axis(segs, clean=False):
     maw = ovd.MedialAxisWalk(vd.getGraph())
     toolpath = maw.walk()
 
-    print_toolpath(toolpath, 1)  # write ngc to output.ngc
+    print_toolpath(settings, toolpath, 1.0)  # write ngc to output.ngc
 
     # vod.setVDText2(times)
     # vod.setAll()

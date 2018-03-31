@@ -233,7 +233,7 @@ class Engrave(object):
             segments.append(seg_begin)
             if abs(seg_end[0] - first_vertex[0]) < Zero and abs(seg_end[1] - first_vertex[1]) < Zero:
                 # segments.append(seg_end)
-                segments.reverse()
+                # segments.reverse()  # inside/outside
                 loops.append(segments)
                 next_loop = True
                 segments = []
@@ -262,7 +262,8 @@ class Engrave(object):
             segs = self.get_loops_from_coords()
             self.v_coords = []
 
-            toolpath = voronoi.medial_axis(segs, clean)  # TODO return status
+            toolpath = voronoi.medial_axis(self.settings, segs, clean)  # TODO return status
+
             toolpath_to_v_coords(toolpath, 1)
 
             done = True
