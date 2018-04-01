@@ -108,12 +108,13 @@ class Gui(Frame):
         self.master.bind('<F2>', self.KEY_F2)
         self.master.bind('<F3>', self.KEY_F3)
         self.master.bind('<F4>', self.KEY_F4)
-        self.master.bind('<F5>', self.KEY_F5)  # self.Recalculate_Click)
+        self.master.bind('<F5>', self.KEY_F5)
         self.master.bind('<Prior>', self.KEY_ZOOM_IN)  # Page Up
         self.master.bind('<Next>', self.KEY_ZOOM_OUT)  # Page Down
         self.master.bind('<Control-q>', self.menu_File_Quit)
+        self.master.bind('<Control-o>', self.KEY_CTRL_O)
         self.master.bind('<Control-g>', self.KEY_CTRL_G)
-        self.master.bind('<Control-s>', self.KEY_CTRL_S)  # Save
+        self.master.bind('<Control-s>', self.KEY_CTRL_S)
 
     def create_widgets(self):
         self.batch = BooleanVar()
@@ -1024,6 +1025,9 @@ class Gui(Frame):
 
     def KEY_CTRL_G(self, event):
         self.CopyClipboard_GCode()
+
+    def KEY_CTRL_O(self, event):
+        self.menu_File_Open_DXF_File()
 
     def KEY_CTRL_S(self, event):
         self.menu_File_Save_G_Code_File()

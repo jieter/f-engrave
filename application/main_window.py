@@ -76,11 +76,11 @@ class MenuBar(object):
         top_File.add("command", label="Read Settings from File", command=self.Ctrl_open_g_code_file)
         top_File.add_separator()
         if POTRACE_AVAILABLE:
-            top_File.add("command", label="Open DXF/Bitmap", command=self.Ctrl_open_dxf_file)
+            top_File.add("command", label="Open DXF/Bitmap", command=self.Ctrl_open_dxf_file, accelerator="Ctrl-O")
         else:
             top_File.add("command", label="Open DXF", command=self.Ctrl_open_dxf_file)
         top_File.add_separator()
-        top_File.add("command", label="Save G-Code", command=self.Ctrl_save_g_code_file)
+        top_File.add("command", label="Save G-Code", command=self.Ctrl_save_g_code_file, accelerator="Ctrl+S")
         top_File.add_separator()
         top_File.add("command", label="Export SVG", command=self.Ctrl_save_svg_file)
         top_File.add("command", label="Export DXF", command=self.Ctrl_save_dxf_file)
@@ -88,11 +88,11 @@ class MenuBar(object):
         if IN_AXIS:
             top_File.add("command", label="Write To Axis and Exit", command=self.Ctrl_write_to_axis)
         else:
-            top_File.add("command", label="Exit", command=self.Ctrl_quit)
+            top_File.add("command", label="Exit", command=self.Ctrl_quit, accelerator="Ctrl+Q")
         self.menuBar.add("cascade", label="File", menu=top_File)
 
         top_Edit = Menu(self.menuBar, tearoff=0)
-        top_Edit.add("command", label="Copy G-Code Data to Clipboard", command=self.Ctrl_copy_g_code)
+        top_Edit.add("command", label="Copy G-Code Data to Clipboard", command=self.Ctrl_copy_g_code, accelerator="Ctrl+G")
         top_Edit.add("command", label="Copy SVG Data to Clipboard", command=self.Ctrl_copy_svg)
         self.menuBar.add("cascade", label="Edit", menu=top_Edit)
 
@@ -100,9 +100,9 @@ class MenuBar(object):
         top_View.add("command", label="Recalculate", command=self.Ctrl_recalculate)
         top_View.add_separator()
 
-        top_View.add("command", label="Zoom In <Page Up>", command=self.Ctrl_zoom_in)
-        top_View.add("command", label="Zoom Out <Page Down>", command=self.Ctrl_zoom_out)
-        top_View.add("command", label="Zoom Fit <F5>", command=self.Ctrl_refresh)
+        top_View.add("command", label="Zoom In", command=self.Ctrl_zoom_in, accelerator="PageUp")
+        top_View.add("command", label="Zoom Out", command=self.Ctrl_zoom_out, accelerator="PageDown")
+        top_View.add("command", label="Zoom Fit", command=self.Ctrl_refresh, accelerator="F5")
 
         top_View.add_separator()
 
@@ -115,10 +115,10 @@ class MenuBar(object):
         self.show_box.trace_variable("w", self.Entry_show_box_Callback)
 
         top_Settings = Menu(self.menuBar, tearoff=0)
-        top_Settings.add("command", label="General Settings", command=self.Ctrl_general_settings)
-        top_Settings.add("command", label="V-Carve Settings", command=self.Ctrl_vcarve_settings)
+        top_Settings.add("command", label="General Settings", command=self.Ctrl_general_settings, accelerator="F2")
+        top_Settings.add("command", label="V-Carve Settings", command=self.Ctrl_vcarve_settings, accelerator="F3")
         if POTRACE_AVAILABLE:
-            top_Settings.add("command", label="Bitmap Import Settings", command=self.Ctrl_bitmap_settings)
+            top_Settings.add("command", label="Bitmap Import Settings", command=self.Ctrl_bitmap_settings, accelerator="F4")
 
         top_Settings.add_separator()
         top_Settings.add_radiobutton(label="Engrave Mode", variable=self.cut_type, value="engrave")
@@ -134,7 +134,7 @@ class MenuBar(object):
         self.menuBar.add("cascade", label="Settings", menu=top_Settings)
 
         top_Help = Menu(self.menuBar, tearoff=0)
-        top_Help.add("command", label="About", command=self.Ctrl_about)
+        top_Help.add("command", label="About", command=self.Ctrl_about, accelerator="F1")
         top_Help.add("command", label="Help (original)", command=self.Ctrl_webpage)
         self.menuBar.add("cascade", label="Help", menu=top_Help)
 
