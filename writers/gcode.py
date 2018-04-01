@@ -19,12 +19,6 @@ def gcode(job):
     code.extend(header_text())
     code.extend(settings.to_gcode())
 
-    # String_short = String
-    # max_len = 40
-    # if len(String) > max_len:
-    #     String_short = String[0:max_len] + '___'
-
-    # accuracy = settings.get('accuracy')
     dp, dpfeed = get_nr_of_decimals(job)
 
     safe_z = settings.get('zsafe')
@@ -100,7 +94,6 @@ def engrave_gcode(job):
         safe_val = '#1'
         depth_val = '#2'
 
-    # TODO add GCode object to job?
     # g_target = lambda s: sys.stdout.write(s + "\n")  # TEST
     g = Gcode(safetyheight=safe_z,
               tolerance=accuracy,
@@ -205,18 +198,12 @@ def engrave_gcode(job):
             z1 = zmin
             rough_again = True
 
-        # zmax = zmin - maxDZ
-
         if settings.get('bit_shape') == "FLAT" and settings.get('cut_type') != "engrave":
             FORMAT = '%%.%df' % (dp)
             depth_val = FORMAT % (z1)
 
-        # dist = 999
         lastx = -999
         lasty = -999
-        # lastz = 0
-        # z1 = 0
-        # nextz = 0
 
         # code.append("G0 Z%s" %(safe_val))
         for line in order_out:
@@ -227,28 +214,12 @@ def engrave_gcode(job):
             else:
                 step = 1
 
-            # R_last = 999
-            # x_center_last = 999
-            # y_center_last = 999
-            # FLAG_arc = 0
-            # FLAG_line = 0
-            # code = []
-
             loop_old = -1
 
             for i in range(temp[0], temp[1] + step, step):
                 x1 = ecoords[i][0]
                 y1 = ecoords[i][1]
                 loop = ecoords[i][2]
-
-                # if i + 1 < temp[1] + step:
-                #     nextx = ecoords[i + 1][0]
-                #     nexty = ecoords[i + 1][1]
-                #     nextloop = ecoords[i + 1][2]
-                # else:
-                #     nextx = 0
-                #     nexty = 0
-                #     nextloop = -99  # don't change this dummy number it is used below
 
                 # check and see if we need to move to a new discontinuous start point
                 if loop != loop_old:
@@ -276,9 +247,9 @@ def engrave_gcode(job):
                         lasty = y1
                         g.cut(x1, y1)
                 else:
-                    g.cut(x1, y1)
                     lastx = x1
                     lasty = y1
+                    g.cut(x1, y1)
 
                 loop_old = loop
 
@@ -454,9 +425,8 @@ def vcarve_gcode(job):
                     nextz = -nextr / tan(half_angle)
                     if settings.get('inlay'):
                         inlay_depth = settings.get('max_cut')
-                        # inlay_depth = settings.get('v_max_cut')
-                        z1 = z1 + inlay_depth
-                        nextz = nextz + inlay_depth
+                        z1 += inlay_depth
+                        nextz += inlay_depth
 
                 elif bit_shape == "BALL":
                     theta = acos(r1 / bit_radius)
@@ -485,7 +455,7 @@ def vcarve_gcode(job):
                     nextz = zmin
                     rough_again = True
 
-                zmax = zmin - maxDZ  # + rough_stock
+                zmax = zmin - maxDZ
                 if z1 > zmax and nextz > zmax and roughing:
                     loop_old = -1
                     continue
@@ -505,16 +475,7 @@ def vcarve_gcode(job):
                     FORMAT = 'G1 Z%%.%df' % (dp)
                     code.append(FORMAT % z1)
 
-                    # lastx = x1
-                    # lasty = y1
-                    # lastz = z1
-                    g.cut(x1, y1, z1)
-                else:
-                    g.cut(x1, y1, z1)
-                    # lastx = x1
-                    # lasty = y1
-                    # lastz = z1
-
+                g.cut(x1, y1, z1)
                 loop_old = loop
 
             g.flush()
@@ -533,11 +494,9 @@ def write_clean_up(job, bit_type="straight"):
 
     calc_depth_limit(job)
     depth = settings.get('max_cut')
-    # depth = settings.get('v_max_cut')
     if settings.get('inlay'):
         depth = depth + settings.get('allowance')
 
-    # accuracy = settings.get('accuracy')
     dp, dpfeed = get_nr_of_decimals(job)
 
     if bit_type == "straight":
@@ -566,7 +525,6 @@ def write_clean_up(job, bit_type="straight"):
     if settings.get('var_dis'):
         FORMAT = '%%.%df' % dp
         safe_val = FORMAT % safe_z
-        # depth_val = FORMAT % depth
     else:
         FORMAT = '#1 = %%.%df  ( Safe Z )' % dp
         code.append(FORMAT % safe_z)
@@ -623,10 +581,6 @@ def write_clean_up(job, bit_type="straight"):
         rough_again = False
         zmin += maxDZ
 
-        # code.append( 'G0 Z%s' % safe_val)
-        # oldx = oldy = -1e10
-        # first_stroke = True
-
         # The clean coords have already been sorted so we can just write them
         order_out = sort_paths(coords_out, 3)
         new_coords = []
@@ -679,8 +633,6 @@ def write_clean_up(job, bit_type="straight"):
                         feed_current = plunge_str
 
                     code.append("G1 Z%s" % (depth_val) + feed_string)
-                    # lastx = x1
-                    # lasty = y1
                 else:
                     if feed_str == feed_current:
                         feed_string = ""
@@ -690,8 +642,6 @@ def write_clean_up(job, bit_type="straight"):
 
                     FORMAT = 'G1 X%%.%df Y%%.%df' % (dp, dp)
                     code.append(FORMAT % (x1, y1) + feed_string)
-                    # lastx = x1
-                    # lasty = y1
 
                 loop_old = loop
 

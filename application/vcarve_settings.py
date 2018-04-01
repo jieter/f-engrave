@@ -94,9 +94,6 @@ class VCarveSettings(object):
         self.create_widgets()
         self.create_icon()
 
-        # self.vcarve_settings_lower.update_idletasks()
-        # self.height = self.vcarve_settings.winfo_height()
-
         position_window(self.vcarve_settings, self.width, self.height)
         self.vcarve_settings.deiconify()
 
@@ -814,7 +811,7 @@ class VCarveSettings(object):
         try:
             vcarve_settings.iconbitmap(bitmap="@emblem64")
         except:
-            try:  # Attempt to create temporary icon bitmap file
+            try:  # attempt to create temporary icon bitmap file
                 temp_icon("f_engrave_icon")
                 vcarve_settings.iconbitmap("@f_engrave_icon")
                 os.remove("f_engrave_icon")

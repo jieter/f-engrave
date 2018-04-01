@@ -161,7 +161,7 @@ class MyText(MyImage):
         self.font = None
         self.text = u''
 
-        # Keys of characters, if any, that were not found in the font set
+        # Keys of the characters, if any, that were not found in the font set
         self.no_font_record = []
 
         # TODO use settings?

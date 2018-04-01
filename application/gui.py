@@ -78,7 +78,6 @@ class Gui(Frame):
         self.statusMessage.set(msg)
         self.statusbar.configure(bg=color)
         self.master.update()
-        # self.PreviewCanvas.update()
 
     def plot_progress(self, normv, color, radius):
         """
@@ -88,7 +87,6 @@ class Gui(Frame):
         cszw = int(self.PreviewCanvas.winfo_width())
         cszh = int(self.PreviewCanvas.winfo_height())
         midx, midy = self.engrave.image.get_midxy()
-
         self.plot_circle(normv, midx, midy, cszw, cszh, color, radius, False)
 
     def f_engrave_init(self):
@@ -113,6 +111,7 @@ class Gui(Frame):
         self.master.bind('<F5>', self.KEY_F5)  # self.Recalculate_Click)
         self.master.bind('<Prior>', self.KEY_ZOOM_IN)  # Page Up
         self.master.bind('<Next>', self.KEY_ZOOM_OUT)  # Page Down
+        self.master.bind('<Control-q>', self.menu_File_Quit)
         self.master.bind('<Control-g>', self.KEY_CTRL_G)
         self.master.bind('<Control-s>', self.KEY_CTRL_S)  # Save
 
@@ -401,10 +400,8 @@ class Gui(Frame):
         self.do_it()
 
     def Settings_ReLoad_Click(self, event, arg1="", arg2=""):
-
         win_id = self.grab_current()
         self.do_it()
-
         try:
             win_id.withdraw()
             win_id.deiconify()
@@ -413,7 +410,6 @@ class Gui(Frame):
 
     def Calculate_CLEAN_Click(self):
 
-        # TSTART = time() # TEST
         win_id = self.grab_current()
 
         if self.engrave.number_of_clean_segments == 0:
@@ -432,7 +428,6 @@ class Gui(Frame):
             win_id.grab_set()
         except:
             pass
-        # print "time for cleanup calculations: ",time()-TSTART # TEST
 
     def Write_Clean_Click(self):
 
@@ -574,8 +569,6 @@ class Gui(Frame):
 
         return error_cnt
 
-    # TODO refactor this into a separate object?
-
     def V_Carve_Calc_Click(self):
         if self.Check_All_Variables() > 0:
             return
@@ -610,7 +603,7 @@ class Gui(Frame):
             vcalc_status.iconbitmap(bitmap="@emblem64")
         except:
             pass
-            try:  # Attempt to create temporary icon bitmap file
+            try:  # attempt to create temporary icon bitmap file
                 temp_icon("f_engrave_icon")
                 vcalc_status.iconbitmap("@f_engrave_icon")
                 os.remove("f_engrave_icon")
@@ -656,7 +649,7 @@ class Gui(Frame):
             try:
                 vcalc_status.iconbitmap(bitmap="@emblem64")
             except:
-                try:  # Attempt to create temporary icon bitmap file
+                try:  # attempt to create temporary icon bitmap file
                     temp_icon("f_engrave_icon")
                     vcalc_status.iconbitmap("@f_engrave_icon")
                     os.remove("f_engrave_icon")
@@ -989,9 +982,9 @@ class Gui(Frame):
             self.statusMessage.set("File Saved: %s" % (filename))
             self.statusbar.configure(bg='white')
 
-    def menu_File_Quit(self):
+    def menu_File_Quit(self, event=None):
         if message_ask_ok_cancel("Exit", "Exiting OOF-Engrave...."):
-            self.Quit_Click(None)
+            self.Quit_Click(event)
 
     def menu_View_Refresh(self):
         if self.initComplete and self.batch.get() is False and self.delay_calc is False:
@@ -1003,9 +996,7 @@ class Gui(Frame):
         self.do_it()
 
     def menu_Help_About(self):
-        about = "OOF-Engrave, refactored from the original F-Engrave.\n\n"
-        # about = about + "\163\143\157\162\143\150\100\163\143\157\162"
-        # about = about + "\143\150\167\157\162\153\163\056\143\157\155\n"
+        about = "OOF-Engrave, refactored F-Engrave.\n\n"
         about = about + "http://github.com/Blokkendoos/OOF-Engrave\n"
         about = about + "http://www.scorchworks.com"
         message_box("About OOF-Engrave", about)
@@ -1014,7 +1005,7 @@ class Gui(Frame):
         webbrowser.open_new(r"http://www.scorchworks.com/Fengrave/fengrave_doc.html")
 
     def KEY_ESC(self, event):
-        pass  # A stop calculation command may go here
+        self.Stop_Click(event)
 
     def KEY_F1(self, event):
         self.menu_Help_About()

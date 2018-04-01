@@ -28,9 +28,6 @@ class JobTest(unittest.TestCase):
 
     def test_text_code(self):
         job = self._job_with_settings(
-            # ('fontfile', 'unicode.cxf'),
-            # ('fontfile', 'ttf/LucidaBright.ttf'),
-            # ('text_code', '116  101  115  116'),  # "test"
             ('text_code', '079 079 070 045 069 110 103 114 097 118 130'),  # "OOF-Engrav&eacute;"
             ('default_text', ''),
         )

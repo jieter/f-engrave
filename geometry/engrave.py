@@ -208,9 +208,9 @@ class Engrave(object):
             x2 = line[2]
             y2 = line[3]
             if v_flop:
-                length = hypot((x1 - x2), (y1 - y2))
+                length = hypot(x1 - x2, y1 - y2)
             else:
-                length = hypot((x2 - x1), (y2 - y1))
+                length = hypot(x2 - x1, y2 - y1)
             if clean:
                 if self.clean_segment[curr_cnt] is True:
                     total_length += length
@@ -220,7 +220,7 @@ class Engrave(object):
         return total_length
 
     def get_loops_from_coords(self):
-        """return a list of (closed) loops"""
+        """return a list of loops"""
         loops = []
         segments = []
         next_loop = True
@@ -400,7 +400,7 @@ class Engrave(object):
             dy = y2 - y1
             Lseg = hypot(dx, dy)
 
-            if Lseg < Zero:  # was accuracy
+            if Lseg < Zero:
                 continue
 
             # calculate the sin and cos of the coord transformation needed for the distance calculations
@@ -411,12 +411,6 @@ class Engrave(object):
             if calc_flag is True:
                 CUR_LENGTH = CUR_LENGTH + Lseg
             else:
-                # theta = phi         #V1.62
-                # x0=x2               #V1.62
-                # y0=y2               #V1.62
-                # seg_sin0=seg_sin    #V1.62
-                # seg_cos0=seg_cos    #V1.62
-                # char_num0=char_num  #V1.62
                 continue
 
             # another loop, or another character
@@ -540,9 +534,7 @@ class Engrave(object):
             sub_seg_sin = sin(sub_phi)
 
             rout = self.find_max_circle(xIndex, yIndex, x1, y1, rmax, char_num, sub_seg_sin, sub_seg_cos, True, CHK_STRING)
-
             normv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rbit, rout, loop_cnt, clean)
-
             self.clean_segment[curr] = self.clean_segment[curr] or clean_seg
 
             if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
@@ -552,11 +544,9 @@ class Engrave(object):
         """
         Determine active partitions for each line segment
         """
-        # rbit = self.calc_vbit_radius()
         rmax = self._calc_rmax(clean)
         minx, maxx, miny, maxy = self.image.get_bbox().tuple()
 
-        # for XY_R in self.coords:
         for curr, coords in enumerate(self.coords):
 
             XY_R = self.coords[curr][:]
@@ -653,7 +643,6 @@ class Engrave(object):
         """
         Setup Grid Partitions for the cleaning toolpath
         """
-        # rbit = self.calc_vbit_radius()
         rmax = self._calc_rmax(clean)
         dline = self.settings.get('v_step_len')
 
@@ -725,10 +714,6 @@ class Engrave(object):
                     pass
 
         return vbit_dia / 2
-
-    # def find_max_circle_CPP(self, xIndex, yIndex, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
-    #     rmax = find_max_circle_CPP(self.partition_list, xIndex, yIndex, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING)
-    #     return rmax
 
     def find_max_circle(self, xIndex, yIndex, xpt, ypt, rmin, char_num, seg_sin, seg_cos, corner, CHK_STRING):
         """
@@ -851,7 +836,7 @@ class Engrave(object):
                 ecoords.append([x2, y2])
                 oldx, oldy = x2, y2
             else:
-                dist = hypot((oldx - x1), (oldy - y1))
+                dist = hypot(oldx - x1, oldy - y1)
                 # check and see if we need to move to a new discontinuous start point
                 if dist > Zero:
                     Lend.append(cnt)

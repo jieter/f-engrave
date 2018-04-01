@@ -192,9 +192,10 @@ class Settings(object):
         'input_type': 'text',
         # 'input_type': 'image',
 
-        # v-cutter parameters
+        # v-cutter parameters:
+
         # options: 'scorch', 'voronoi'
-        'v_strategy': 'scorch',
+        'v_strategy': 'scorch',  # new in v1.65b
         'v_bit_angle': 60,
         'v_bit_dia': 3.0,
         'v_depth_lim': 0.0,
