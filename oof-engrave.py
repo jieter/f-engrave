@@ -304,9 +304,22 @@ else:
 
     root = Tk()
     app = Gui(root, settings)
+
+    width = 900
+    height = 600
+
     app.master.title("OOF-Engrave v" + f_engrave_version())
     app.master.iconname("OOF-Engrave")
-    app.master.minsize(900, 600)
+    app.master.minsize(width, height)
+
+    # get screen width and height
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    # center window
+    x = (screen_width / 2) - (width / 2)
+    y = (screen_height / 2) - (height / 2)
+    root.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
     app.f_engrave_init()
 

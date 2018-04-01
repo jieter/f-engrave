@@ -1792,6 +1792,7 @@ class Gui(Frame):
                 self.statusMessage.set('Done -- ' + self.bounding_box.get())
                 self.statusbar.configure(bg='white')
 
+        # in OS X, if the window position is upper left the window maximizes when resizing is enabled
         self.master.resizable(True, True)
         self.master.bind("<Configure>", self.Master_Configure)
 

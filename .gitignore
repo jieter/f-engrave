@@ -1,4 +1,12 @@
 *.pyc
+
+# ignore Mac OS files
 .DS_Store
+
+# ignore project files
 .idea/
+
+# ignore G-Code output
+output.ngc
+
 f-engrave.icon
