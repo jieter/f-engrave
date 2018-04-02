@@ -219,56 +219,19 @@ class Engrave(object):
 
         return total_length
 
-    def get_loops_from_coords(self):
-        """return a list of loops"""
-        loops = []
-        segments = []
-        next_loop = True
-        for segment in self.coords:
-            seg_begin = segment[0:2]
-            seg_end = segment[2:4]
-            if next_loop:
-                first_vertex = seg_begin
-                next_loop = False
-            segments.append(seg_begin)
-            if abs(seg_end[0] - first_vertex[0]) < Zero and abs(seg_end[1] - first_vertex[1]) < Zero:
-                # segments.append(seg_end)
-                # segments.reverse()  # inside/outside
-                loops.append(segments)
-                next_loop = True
-                segments = []
-        return loops
-
     def v_carve(self, clean=False):
 
         done = False
 
         if OVD_AVAILABLE and self.settings.get('v_strategy') == 'voronoi':
-
             # experimental toolpath strategy, using Anders Wallin's openvoronoi library
             import voronoi
-
-            def toolpath_to_v_coords(toolpath, scale):
-                for loop_cnt, chain in enumerate(toolpath):
-                    for move in chain:
-                        for point in move:
-                            p = point[0]
-                            z = point[1]
-                            xnormv = scale * p.x
-                            ynormv = scale * p.y
-                            rout = scale * (-z)
-                            self.v_coords.append([xnormv, ynormv, rout, loop_cnt])
-
-            segs = self.get_loops_from_coords()
-            self.v_coords = []
-
-            toolpath = voronoi.medial_axis(self.settings, segs, clean)  # TODO return status
-
-            toolpath_to_v_coords(toolpath, 1)
-
+            self.v_coords = voronoi.medial_axis(self.coords, self.image.get_max_radius(),
+                                                self.get_v_flop(), clean)  # TODO return status
             done = True
         else:
             done = self.v_carve_scorch(clean)
+
         return done
 
     def v_carve_scorch(self, clean=False):

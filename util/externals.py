@@ -9,7 +9,7 @@ def check_ovd():
         import openvoronoi as ovd
         return True
     except:
-        print("openvoronoi module is not found/working...")
+        print("openvoronoi module is not found...")
 
     return False
 

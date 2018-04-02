@@ -1,7 +1,6 @@
 import openvoronoi as ovd
-# import ngc_writer
-from util import header_text, f_engrave_version
 from math import (sqrt)
+from geometry import Zero
 
 import time
 
@@ -41,27 +40,36 @@ def modify_segments(segs):
         seg.pop()
         seg.reverse()  # to get interior or exterior offsets
         segs_mod.append(seg)
-        # drawSegment(myscreen, seg)
     return segs_mod
 
 
+def reverse_segments(segs):
+    for seg in segs:
+        seg.reverse()  # to get interior or exterior offsets
+    return
+
+
 def insert_many_polygons(vd, segs):
+
+    # t_before = time.time()
+
     polygon_ids = []
-    t_before = time.time()
     for poly in segs:
         poly_id = insert_polygon_points(vd, poly)
         polygon_ids.append(poly_id)
-    t_after = time.time()
-    pt_time = t_after - t_before
 
-    t_before = time.time()
+    # t_after = time.time()
+    # pt_time = t_after - t_before
+    # t_before = time.time()
+
     for ids in polygon_ids:
         insert_polygon_segments(vd, ids)
 
-    t_after = time.time()
-    seg_time = t_after - t_before
+    # t_after = time.time()
+    # seg_time = t_after - t_before
 
-    return [pt_time, seg_time]
+    # return [pt_time, seg_time]
+    return
 
 
 def translate(segs, x, y):
@@ -77,93 +85,48 @@ def translate(segs, x, y):
     return out
 
 
-class NgcWriter:
-    """A basic G-Code writer, for testing purpose"""
-    clearance_height = 20
-    feed_height = 10
-    feed = 200
-    plunge_feed = 100
-    metric = True
-    scale = 1
-
-    def __init__(self, settings, filename="output.ngc"):
-        self.filename = filename
-        self.settings = settings
-        self.out = open(filename, 'w')
-        self.write_header()
-
-    def write_header(self):
-        for line in header_text():
-            self.out.write("{}\n".format(line))
-
-    def write_preamble(self):
-        for line in self.settings.get('gcode_preamble').split('|'):
-            # code.append(line)
-            self.out.write("{}\n".format(line))
-
-    def write_postamble(self):
-        for line in self.settings.get('gcode_postamble').split('|'):
-            # code.append(line)
-            self.out.write("{}\n".format(line))
-
-    def write(self, cmd):
-        self.out.write("{}\n".format(cmd))
-
-    def pen_up(self):
-        self.write("G0 Z{}".format(self.feed_height))
-
-    def xy_rapid_to(self, x, y):
-        self.write("G0 X{} Y{}".format(x, y))
-
-    def pen_down(self, z):
-        self.write("G0 Z{}".format(z))
-
-    def line_to(self, x, y, z):
-        self.write("G1 X{} Y{} Z{} F{}".format(x, y, z, self.feed))
+def get_loops_from_coords(coords):
+    """return a list of loops"""
+    loops = []
+    segments = []
+    next_loop = True
+    for segment in coords:
+        seg_begin = segment[0:2]
+        seg_end = segment[2:4]
+        if next_loop:
+            first_vertex = seg_begin
+            next_loop = False
+        segments.append(seg_begin)
+        if abs(seg_end[0] - first_vertex[0]) < Zero and abs(seg_end[1] - first_vertex[1]) < Zero:
+            loops.append(segments)
+            next_loop = True
+            segments = []
+    return loops
 
 
-def print_toolpath(settings, toolpath, scale=1.0):
-    ngc = NgcWriter(settings)
-    ngc.write_preamble()
-
-    for chain in toolpath:
-        first_point = True
+def toolpath_to_v_coords(toolpath):
+    v_coords = []
+    for loop_cnt, chain in enumerate(toolpath):
         for move in chain:
             for point in move:
-                if first_point:  # don't draw anything on the first iteration
-                    first_point = False
-                    p = point[0]
-                    zdepth = scale * point[1]  # derive Z height from MIC
-                    ngc.pen_up()
-                    ngc.xy_rapid_to(scale * p.x, scale * p.y)
-                    ngc.pen_down(z=-zdepth)
-                else:
-                    p = point[0]
-                    z = point[1]
-                    ngc.line_to(scale * p.x, scale * p.y, scale * (-z))
-
-    ngc.pen_up()  # final engraver up
-    ngc.write_postamble()
-
-    return
+                p = point[0]
+                z = point[1]
+                v_coords.append([p.x, p.y, z, loop_cnt])
+    return v_coords
 
 
-def medial_axis(settings, segs, clean=False):
-    import sys
+def medial_axis(coords, far=500.0, v_flop=False, clean=False):
 
-    # svg = "../samples/Hello_flattened2_rev.svg" if len(sys.argv) < 2 else sys.argv[1]
-    # svgr = SvgReader(svg, error_threshold=.6)
-    # svgr.parse()
-    # svgr.centerPolys()
+    segs = get_loops_from_coords(coords)
+    if v_flop:
+        reverse_segments(segs)
 
-    # far = svgr.radius * 1.2
-    far = 500.0  # TODO derive far from coords radius or bounding box
-    n_bins = int(sqrt(1200))  # approx. sqrt(nr of sites)
+    n_bins = int(sqrt(len(coords)))  # approx. sqrt(nr of sites)
     vd = ovd.VoronoiDiagram(far, n_bins)
     # vd.debug_on()
 
-    times = insert_many_polygons(vd, segs)
-    # print("all sites inserted: %d " % len(times))
+    insert_many_polygons(vd, segs)
+
     print("VD check: %s" % vd.check())
 
     pi = ovd.PolygonInterior(True)
@@ -174,9 +137,4 @@ def medial_axis(settings, segs, clean=False):
     maw = ovd.MedialAxisWalk(vd.getGraph())
     toolpath = maw.walk()
 
-    print_toolpath(settings, toolpath, 1.0)  # write ngc to output.ngc
-
-    # vod.setVDText2(times)
-    # vod.setAll()
-
-    return toolpath
+    return toolpath_to_v_coords(toolpath)
