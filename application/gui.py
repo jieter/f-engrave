@@ -747,15 +747,6 @@ class Gui(Frame):
         self.settings.from_configfile(filename)
         self.initialise_settings()
 
-        file_full = self.settings.get_fontfile()
-        fileName, fileExtension = os.path.splitext(file_full)
-        TYPE = fileExtension.upper()
-
-        if TYPE != '.CXF' and TYPE != '.TTF' and TYPE != '':
-            if os.path.isfile(file_full):
-                self.settings.set('input_type', "image")
-                self.Ctrl_set_menu_input_type()
-
         # TODO is this for backward compatibility?
         # if self.arc_fit.get() == "0":
         #     self.arc_fit.set("none")
@@ -773,9 +764,8 @@ class Gui(Frame):
         self.calc_depth_limit()
         self.delay_calc = False
 
-        if self.initComplete:
-            self.NGC_FILE = filename
-            self.Ctrl_mode_change()
+        self.Ctrl_set_menu_input_type()
+        self.Ctrl_set_menu_cut_type()
 
     def menu_File_Save_Settings_File(self):
 
@@ -1219,7 +1209,7 @@ class Gui(Frame):
         if self.settings.get('show_thick'):
             plot_width = thickness / plot_scale
         else:
-            plot_width = 1.0
+            plot_width = 0.0
 
         # show shaded background with the size of the image bounding box,
         # including the circle to be plotted, if any
@@ -1795,8 +1785,8 @@ class Gui(Frame):
         all = self.PreviewCanvas.find_all()
         for i in all:
             self.PreviewCanvas.scale(i, x0, y0, z_factor, z_factor)
-            w = self.PreviewCanvas.itemcget(i, "width")
-            self.PreviewCanvas.itemconfig(i, width=float(w) * z_factor)
+            pw = float(self.PreviewCanvas.itemcget(i, "width")) * z_factor
+            self.PreviewCanvas.itemconfig(i, width=pw)
         self.PreviewCanvas.update_idletasks()
 
     def ZOOM(self, z_inc):
@@ -1805,8 +1795,8 @@ class Gui(Frame):
         y = int(self.PreviewCanvas.winfo_height()) / 2.0
         for i in all:
             self.PreviewCanvas.scale(i, x, y, z_inc, z_inc)
-            w = self.PreviewCanvas.itemcget(i, "width")
-            self.PreviewCanvas.itemconfig(i, width=float(w) * z_inc)
+            pw = float(self.PreviewCanvas.itemcget(i, "width")) * z_inc
+            self.PreviewCanvas.itemconfig(i, width=pw)
         self.PreviewCanvas.update_idletasks()
 
     def KEY_ZOOM_IN(self, event):
