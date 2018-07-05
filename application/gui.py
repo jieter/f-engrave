@@ -235,9 +235,15 @@ class Gui(Frame):
 
     def create_mainwindow_widgets(self):
         if self.settings.get('input_type') == 'text':
+            if self.mainwindow_text_left is not None:
+                self.mainwindow_text_left.grid_forget()
+            if self.mainwindow_text_right is not None:
+                self.mainwindow_text_right.grid_forget()
             self.mainwindow_text_left = MainWindowTextLeft(self.master, self, self.settings)
             self.mainwindow_text_right = MainWindowTextRight(self.master, self, self.settings)
         else:
+            if self.mainwindow_image_left is not None:
+                self.mainwindow_image_left.grid_forget()
             self.mainwindow_image_left = MainWindowImageLeft(self.master, self, self.settings)
 
     def create_previewcanvas(self):
@@ -766,6 +772,7 @@ class Gui(Frame):
 
         self.Ctrl_set_menu_input_type()
         self.Ctrl_set_menu_cut_type()
+        self.Ctrl_mode_change()
 
     def menu_File_Save_Settings_File(self):
 
