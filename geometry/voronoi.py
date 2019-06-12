@@ -2,7 +2,8 @@ import openvoronoi as ovd
 from math import (sqrt)
 from geometry import Zero
 
-import time
+# import time
+# from ngcwriter import *
 
 
 def insert_polygon_points(vd, polygon):
@@ -124,17 +125,20 @@ def medial_axis(coords, far=500.0, v_flop=False, clean=False):
     n_bins = int(sqrt(len(coords)))  # approx. sqrt(nr of sites)
     vd = ovd.VoronoiDiagram(far, n_bins)
     # vd.debug_on()
+    # vd.set_silent(True)  # suppress Warnings  # JvO: not implemented?
 
     insert_many_polygons(vd, segs)
 
     print("VD check: %s" % vd.check())
 
-    pi = ovd.PolygonInterior(True)
+    pi = ovd.PolygonInterior(True)  # filter so that only polygon interior remains
     vd.filter_graph(pi)
-    ma = ovd.MedialAxis()
+    ma = ovd.MedialAxis()  # filter so that only medial axis remains
     vd.filter_graph(ma)
 
     maw = ovd.MedialAxisWalk(vd.getGraph())
     toolpath = maw.walk()
+
+    # print_toolpath(toolpath, 1.0)  # write ngc to output.ngc
 
     return toolpath_to_v_coords(toolpath)

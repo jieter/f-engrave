@@ -66,6 +66,9 @@ TEXT_CODE = 'text_code'
 CUT_TYPE_ENGRAVE = 'engrave'
 CUT_TYPE_VCARVE = 'v-carve'
 
+INPUT_TYPE_TEXT = 'text'
+INPUT_TYPE_IMAGE = 'image'
+
 HOME_DIR = os.path.expanduser("~")
 NGC_FILE = (HOME_DIR + "/None")
 # IMAGE_FILE = (HOME_DIR + "/None")

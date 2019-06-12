@@ -1,4 +1,5 @@
-from util import *
+from util import POTRACE_AVAILABLE, VERSION, IN_AXIS, OK, NOR, INV, NAN, validate_entry_set
+import os.path
 from tooltip import ToolTip
 from settings import CUT_TYPE_VCARVE  # , CUT_TYPE_ENGRAVE
 
@@ -8,15 +9,15 @@ if VERSION == 3:
 else:
     from Tkinter import *
     from tkFileDialog import *
+    from pubsub import pub
 
 
 class MenuBar(object):
 
-    def __init__(self, parent, gui, settings):
+    def __init__(self, parent, settings):
 
         self.menuBar = Menu(parent, relief="raised", bd=2)
 
-        self.gui = gui
         self.master = parent
         self.settings = settings
 
@@ -28,38 +29,73 @@ class MenuBar(object):
         self.cut_type = StringVar()
         self.input_type = StringVar()
 
-        # Gui callbacks
-        self.Ctrl_save_settings_file = gui.menu_File_Save_Settings_File
-        self.Ctrl_open_g_code_file = gui.menu_File_Open_G_Code_File
-        self.Ctrl_open_dxf_file = gui.menu_File_Open_DXF_File
-        self.Ctrl_save_g_code_file = gui.menu_File_Save_G_Code_File
-        self.Ctrl_save_svg_file = gui.menu_File_Save_SVG_File
-        self.Ctrl_save_dxf_file = gui.menu_File_Save_DXF_File
-        self.Ctrl_save_dxf_file_close_loops = gui.menu_File_Save_DXF_File_close_loops
-
-        self.Ctrl_write_to_axis = gui.WriteToAxis
-        self.Ctrl_quit = gui.menu_File_Quit
-
-        self.Ctrl_copy_g_code = gui.CopyClipboard_GCode
-        self.Ctrl_copy_svg = gui.CopyClipboard_SVG
-        self.Ctrl_recalculate = gui.menu_View_Recalculate
-
-        self.Ctrl_zoom_in = gui.menu_View_Zoom_in
-        self.Ctrl_zoom_out = gui.menu_View_Zoom_out
-        self.Ctrl_refresh = gui.menu_View_Refresh
-
-        self.Ctrl_general_settings = gui.general_settings_window
-        self.Ctrl_vcarve_settings = gui.vcarve_settings_window
-        self.Ctrl_bitmap_settings = gui.bitmap_settings_window
-
-        self.Ctrl_about = gui.menu_Help_About
-        self.Ctrl_webpage = gui.menu_Help_Web
-
-        self.Ctrl_cut_type_changed = gui.Ctrl_set_cut_type
-        self.Ctrl_mode_changed = gui.Ctrl_mode_change
-
         self.initialise_variables()
         self.create_widgets()
+
+        pub.subscribe(self.set_cut_type, 'cut_type_changed')
+
+    def Ctrl_save_settings_file(self):
+        pub.sendMessage('save.settings_file')
+
+    def Ctrl_open_g_code_file(self):
+        pub.sendMessage('open.g_code_file')
+
+    def Ctrl_open_dxf_file(self):
+        pub.sendMessage('open.dxf_file')
+
+    def Ctrl_save_g_code_file(self):
+        pub.sendMessage('save.g_code_file')
+
+    def Ctrl_save_svg_file(self):
+        pub.sendMessage('save.svg_file')
+
+    def Ctrl_save_dxf_file(self):
+        pub.sendMessage('save.dxf_file')
+
+    def Ctrl_save_dxf_file_close_loops(self):
+        pub.sendMessage('save.dxf_file_close_loops')
+
+    def Ctrl_write_to_axis(self):
+        pub.sendMessage('write_to_axis')
+
+    def Ctrl_recalculate(self, event=None):
+        pub.sendMessage('recalculate')
+
+    def Ctrl_copy_g_code(self):
+        pub.sendMessage('copy.gcode_to_clipboard')
+
+    def Ctrl_copy_svg(self):
+        pub.sendMessage('copy.svg_to_clipboard')
+
+    def Ctrl_general_settings(self):
+        pub.sendMessage('general_settings_window')
+
+    def Ctrl_vcarve_settings(self):
+        pub.sendMessage('vcarve_settings_window')
+
+    def Ctrl_bitmap_settings(self):
+        pub.sendMessage('bitmap_settings_window')
+
+    def Ctrl_about(self):
+        pub.sendMessage('help_about')
+
+    def Ctrl_webpage(self):
+        pub.sendMessage('help_web')
+
+    def Ctrl_cut_type_changed(self):
+        pub.sendMessage('cut_type_changed')
+
+    def Ctrl_mode_changed(self):
+        pub.sendMessage('mode_changed')
+
+    def Ctrl_zoom_in(self, event=None):
+        pub.sendMessage('zoom_in')
+
+    def Ctrl_zoom_out(self, event=None):
+        pub.sendMessage('zoom_out')
+
+    def Ctrl_refresh(self, event=None):
+        pub.sendMessage('refresh')
 
     def initialise_variables(self):
         self.cut_type.set(self.settings.get('cut_type'))
@@ -158,7 +194,7 @@ class MenuBar(object):
         self.Ctrl_mode_changed()
 
     def set_cut_type(self):
-        # only when changed (to avoid recursion due to trace_variable callback)
+        # only when changed (to avoid a publish/subscribe loop)
         if self.cut_type.get() != self.settings.get('cut_type'):
             self.cut_type.set(self.settings.get('cut_type'))
 
@@ -166,10 +202,13 @@ class MenuBar(object):
         if self.input_type.get() != self.settings.get('input_type'):
             self.input_type.set(self.settings.get('input_type'))
 
+    def Ctrl_quit(self):
+        pub.sendMessage('quit')
+
 
 class MainWindowWidget(Frame):
 
-    def __init__(self, parent, gui, settings):
+    def __init__(self, parent, settings):
 
         self.w = 250
         Frame.__init__(self, parent, width=self.w)
@@ -184,14 +223,12 @@ class MainWindowWidget(Frame):
         self.units = StringVar()
         self.cut_type = StringVar()
 
-        # Gui callbacks
-        self.Ctrl_entry_set = gui.entry_set
-        self.Ctrl_recalculate = gui.Recalculate_Click
-        self.Ctrl_recalculate_required = gui.Recalc_RQD
-        self.Ctrl_refresh = gui.menu_View_Refresh
-        self.Ctrl_status_message = gui.statusMessage
-
         self._initialise_variables()
+
+        pub.subscribe(self.configure_units, 'units_changed')
+        pub.subscribe(self.configure_cut_type, 'cut_type_changed')
+        pub.subscribe(self.scale_linear_inputs, 'scale_linear_inputs')
+        pub.subscribe(self.check_all_variables, 'check_all_variables')
 
     def _initialise_variables(self):
         self.units.set(self.settings.get('units'))
@@ -205,22 +242,36 @@ class MainWindowWidget(Frame):
     # Virtual methods
 
     def configure_units(self):
-        pass
+        print("Class '%s', method 'configure_units' not implemented!" % self.__class__.__name__)
 
     def set_cut_type(self, cut_type):
-        pass
+        print("Class '%s', method 'set_cut_type' not implemented!" % self.__class__.__name__)
 
     def configure_cut_type(self):
-        pass
+        print("Class '%s', method 'configure_cut_type' not implemented!" % self.__class__.__name__)
 
     def scale_linear_inputs(self, factor=1.0):
-        pass
+        print("Class '%s', method 'scale_linear_inputs' not implemented!" % self.__class__.__name__)
+
+    def check_all_variables(self, new=0):
+        print("Class '%s', method 'check_all_variables' not implemented!" % self.__class__.__name__)
+
+    # publish/subscribe
+
+    def Ctrl_recalculate(self, event=None):
+        pub.sendMessage('recalculate')
+
+    def Ctrl_recalculation_required(self):
+        pub.sendMessage('recalculation_required')
+
+    def Ctrl_refresh(self):
+        pub.sendMessage('refresh')
 
 
 class TextFontProperties(MainWindowWidget):
 
-    def __init__(self, parent, gui, settings):
-        MainWindowWidget.__init__(self, parent, gui, settings)
+    def __init__(self, parent, settings):
+        MainWindowWidget.__init__(self, parent, settings)
 
         self.flip = BooleanVar()
         self.mirror = BooleanVar()
@@ -378,12 +429,12 @@ class TextFontProperties(MainWindowWidget):
 
     def check_all_variables(self, new):
         error_cnt = \
-            self.Ctrl_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
-            self.Ctrl_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
-            self.Ctrl_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new) + \
-            self.Ctrl_entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), new) + \
-            self.Ctrl_entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), new) + \
-            self.Ctrl_entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), new)
+            validate_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
+            validate_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
+            validate_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new) + \
+            validate_entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), new) + \
+            validate_entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), new) + \
+            validate_entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1):
@@ -397,40 +448,40 @@ class TextFontProperties(MainWindowWidget):
         try:
             value = float(self.YSCALE.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Height should be greater than 0 ")
+                pub.sendMessage('status_message', msg="Height should be greater than 0")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Yscale_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale')
+        validate_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale', settings=self.settings)
 
     def Entry_Xscale_Check(self):
         try:
             value = float(self.XSCALE.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Width should be greater than 0 ")
+                pub.sendMessage('status_message', msg="Width should be greater than 0")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Xscale_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale')
+        validate_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale', settings=self.settings)
 
     def Entry_Sthick_Check(self):
         try:
             value = float(self.STHICK.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Thickness should be greater than 0 ")
+                pub.sendMessage('status_message', msg="Thickness should be greater than 0")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Sthick_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness')
+        validate_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness', settings=self.settings)
 
     def Entry_Lspace_Check(self):
         try:
@@ -443,39 +494,39 @@ class TextFontProperties(MainWindowWidget):
         return OK
 
     def Entry_Lspace_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), setting='line_space')
+        validate_entry_set(self.Entry_Lspace, self.Entry_Lspace_Check(), setting='line_space', settings=self.settings)
 
     def Entry_Cspace_Check(self):
         try:
             value = float(self.CSPACE.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Character space should be greater than or equal to 0 ")
+                pub.sendMessage('status_message', msg="Character space should be greater than or equal to 0")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Cspace_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), setting='char_space')
+        validate_entry_set(self.Entry_Cspace, self.Entry_Cspace_Check(), setting='char_space', settings=self.settings)
 
     def Entry_Wspace_Check(self):
         try:
             value = float(self.WSPACE.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Word space should be greater than or equal to 0 ")
+                pub.sendMessage('status_message', msg="Word space should be greater than or equal to 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Wspace_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), setting='word_space')
+        validate_entry_set(self.Entry_Wspace, self.Entry_Wspace_Check(), setting='word_space', settings=self.settings)
 
 
 class TextPosition(MainWindowWidget):
 
-    def __init__(self, parent, gui, settings):
-        MainWindowWidget.__init__(self, parent, gui, settings)
+    def __init__(self, parent, settings):
+        MainWindowWidget.__init__(self, parent, settings)
 
         self.TANGLE = StringVar()
         self.justify = StringVar()
@@ -577,8 +628,17 @@ class TextPosition(MainWindowWidget):
 
     def check_all_variables(self, new):
         error_cnt = \
-            self.Ctrl_entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), new)
+            validate_entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), new)
         return error_cnt
+
+    def configure_cut_type(self):
+        pass
+
+    def configure_units(self):
+        pass
+
+    def scale_linear_inputs(self, factor=1.0):
+        pass
 
     # Text Position and Orientation callbacks
 
@@ -586,37 +646,36 @@ class TextPosition(MainWindowWidget):
         try:
             value = float(self.TANGLE.get())
             if value <= -360.0 or value >= 360.0:
-                self.Ctrl_status_message.set(" Angle should be between -360 and 360 ")
+                pub.sendMessage('status_message', msg="Angle should be between -360 and 360 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Tangle_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), setting='text_angle')
-        self.Ctrl_recalculate_required()
+        validate_entry_set(self.Entry_Tangle, self.Entry_Tangle_Check(), setting='text_angle', settings=self.settings)
 
     def Entry_justify_Callback(self, varName, index, mode):
         self.settings.set('justify', self.justify.get())
-        self.Ctrl_recalculate_required()
+        self.Ctrl_recalculation_required()
 
     def Entry_origin_Callback(self, varName, index, mode):
         self.settings.set('origin', self.origin.get())
-        self.Ctrl_recalculate_required()
+        self.Ctrl_recalculation_required()
 
     def Entry_flip_Callback(self, varName, index, mode):
         self.settings.set('flip', self.flip.get())
-        self.Ctrl_recalculate_required()
+        self.Ctrl_recalculation_required()
 
     def Entry_mirror_Callback(self, varName, index, mode):
         self.settings.set('mirror', self.mirror.get())
-        self.Ctrl_recalculate_required()
+        self.Ctrl_recalculation_required()
 
 
 class TextOnCircle(MainWindowWidget):
 
-    def __init__(self, parent, gui, settings):
-        MainWindowWidget.__init__(self, parent, gui, settings)
+    def __init__(self, parent, settings):
+        MainWindowWidget.__init__(self, parent, settings)
 
         self.TRADIUS = StringVar()
         self.outer = BooleanVar()
@@ -693,11 +752,14 @@ class TextOnCircle(MainWindowWidget):
 
     def check_all_variables(self, new):
         error_cnt = \
-            self.Ctrl_entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), new)
+            validate_entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
         self.TRADIUS.set('%.3g' % self.settings.get('text_radius'))
+
+    def configure_cut_type(self):
+        pass
 
     # Text on Circle callbacks
 
@@ -705,28 +767,28 @@ class TextOnCircle(MainWindowWidget):
         try:
             value = float(self.TRADIUS.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Radius should be greater than or equal to 0 ")
+                pub.sendMessage('status_message', msg="Radius should be greater than or equal to 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Tradius_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), setting='text_radius')
+        validate_entry_set(self.Entry_Tradius, self.Entry_Tradius_Check(), setting='text_radius', settings=self.settings)
 
     def Entry_outer_Callback(self, varName, index, mode):
         self.settings.set('outer', self.outer.get())
-        self.Ctrl_recalculate_required()
+        self.Ctrl_recalculation_required()
 
     def Entry_upper_Callback(self, varName, index, mode):
         self.settings.set('upper', self.upper.get())
-        self.Ctrl_recalculate_required()
+        self.Ctrl_recalculation_required()
 
 
 class GCodeProperties(MainWindowWidget):
 
-    def __init__(self, parent, gui, settings):
-        MainWindowWidget.__init__(self, parent, gui, settings)
+    def __init__(self, parent, settings):
+        MainWindowWidget.__init__(self, parent, settings)
 
         self.funits = StringVar()
         self.FEED = StringVar()
@@ -840,10 +902,11 @@ class GCodeProperties(MainWindowWidget):
             self.funits.set('mm/min')
 
     def check_all_variables(self, new):
-        error_cnt = self.Ctrl_entry_set(self.Entry_Feed, self.Entry_Feed_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), new)
+        error_cnt = \
+            validate_entry_set(self.Entry_Feed, self.Entry_Feed_Check(), new) + \
+            validate_entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), new) + \
+            validate_entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), new) + \
+            validate_entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1.0):
@@ -858,27 +921,27 @@ class GCodeProperties(MainWindowWidget):
         try:
             value = float(self.FEED.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Feed should be greater than 0.0 ")
+                pub.sendMessage('status_message', msg="Feed should be greater than 0.0 ")
                 return INV
         except:
             return NAN
         return NOR
 
     def Entry_Feed_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Feed, self.Entry_Feed_Check(), setting='feedrate')
+        validate_entry_set(self.Entry_Feed, self.Entry_Feed_Check(), setting='feedrate', settings=self.settings)
 
     def Entry_Plunge_Check(self):
         try:
             value = float(self.PLUNGE.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Plunge rate should be greater than or equal to 0.0 ")
+                pub.sendMessage('status_message', msg="Plunge rate should be greater than or equal to 0.0 ")
                 return INV
         except:
             return NAN
         return NOR
 
     def Entry_Plunge_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), setting='plunge_rate')
+        validate_entry_set(self.Entry_Plunge, self.Entry_Plunge_Check(), setting='plunge_rate', settings=self.settings)
 
     def Entry_Zsafe_Check(self):
         try:
@@ -888,7 +951,7 @@ class GCodeProperties(MainWindowWidget):
         return NOR
 
     def Entry_Zsafe_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Zsafe, self.Entry_Zsafe_Check(), setting='zsafe')
+        validate_entry_set(self.Entry_Zsafe, check_flag=self.Entry_Zsafe_Check(), setting='zsafe', settings=self.settings)
 
     def Entry_Zcut_Check(self):
         try:
@@ -898,25 +961,36 @@ class GCodeProperties(MainWindowWidget):
         return NOR
 
     def Entry_Zcut_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut')
+        validate_entry_set(self.Entry_Zcut, self.Entry_Zcut_Check(), setting='zcut', settings=self.settings)
 
 
 class FontFiles(MainWindowWidget):
 
-    def __init__(self, parent, gui, settings):
-        MainWindowWidget.__init__(self, parent, gui, settings)
+    def __init__(self, parent, settings):
+        MainWindowWidget.__init__(self, parent, settings)
 
         self.fontdex = BooleanVar()
         self.fontdir = StringVar()
         self.fontfile = StringVar()
         self.current_input_file = StringVar()
 
-        # Gui callback
-        self.Ctrl_font_file_changed = gui.Ctrl_font_file_changed
-
         self.initialise_variables()
         self.create_widgets()
         self.master_configure()
+
+        pub.subscribe(self.Fontdir_Click, 'fontdir_click')
+
+    def configure_cut_type(self):
+        pass
+
+    def configure_units(self):
+        pass
+
+    def scale_linear_inputs(self, factor=1.0):
+        pass
+
+    def Ctrl_font_file_changed(self):
+        pub.sendMessage('font_file_changed')
 
     def initialise_variables(self):
         self.fontfile.set(self.settings.get('fontfile'))
@@ -980,11 +1054,14 @@ class FontFiles(MainWindowWidget):
         self.Checkbutton_fontdex.pack(side=BOTTOM)
         self.Label_fontfile.pack(side=BOTTOM, padx=15, anchor=W)
 
+    def check_all_variables(self, new=0):
+        pass
+
     # Font files callbacks
 
     def Entry_fontdex_Callback(self, varName, index, mode):
         self.settings.set('fontdex', self.fontdex.get())
-        self.Ctrl_recalculate_required()
+        self.Ctrl_recalculation_required()
 
     def Entry_fontdir_Callback(self, varName, index, mode):
         self.Listbox_1.delete(0, END)
@@ -1062,8 +1139,8 @@ class FontFiles(MainWindowWidget):
 
 class ImageProperties(MainWindowWidget):
 
-    def __init__(self, parent, gui, settings):
-        MainWindowWidget.__init__(self, parent, gui, settings)
+    def __init__(self, parent, settings):
+        MainWindowWidget.__init__(self, parent, settings)
 
         self.useIMGsize = BooleanVar()
         self.YSCALE = StringVar()
@@ -1073,17 +1150,25 @@ class ImageProperties(MainWindowWidget):
         self.WSPACE = StringVar()
         self.STHICK = StringVar()
 
-        self.Ctrl_get_image_height = gui.Ctrl_get_image_height
-
         self.initialise_variables()
         self.create_widgets()
         self.master_configure()
+
+        pub.subscribe(self.set_image_height, 'set_image_height')
 
     def initialise_variables(self):
         self.useIMGsize.set(self.settings.get('useIMGsize'))
         self.YSCALE.set(self.settings.get('yscale'))
         self.XSCALE.set(self.settings.get('xscale'))
         self.STHICK.set(self.settings.get('line_thickness'))
+        self.set_image_height(10)
+
+    @property
+    def image_height(self):
+        return self._image_height
+
+    def set_image_height(self, value):
+        self._image_height = value
 
     def create_widgets(self):
 
@@ -1178,9 +1263,9 @@ class ImageProperties(MainWindowWidget):
 
     def check_all_variables(self, new):
         error_cnt = \
-            self.Ctrl_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
-            self.Ctrl_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
-            self.Ctrl_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new)
+            validate_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), new) + \
+            validate_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), new) + \
+            validate_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), new)
         return error_cnt
 
     def scale_linear_inputs(self, factor=1):
@@ -1190,71 +1275,67 @@ class ImageProperties(MainWindowWidget):
     # Image properties callbacks
 
     def useIMGsize_var_Callback(self):
-
         if self.settings.get('input_type') == "image":
             try:
-                image_height = self.Ctrl_get_image_height()
+                image_height = self.image_height
             except:
                 if self.settings.get('units') == 'in':
                     image_height = 2
                 else:
                     image_height = 50
-
         self.settings.set('useIMGsize', self.useIMGsize.get())
         if self.useIMGsize.get():
             self.YSCALE.set('%.3g' % (100 * float(self.YSCALE.get()) / image_height))
         else:
             self.YSCALE.set('%.3g' % ((float(self.YSCALE.get()) / 100) * image_height))
-
         self.settings.set('yscale', self.YSCALE.get())
-
         self.Ctrl_refresh()
-        self.Ctrl_recalculate_required()
+        self.Ctrl_recalculation_required()
 
     def Entry_Yscale_Check(self):
         try:
             value = float(self.YSCALE.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Height should be greater than 0 ")
+                pub.sendMessage('status_message', msg="Height should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Yscale_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale')
+        validate_entry_set(self.Entry_Yscale, self.Entry_Yscale_Check(), setting='yscale', settings=self.settings)
 
     def Entry_Xscale_Check(self):
         try:
             value = float(self.XSCALE.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Width should be greater than 0 ")
+                pub.sendMessage('status_message', msg="Width should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Xscale_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale')
+        validate_entry_set(self.Entry_Xscale, self.Entry_Xscale_Check(), setting='xscale', settings=self.settings)
 
     def Entry_Sthick_Check(self):
         try:
             value = float(self.STHICK.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Thickness should be greater than 0 ")
+                pub.sendMessage('status_message', msg="Thickness should be greater than 0 ")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_Sthick_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness')
+        validate_entry_set(self.Entry_Sthick, self.Entry_Sthick_Check(), setting='line_thickness', settings=self.settings)
 
 
 class ImagePosition(TextPosition):
 
-    def __init__(self, parent, gui, settings):
-        TextPosition.__init__(self, parent, gui, settings)
+    def __init__(self, parent, settings):
+        TextPosition.__init__(self, parent, settings)
 
     # TODO aanpassen van de Text widgets
     def create_widgets(self):
@@ -1321,34 +1402,41 @@ class ImagePosition(TextPosition):
 
         self.configure_units()
 
+    def configure_units(self):
+        pass
+
+    def scale_linear_inputs(self, factor=1.0):
+        pass
+
 
 class MainWindowTextLeft(Frame):
 
-    def __init__(self, parent, gui, settings):
+    def __init__(self, parent, settings):
 
         Frame.__init__(self, parent)
 
         self.settings = settings
-
         self.cut_type = StringVar()
-        self.units = StringVar()
-
-        # Gui callback
-        self.recalculate_click = gui.Recalculate_Click
-        self.set_menu_cut_type = gui.Ctrl_set_menu_cut_type
 
         self.initialise_variables()
-        self.create_widgets(gui, settings)
+        self.create_widgets(settings)
         self.master_configure()
 
+        pub.subscribe(self.configure_cut_type, 'cut_type_changed')
+
+    def Ctrl_recalculate(self, event=None):
+        pub.sendMessage('recalculate')
+
+    def Ctrl_cut_type_changed(self):
+        pub.sendMessage('cut_type_changed')
+
     def initialise_variables(self):
-        self.units.set(self.settings.get('units'))
         self.cut_type.set(self.settings.get('cut_type'))
 
-    def create_widgets(self, gui, settings):
-        self.text_font_properties = TextFontProperties(self, gui, settings)
-        self.text_position = TextPosition(self, gui, settings)
-        self.text_on_circle = TextOnCircle(self, gui, settings)
+    def create_widgets(self, settings):
+        self.text_font_properties = TextFontProperties(self, settings)
+        self.text_position = TextPosition(self, settings)
+        self.text_on_circle = TextOnCircle(self, settings)
 
         self.separator1 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
         self.separator2 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
@@ -1356,7 +1444,7 @@ class MainWindowTextLeft(Frame):
 
         # Buttons
         self.Recalculate = Button(self, text="Recalculate")
-        self.Recalculate.bind("<ButtonRelease-1>", self.recalculate_click)
+        self.Recalculate.bind("<ButtonRelease-1>", self.Ctrl_recalculate)
 
         self.cut_type.trace_variable("w", self.entry_cut_type_callback)
 
@@ -1377,10 +1465,13 @@ class MainWindowTextLeft(Frame):
         self.separator3.pack(side=TOP, fill=X, padx=10, pady=5, anchor=W)
         self.Recalculate.pack(side=BOTTOM, anchor=W)
 
+        self.configure_cut_type()
+
     def configure_cut_type(self):
-        self.text_font_properties.configure_cut_type()
-        self.text_position.configure_cut_type()
-        self.text_on_circle.configure_cut_type()
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            self.Recalculate.configure(state="disable", command=None)
+        else:
+            self.Recalculate.configure(state="normal", command=None)
 
     def set_cut_type(self):
         if self.cut_type.get() != self.settings.get('cut_type'):
@@ -1390,56 +1481,36 @@ class MainWindowTextLeft(Frame):
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
         self.configure_cut_type()
-        self.set_menu_cut_type()
-
-    def check_all_variables(self, new):
-        error_cnt = \
-            self.text_font_properties.check_all_variables(new) + \
-            self.text_position.check_all_variables(new) + \
-            self.text_on_circle.check_all_variables(new)
-        return error_cnt
-
-    def scale_linear_inputs(self, factor=1.0):
-        self.text_font_properties.scale_linear_inputs()
-        self.text_position.scale_linear_inputs()
-        self.text_on_circle.scale_linear_inputs()
-
-    def entry_units_var_callback(self):
-        self.text_font_properties.configure_units()
-        self.text_position.configure_units()
-        self.text_on_circle.configure_units()
+        self.Ctrl_cut_type_changed()
 
 
 class MainWindowTextRight(Frame):
 
-    def __init__(self, parent, gui, settings):
+    def __init__(self, parent, settings):
 
         Frame.__init__(self, parent)
 
         self.settings = settings
-
         self.cut_type = StringVar()
-        self.units = StringVar()
-
-        # GUI callbacks
-        self.entry_set = gui.entry_set
-        self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
-        self.Ctrl_cut_type_changed = gui.Ctrl_set_menu_cut_type
 
         self.initialise_variables()
-        self.create_widgets(gui, settings)
+        self.create_widgets(settings)
         self.master_configure()
 
-        # Callback
-        self.fontdir_click = self.font_files.Fontdir_Click
+        pub.subscribe(self.configure_cut_type, 'cut_type_changed')
+
+    def Ctrl_calculate_v_carve(self):
+        pub.sendMessage('calculate_v_carve')
+
+    def Ctrl_cut_type_changed(self):
+        pub.sendMessage('cut_type_changed')
 
     def initialise_variables(self):
-        self.units.set(self.settings.get('units'))
         self.cut_type.set(self.settings.get('cut_type'))
 
-    def create_widgets(self, gui, settings):
-        self.gcode_properties = GCodeProperties(self, gui, settings)
-        self.font_files = FontFiles(self, gui, settings)
+    def create_widgets(self, settings):
+        self.gcode_properties = GCodeProperties(self, settings)
+        self.font_files = FontFiles(self, settings)
 
         self.separator1 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
         self.separator2 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
@@ -1453,11 +1524,6 @@ class MainWindowTextRight(Frame):
         self.Radio_Cut_V.configure(variable=self.cut_type)
 
         self.cut_type.trace_variable("w", self.entry_cut_type_callback)
-
-    def set_cut_type(self):
-        if self.cut_type.get() != self.settings.get('cut_type'):
-            self.cut_type.set(self.settings.get('cut_type'))
-        self.configure_cut_type()
 
     def master_configure(self):
         self.gcode_properties.pack(side=TOP, anchor=W)
@@ -1475,64 +1541,59 @@ class MainWindowTextRight(Frame):
         self.configure_cut_type()
 
     def configure_cut_type(self):
-        self.gcode_properties.configure_cut_type()
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
+        self.cut_type.set(self.settings.get('cut_type'))
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
             self.V_Carve_Calc.configure(state="normal", command=None)
         else:
             self.V_Carve_Calc.configure(state="disabled", command=None)
 
-    def check_all_variables(self, new):
-        error_cnt = \
-            self.gcode_properties.check_all_variables(new)
-        # self.font_files.check_all_variables(new)
-        return error_cnt
-
-    def scale_linear_inputs(self, factor=1.0):
-        self.gcode_properties.scale_linear_inputs()
-        self.font_files.scale_linear_inputs()
-
-    def entry_units_var_callback(self):
-        self.gcode_properties.configure_units()
-
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
-        self.configure_cut_type()
         self.Ctrl_cut_type_changed()
 
 
 class MainWindowImageLeft(Frame):
 
-    def __init__(self, parent, gui, settings):
+    def __init__(self, parent, settings):
 
         Frame.__init__(self, parent)
 
         self.settings = settings
-
         self.current_input_file = StringVar()
         self.cut_type = StringVar()
-        self.units = StringVar()
-
-        # GUI callbacks
-        self.entry_set = gui.entry_set
-        self.Ctrl_recalculate = gui.Recalculate_Click
-        self.Ctrl_recalculate_required = gui.Recalc_RQD
-        self.Ctrl_calculate_v_carve = gui.V_Carve_Calc_Click
-        self.Ctrl_refresh = gui.menu_View_Refresh
-        self.Ctrl_cut_type_changed = gui.Ctrl_set_menu_cut_type
 
         self.initialise_variables()
-        self.create_widgets(gui, settings)
+        self.create_widgets(settings)
         self.master_configure()
+
+        pub.subscribe(self.configure_cut_type, 'cut_type_changed')
+
+    def Ctrl_entry_set(self, value, check_flag=0, new=0, setting=None):
+        pub.sendMessage('entry_set', val=value, check_flag=check_flag, new=new, setting=setting)
+
+    def Ctrl_recalculate(self, event=None):
+        pub.sendMessage('recalculate')
+
+    def Ctrl_recalculate_required(self):
+        pub.sendMessage('recalculate_required')
+
+    def Ctrl_calculate_v_carve(self):
+        pub.sendMessage('calculate_v_carve')
+
+    def Ctrl_cut_type_changed(self):
+        pub.sendMessage('cut_type_changed')
+
+    def Ctrl_refresh(self):
+        pub.sendMessage('refresh')
 
     def initialise_variables(self):
         self.current_input_file.set(os.path.basename(self.settings.get('IMAGE_FILE')))
-        self.units.set(self.settings.get('units'))
         self.cut_type.set(self.settings.get('cut_type'))
 
-    def create_widgets(self, gui, settings):
-        self.image_properties = ImageProperties(self, gui, settings)
-        self.image_position = ImagePosition(self, gui, settings)
-        self.gcode_properties = GCodeProperties(self, gui, settings)
+    def create_widgets(self, settings):
+        self.image_properties = ImageProperties(self, settings)
+        self.image_position = ImagePosition(self, settings)
+        self.gcode_properties = GCodeProperties(self, settings)
 
         self.separator1 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
         self.separator2 = Frame(master=self, height=2, bd=1, relief=SUNKEN)
@@ -1551,11 +1612,6 @@ class MainWindowImageLeft(Frame):
         self.V_Carve_Calc = Button(self.button_frame, text="Calc V-Carve", command=self.Ctrl_calculate_v_carve)
 
         self.cut_type.trace_variable("w", self.entry_cut_type_callback)
-
-    def set_cut_type(self):
-        if self.cut_type.get() != self.settings.get('cut_type'):
-            self.cut_type.set(self.settings.get('cut_type'))
-        self.configure_cut_type()
 
     def master_configure(self):
         self.image_properties.pack(side=TOP, padx=10, anchor=W)
@@ -1582,32 +1638,14 @@ class MainWindowImageLeft(Frame):
         self.configure_cut_type()
 
     def configure_cut_type(self):
-        self.image_properties.configure_cut_type()
-        self.image_position.configure_cut_type()
-        self.gcode_properties.configure_cut_type()
-        if self.cut_type.get() == CUT_TYPE_VCARVE:
+        self.cut_type.set(self.settings.get('cut_type'))
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            self.Recalculate.configure(state="disabled", command=None)
             self.V_Carve_Calc.configure(state="normal", command=None)
         else:
+            self.Recalculate.configure(state="normal", command=None)
             self.V_Carve_Calc.configure(state="disabled", command=None)
-
-    def check_all_variables(self, new):
-        error_cnt = \
-            self.image_properties.check_all_variables(new) + \
-            self.image_position.check_all_variables(new) + \
-            self.gcode_properties.check_all_variables(new)
-        return error_cnt
-
-    def scale_linear_inputs(self, factor=1.0):
-        self.image_properties.scale_linear_inputs()
-        self.image_position.scale_linear_inputs()
-        self.gcode_properties.scale_linear_inputs()
-
-    def entry_units_var_callback(self):
-        self.image_properties.configure_units()
-        self.image_position.configure_units()
-        self.gcode_properties.configure_units()
 
     def entry_cut_type_callback(self, varName, index, mode):
         self.settings.set('cut_type', self.cut_type.get())
-        self.configure_cut_type()
         self.Ctrl_cut_type_changed()

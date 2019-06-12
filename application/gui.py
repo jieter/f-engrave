@@ -1,20 +1,21 @@
 import getopt
 import webbrowser
 
-from util import *
+from util import VERSION, POTRACE_AVAILABLE, COLOR_OK, COLOR_RECALC, position_window, message_ask_ok_cancel
 
 from bitmap_settings import BitmapSettings
 from vcarve_settings import VCarveSettings
 from general_settings import GeneralSettings
 from main_window import MenuBar, MainWindowTextLeft, MainWindowTextRight, MainWindowImageLeft
 
+from geometry.font import Font
 from geometry.coords import MyImage, MyText
 from geometry.engrave import Engrave
 
 from readers import *
 from writers import *
 
-from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE
+from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE, INPUT_TYPE_TEXT, INPUT_TYPE_IMAGE
 
 if VERSION == 3:
     from tkinter import *
@@ -22,6 +23,7 @@ if VERSION == 3:
 else:
     from Tkinter import *
     from tkFileDialog import *
+    from pubsub import pub
 
 
 class Gui(Frame):
@@ -41,6 +43,7 @@ class Gui(Frame):
         self.text = MyText()
         self.image = MyImage()
         self.plot_bbox = BoundingBox()
+        self.reset_error_count()
 
         # the main window consists of three rows and three columns
         self.grid()
@@ -52,18 +55,62 @@ class Gui(Frame):
 
         self.engrave = Engrave(self.settings)
 
-        # engrave callbacks
-        self.engrave.set_plot_progress_callback(self.plot_progress)
-        self.engrave.set_status_callback(self.status_update)
-
-        # callbacks (wherein this Gui/App acts as the Controller)
-        self.Ctrl_check_all_variables = lambda *_, **__: None
-        self.Ctrl_Fontdir_Click = lambda *_, **__: None
-        self.Ctrl_Entry_units_var_Callback = lambda *_, **__: None
-        self.Ctrl_Scale_Linear_Inputs = lambda *_, **__: None
-        self.Ctrl_set_mainwindow_cut_type = lambda *_, **__: None
-
         self.create_widgets()
+
+        pub.subscribe(self.increment_error_count, 'increment_error_count')
+
+        pub.subscribe(self.menu_File_Quit, 'quit')
+        pub.subscribe(self.Ctrl_font_file_changed, 'font_file_changed')
+
+        pub.subscribe(self.menu_File_Save_Settings_File, 'save.settings_file')
+        pub.subscribe(self.menu_File_Open_G_Code_File, 'open.g_code_file')
+        pub.subscribe(self.menu_File_Open_DXF_File, 'open.dxf_file')
+        pub.subscribe(self.menu_File_Save_G_Code_File, 'save.g_code_file')
+        pub.subscribe(self.menu_File_Save_SVG_File, 'save.svg_file')
+        pub.subscribe(self.menu_File_Save_DXF_File, 'save.dxf_file')
+        pub.subscribe(self.menu_File_Save_DXF_File_close_loops, 'save.dxf_file_close_loops')
+
+        pub.subscribe(self.CopyClipboard_GCode, 'copy.gcode_to_clipboard')
+        pub.subscribe(self.CopyClipboard_SVG, 'copy.svg_to_clipboard')
+
+        pub.subscribe(self.status_color, 'status_color')
+        pub.subscribe(self.status_message, 'status_message')
+        pub.subscribe(self.status_update_bbox, 'status_message_bbox')
+
+        pub.subscribe(self.general_settings_window, 'general_settings_window')
+        pub.subscribe(self.vcarve_settings_window, 'vcarve_settings_window')
+        pub.subscribe(self.bitmap_settings_window, 'bitmap_settings_window')
+        pub.subscribe(self.Settings_ReLoad_Click, 'reload')
+        pub.subscribe(self.write_config_file, 'write_config_file')
+
+        pub.subscribe(self.Recalculation_RQD, 'recalculation_required')
+        pub.subscribe(self.Recalculate_Click, 'recalculate')
+        pub.subscribe(self.V_Carve_Calc_Click, 'calculate_v_carve')
+        pub.subscribe(self.Calculate_CLEAN_Click, 'calculate_cleanup')
+        pub.subscribe(self.Ctrl_v_pplot_changed, 'v_pplot_changed')
+        pub.subscribe(self.Ctrl_mode_change, 'mode_changed')
+
+        pub.subscribe(self.menu_View_Zoom_in, 'zoom_in')
+        pub.subscribe(self.menu_View_Zoom_out, 'zoom_out')
+        pub.subscribe(self.menu_View_Refresh, 'refresh')
+
+        pub.subscribe(self.calc_depth_limit, 'calc_depth_limit')
+
+        pub.subscribe(self.Write_Clean_Click, 'write_clean_file')
+        pub.subscribe(self.Write_V_Clean_Click, 'write_v_clean_file')
+
+        # engrave progress
+        pub.subscribe(self.plot_progress, 'plot_progress')
+
+    @property
+    def error_count(self):
+        return self._error_count
+
+    def reset_error_count(self):
+        self._error_count = 0
+
+    def increment_error_count(self, incr=1):
+        self._error_count += incr
 
     def general_settings_window(self):
         general_settings_window = GeneralSettings(self, self.settings)
@@ -74,15 +121,19 @@ class Gui(Frame):
     def vcarve_settings_window(self):
         vcarve_settings_window = VCarveSettings(self, self.settings)
 
-    def status_update(self, msg, color='yellow'):
+    def status_color(self, color=COLOR_RECALC):
+        self.statusbar.configure(bg=color)
+
+    def status_message(self, msg):
         self.statusMessage.set(msg)
+        self.master.update()
+
+    def status_update_bbox(self, color=COLOR_RECALC):
+        self.statusMessage.set(self.bounding_box.get())
         self.statusbar.configure(bg=color)
         self.master.update()
 
     def plot_progress(self, normv, color, radius):
-        """
-        Engrave progress callback
-        """
         self.PreviewCanvas.update_idletasks()
         cszw = int(self.PreviewCanvas.winfo_width())
         cszh = int(self.PreviewCanvas.winfo_height())
@@ -92,7 +143,7 @@ class Gui(Frame):
     def f_engrave_init(self):
         self.master.update()
 
-        if self.settings.get('input_type') == "text":
+        if self.settings.get('input_type') == INPUT_TYPE_TEXT:
             self.font = readFontFile(self.settings)
         else:
             self.load_image_file()
@@ -145,7 +196,7 @@ class Gui(Frame):
         self.create_input()
         self.create_statusbar()
 
-        self.menubar = MenuBar(self.master, self, self.settings)
+        self.menubar = MenuBar(self.master, self.settings)
         self.mainwindow_image_left = None
         self.mainwindow_text_left = None
         self.mainwindow_text_right = None
@@ -186,11 +237,11 @@ class Gui(Frame):
                     fileName, fileExtension = os.path.splitext(value)
                     TYPE = fileExtension.upper()
                     if TYPE == '.CXF' or TYPE == '.TTF':
-                        self.settings.set('input_type', 'text')
+                        self.settings.set('input_type', INPUT_TYPE_TEXT)
                         self.settings.set('fontdir', dirname)
                         self.settings.set('fontfile', os.path.basename(fileName) + fileExtension)
                     else:
-                        self.settings.set('input_type', 'image')
+                        self.settings.set('input_type', INPUT_TYPE_IMAGE)
                         self.IMAGE_FILE = value
                 else:
                     fmessage("File/Directory Not Found:\t%s" % value)
@@ -214,7 +265,7 @@ class Gui(Frame):
 
             fmessage('(OOF-Engrave Batch Mode)')
 
-            if self.settings.get('input_type') == "text":
+            if self.settings.get('input_type') == INPUT_TYPE_TEXT:
                 self.font = readFontFile(self.settings)
             else:
                 self.load_image_file()
@@ -234,17 +285,17 @@ class Gui(Frame):
             sys.exit()
 
     def create_mainwindow_widgets(self):
-        if self.settings.get('input_type') == 'text':
+        if self.settings.get('input_type') == INPUT_TYPE_TEXT:
             if self.mainwindow_text_left is not None:
                 self.mainwindow_text_left.grid_forget()
             if self.mainwindow_text_right is not None:
                 self.mainwindow_text_right.grid_forget()
-            self.mainwindow_text_left = MainWindowTextLeft(self.master, self, self.settings)
-            self.mainwindow_text_right = MainWindowTextRight(self.master, self, self.settings)
+            self.mainwindow_text_left = MainWindowTextLeft(self.master, self.settings)
+            self.mainwindow_text_right = MainWindowTextRight(self.master, self.settings)
         else:
             if self.mainwindow_image_left is not None:
                 self.mainwindow_image_left.grid_forget()
-            self.mainwindow_image_left = MainWindowImageLeft(self.master, self, self.settings)
+            self.mainwindow_image_left = MainWindowImageLeft(self.master, self.settings)
 
     def create_previewcanvas(self):
         self.PreviewCanvas = Canvas(self.master, background="grey")
@@ -293,48 +344,7 @@ class Gui(Frame):
         self.NGC_FILE = (self.settings.get('NGC_FILE'))
         self.IMAGE_FILE = (self.settings.get('IMAGE_FILE'))
 
-    def entry_set(self, val, check_flag=0, new=0, setting=None):
-
-        retval = 0
-
-        if check_flag == OK and new == 0:
-            self.statusbar.configure(bg='yellow')
-            val.configure(bg='yellow')
-            self.statusMessage.set(" Recalculation required.")
-
-        elif check_flag == NAN:
-            val.configure(bg='red')
-            self.statusbar.configure(bg='red')
-            self.statusMessage.set(" Value should be a number. ")
-
-        elif check_flag == INV:
-            self.statusbar.configure(bg='red')
-            val.configure(bg='red')
-
-        elif (check_flag == OK or check_flag == NOR) and new == 1:
-            self.statusbar.configure(bg='white')
-            self.statusMessage.set(self.bounding_box.get())
-            val.configure(bg='white')
-
-        elif check_flag == NOR and new == 0:
-            self.statusbar.configure(bg='white')
-            self.statusMessage.set(self.bounding_box.get())
-            val.configure(bg='white')
-
-        elif (check_flag == OK or check_flag == NOR) and new == 2:
-            pass
-
-        else:
-            retval = 1
-
-        if (setting is not None) and \
-                (check_flag == OK or check_flag == NOR) and \
-                new == 0:
-            self.settings.set(setting, val.get())
-
-        return retval
-
-    def write_config_file(self, event):
+    def write_config_file(self):
 
         gcode = []
 
@@ -377,8 +387,14 @@ class Gui(Frame):
 
     def CopyClipboard_GCode(self):
         self.clipboard_clear()
-        if self.Check_All_Variables() > 0:
+
+        self.Check_All_Variables()
+        if self.error_count > 0:
+            #print("error_count: %s" % self.error_count)
+            # clear clipboard, or leave unchanged
+            # self.clipboard_append('')
             return
+
         g_code = gcode(self.engrave)
         for line in g_code:
             self.clipboard_append(str(line) + '\n')
@@ -393,8 +409,10 @@ class Gui(Frame):
             self.clipboard_append(line + '\n')
 
     def WriteToAxis(self):
-        if self.Check_All_Variables() > 0:
+        self.Check_All_Variables()
+        if self.error_count > 0:
             return
+
         g_code = gcode(self.engrave)
         for line in g_code:
             try:
@@ -406,7 +424,7 @@ class Gui(Frame):
     def Recalculate_Click(self, event=None):
         self.do_it()
 
-    def Settings_ReLoad_Click(self, event, arg1="", arg2=""):
+    def Settings_ReLoad_Click(self, event=None, arg1="", arg2=""):
         win_id = self.grab_current()
         self.do_it()
         try:
@@ -565,19 +583,15 @@ class Gui(Frame):
         return r_inlay_top
 
     def Check_All_Variables(self, new=2):
-
         if self.batch.get():
             return 0  # nothing to be done in batchmode
 
-        error_cnt = self.Ctrl_check_all_variables(new)
-        if error_cnt > 0:
-            self.statusbar.configure(bg='red')
-            self.statusMessage.set(" Entry Error Detected: Check Entry Values in Main Window ")
-
-        return error_cnt
+        self.reset_error_count()
+        pub.sendMessage('check_all_variables', new=new)
 
     def V_Carve_Calc_Click(self):
-        if self.Check_All_Variables() > 0:
+        self.Check_All_Variables()
+        if self.error_count > 0:
             return
 
         width = 600
@@ -629,7 +643,8 @@ class Gui(Frame):
 
     def Clean_Calc_Click(self, bit_type="straight"):
 
-        if self.Check_All_Variables() > 0:
+        self.Check_All_Variables()
+        if self.error_count > 0:
             return True  # Stop
 
         if self.engrave.number_of_clean_coords() == 0:
@@ -736,7 +751,7 @@ class Gui(Frame):
         else:
             self.image = MyImage()
 
-        # input_type may have been changed by read_image_file
+        # the input_type may have been changed by read_image_file
         self.Ctrl_set_menu_input_type()
         self.create_mainwindow_widgets()
 
@@ -782,7 +797,7 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        if self.settings.get('input_type') == "image":
+        if self.settings.get('input_type') == INPUT_TYPE_IMAGE:
             filename, file_extension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(filename)
         else:
@@ -813,7 +828,8 @@ class Gui(Frame):
 
     def menu_File_Save_G_Code_File(self):
 
-        if self.Check_All_Variables() > 0:
+        self.Check_All_Variables()
+        if self.error_count > 0:
             return
 
         if self.engrave.number_of_v_coords() == 0 and self.settings.get('cut_type') == CUT_TYPE_VCARVE:
@@ -831,7 +847,7 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        if self.settings.get('input_type') == "image":
+        if self.settings.get('input_type') == INPUT_TYPE_IMAGE:
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
         else:
@@ -861,7 +877,8 @@ class Gui(Frame):
 
     def menu_File_Save_clean_G_Code_File(self, bit_type="straight"):
 
-        if self.Check_All_Variables() > 0:
+        self.Check_All_Variables()
+        if self.error_count > 0:
             return
 
         g_code = write_clean_up(self.engrave, bit_type)
@@ -870,7 +887,7 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        if self.settings.get('input_type') == "image":
+        if self.settings.get('input_type') == INPUT_TYPE_IMAGE:
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
             fileName_tmp, fileExtension = os.path.splitext(init_file)
@@ -913,7 +930,7 @@ class Gui(Frame):
         if not os.path.isdir(init_dir):
             init_dir = self.HOME_DIR
 
-        if self.settings.get('input_type') == "image":
+        if self.settings.get('input_type') == INPUT_TYPE_IMAGE:
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
         else:
@@ -952,7 +969,7 @@ class Gui(Frame):
             init_dir = self.HOME_DIR
 
         # fileName, fileExtension = os.path.splitext(self.NGC_FILE)
-        if self.settings.get('input_type') != "text":
+        if self.settings.get('input_type') == INPUT_TYPE_IMAGE:
             fileName, fileExtension = os.path.splitext(self.IMAGE_FILE)
             init_file = os.path.basename(fileName)
         else:
@@ -989,9 +1006,6 @@ class Gui(Frame):
             dummy_event = Event()
             dummy_event.widget = self.master
             self.Master_Configure(dummy_event, True)
-
-    def menu_View_Recalculate(self):
-        self.do_it()
 
     def menu_Help_About(self):
         about = "OOF-Engrave, refactored F-Engrave.\n\n"
@@ -1047,7 +1061,7 @@ class Gui(Frame):
             self.h = h
 
             # TODO get rid of window instance test
-            if self.settings.get('input_type') == "text":
+            if self.settings.get('input_type') == INPUT_TYPE_TEXT:
                 self.Master_Configure_text()
 
             elif self.mainwindow_image_left is not None:
@@ -1070,52 +1084,22 @@ class Gui(Frame):
         self.mainwindow_text_left.grid(row=0, rowspan=2, column=0, padx=10, pady=10, sticky=NSEW)
         self.mainwindow_text_right.grid(row=0, rowspan=2, column=2, padx=10, pady=10, sticky=NSEW)
 
-        # main window callbacks
-        self.Ctrl_set_mainwindow_cut_type = self.Ctrl_set_cut_type_Text
-        self.Ctrl_Entry_units_var_Callback = self.Ctrl_Entry_units_var_Callback_Text
-        self.Ctrl_Scale_Linear_Inputs = self.Ctrl_Scale_Linear_Inputs_Text
-        self.Ctrl_Fontdir_Click = self.mainwindow_text_right.fontdir_click
-        self.Ctrl_check_all_variables = self.Ctrl_check_all_variables_text
-
         self.mainwindow_text_left.master_configure()
         self.mainwindow_text_right.master_configure()
 
-    # callbacks (wherein this Gui/App is the Controller)
-
-    def Ctrl_get_image_height(self):
-        return self.image.get_height()
-
-    def Ctrl_check_all_variables_text(self, new):
-        error_cnt = self.mainwindow_text_left.check_all_variables(new) + \
-                    self.mainwindow_text_right.check_all_variables(new)
-        return error_cnt
+    # callbacks
 
     def Ctrl_set_menu_cut_type(self):
         self.menubar.set_cut_type()
-        self.Recalc_RQD()
+        self.Recalculation_RQD()
 
     def Ctrl_set_menu_input_type(self):
         self.menubar.set_input_type()
-        self.Recalc_RQD()
-
-    def Ctrl_set_cut_type(self):
-        self.Ctrl_set_mainwindow_cut_type()
-
-    def Ctrl_set_cut_type_Text(self):
-        self.mainwindow_text_left.set_cut_type()
-        self.mainwindow_text_right.set_cut_type()
-
-    def Ctrl_Entry_units_var_Callback_Text(self):
-        self.mainwindow_text_left.entry_units_var_callback()
-        self.mainwindow_text_right.entry_units_var_callback()
-
-    def Ctrl_Scale_Linear_Inputs_Text(self, factor):
-        self.mainwindow_text_left.scale_linear_inputs(factor)
-        self.mainwindow_text_right.scale_linear_inputs(factor)
+        self.Recalculation_RQD()
 
     def Ctrl_font_file_changed(self):
         self.font = readFontFile(self.settings)
-        self.Recalc_RQD()
+        self.Recalculation_RQD()
 
     def Ctrl_mode_change(self):
 
@@ -1139,14 +1123,6 @@ class Gui(Frame):
 
         self.PreviewCanvas.grid(row=0, rowspan=2, column=1, columnspan=2, padx=10, pady=10, sticky=NSEW)
         self.mainwindow_image_left.grid(row=0, rowspan=2, column=0, pady=10, sticky=NSEW)
-
-        # main window callbacks
-        self.Ctrl_set_mainwindow_cut_type = self.mainwindow_image_left.set_cut_type
-        self.Ctrl_Entry_units_var_Callback = self.mainwindow_image_left.entry_units_var_callback
-        self.Ctrl_Scale_Linear_Inputs = self.mainwindow_image_left.scale_linear_inputs
-        self.Ctrl_check_all_variables = self.mainwindow_image_left.check_all_variables
-        self.Ctrl_Fontdir_Click = lambda *_, **__: None
-
         self.mainwindow_image_left.master_configure()
 
     def plot_line(self, old, new, midx, midy, cszw, cszh, color, radius=0):
@@ -1178,7 +1154,7 @@ class Gui(Frame):
         self.input.configure(bg='yellow')
         self.statusMessage.set(" Recalculation required.")
 
-    def Recalc_RQD(self, event=None):
+    def Recalculation_RQD(self, event=None):
         self.recalculate_RQD_Nocalc(event)
         self.do_it()
 
@@ -1221,8 +1197,8 @@ class Gui(Frame):
         # show shaded background with the size of the image bounding box,
         # including the circle to be plotted, if any
         # TODO ugly hack to avoid stale text box presented when no image is loaded yet
-        if (self.settings.get('input_type') == 'text' and len(self.text) > 0) or \
-                (self.settings.get('input_type') == 'image' and len(self.image) > 0):
+        if (self.settings.get('input_type') == INPUT_TYPE_TEXT and len(self.text) > 0) or \
+                (self.settings.get('input_type') == INPUT_TYPE_IMAGE and len(self.image) > 0):
             x_lft = cszw / 2 + (minx - midx) / plot_scale
             x_rgt = cszw / 2 + (maxx - midx) / plot_scale
             y_bot = cszh / 2 + (maxy - midy) / plot_scale
@@ -1244,7 +1220,7 @@ class Gui(Frame):
 
         # plot the original lines
         scaled_coords = []
-        if self.settings.get('input_type') == "text":
+        if self.settings.get('input_type') == INPUT_TYPE_TEXT:
             if len(self.text) > 0:
                 for XY in self.text.get_coords():
                     # for XY in self.text.coords:
@@ -1369,7 +1345,8 @@ class Gui(Frame):
 
         self.menu_View_Refresh()
 
-        if self.Check_All_Variables() > 0:
+        self.Check_All_Variables()
+        if self.error_count > 0:
             return
 
         if not self.batch.get():
@@ -1378,7 +1355,7 @@ class Gui(Frame):
             self.master.update_idletasks()
             self.PreviewCanvas.delete(ALL)
 
-        if self.settings.get('input_type') == "text":
+        if self.settings.get('input_type') == INPUT_TYPE_TEXT:
             self.do_it_text()
         else:
             self.do_it_image()
@@ -1498,8 +1475,8 @@ class Gui(Frame):
 
         if not self.batch.get():
 
-            self.input.configure(bg='white')
-            # self.statusbar.configure(bg='white')
+            self.input.configure(bg=COLOR_OK)
+            self.statusbar.configure(bg=COLOR_OK)
             self.Check_All_Variables(new=1)
 
             self.bounding_box.set("Bounding Box (WxH) = " +
@@ -1567,6 +1544,7 @@ class Gui(Frame):
 
         self.plot_bbox = self.image.get_bbox()
         minx, maxx, miny, maxy = self.plot_bbox.tuple()
+
         # engrave box or circle
 
         if self.settings.get('plotbox'):
@@ -1576,7 +1554,8 @@ class Gui(Frame):
             minx, maxx, miny, maxy = self.plot_bbox.tuple()
 
         if not self.batch.get():
-            self.input.configure(bg='white')
+            self.input.configure(bg=COLOR_OK)
+            self.statusbar.configure(bg=COLOR_OK)
             self.Check_All_Variables(new=1)
 
             self.bounding_box.set("Bounding Box (WxH) = " +
@@ -1693,7 +1672,7 @@ class Gui(Frame):
 
         text_radius = 0.0
 
-        if self.settings.get('input_type') == "text":
+        if self.settings.get('input_type') == INPUT_TYPE_TEXT:
             if self.settings.get('plotbox') and \
                     self.settings.get('cut_type') == CUT_TYPE_ENGRAVE and \
                     self.settings.get('text_radius') != 0:
@@ -1754,7 +1733,8 @@ class Gui(Frame):
                 v_step_len = 0.0005
                 self.settings.set('v_step_len', v_step_len)
 
-        if self.Check_All_Variables() > 0:
+        self.Check_All_Variables()
+        if self.error_count > 0:
             return
 
         if not clean:

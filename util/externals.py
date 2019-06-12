@@ -59,3 +59,14 @@ def check_pil():
         PIL enables more image file formats.")
 
     return False
+
+
+def check_pubsub():
+    try:
+        from pubsub import pub
+        print "Python pubsub API version: %s found" % pub.VERSION_API
+        return True
+    except:
+        raise Exception("Python pubsub is not found...")
+
+    return False

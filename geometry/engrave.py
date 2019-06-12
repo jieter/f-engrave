@@ -1,9 +1,11 @@
 from time import time
 from math import (ceil, fabs, floor, tan)
 
-from util import fmessage, OVD_AVAILABLE
+from util import fmessage, OVD_AVAILABLE, COLOR_OK
 from geometry import *
 from geometry.pathsorter import sort_paths
+
+from pubsub import pub
 
 # from sortPaths import sort_paths
 # from findMaxCircle import find_max_circle as find_max_circle_CPP
@@ -82,10 +84,7 @@ class Engrave(object):
     """
     def __init__(self, settings, image=None):
 
-        self.plot_progress_callback = None
-        self.status_callback = None
         self.callback_counter = 0
-
         self.settings = settings
         self.image = image
         self.toolbit = None
@@ -101,6 +100,12 @@ class Engrave(object):
         self.accuracy = self.settings.get('accuracy')
         self.v_pplot = self.settings.get('v_pplot')
         self.stop_calc = False
+
+        pub.subscribe(self.init_clean_coords, 'init_clean_coords')
+
+    def status_update(self, msg=None, color=COLOR_OK):
+        pub.sendMessage('status_color', color=color)
+        pub.sendMessage('status_message', msg=msg)
 
     def init_coords(self):
         # Path coords format: (x1, y1, x2, y2, line_num, char_num)
@@ -141,12 +146,6 @@ class Engrave(object):
 
     def set_coords(self, coords):
         self.coords = coords
-
-    def set_plot_progress_callback(self, callback):
-        self.plot_progress_callback = callback
-
-    def set_status_callback(self, callback):
-        self.status_callback = callback
 
     def refresh_v_pplot(self):
         self.v_pplot = self.settings.get('v_pplot')
@@ -329,11 +328,10 @@ class Engrave(object):
                 MIN_REMAIN = -1
                 MIN_TOTAL = -1
 
-            if self.status_callback is not None:
-                self.callback_counter += 1
-                if (self.v_pplot and not clean) or (self.callback_counter % 100) == 0:
-                    msg = '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL)
-                    self.status_callback(msg)
+            self.callback_counter += 1
+            if (self.v_pplot and not clean) or (self.callback_counter % 100) == 0:
+                msg = '%.1f %% ( %.1f Minutes Remaining | %.1f Minutes Total )' % (CUR_PCT, MIN_REMAIN, MIN_TOTAL)
+                self.status_update(msg)
 
             if self.stop_calc:
                 self.stop_calc = False
@@ -448,8 +446,8 @@ class Engrave(object):
                 normv, rv, clean_seg = self.record_v_carve_data(xpt, ypt, phi2, rbit, rout, loop_cnt, clean)
                 self.clean_segment[curr] = self.clean_segment[curr] or clean_seg
 
-                if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
-                    self.plot_progress_callback(normv, "blue", rv)
+                if self.v_pplot and clean is False:
+                    pub.sendMessage('plot_progress', normv=normv, color='blue', radius=rv)
 
                 if new_loop and cnt == 1:
                     xpta = xpt
@@ -500,8 +498,8 @@ class Engrave(object):
             normv, rv, clean_seg = self.record_v_carve_data(x1, y1, sub_phi, rbit, rout, loop_cnt, clean)
             self.clean_segment[curr] = self.clean_segment[curr] or clean_seg
 
-            if self.v_pplot and (self.plot_progress_callback is not None) and clean is False:
-                self.plot_progress_callback(normv, "blue", rv)
+            if self.v_pplot and clean is False:
+                pub.sendMessage('plot_progress', normv=normv, color='blue', radius=rv)
 
     def determine_active_partitions(self, xN, yN, xPartitionLength, yPartitionLength, clean):
         """
@@ -812,8 +810,7 @@ class Engrave(object):
 
         Lend.append(cnt)
 
-        if self.status_callback is not None:
-            self.status_callback('Checking Input Image Data')
+        self.status_update('Checking Input Image Data')
 
         # Fully Close Closed loops and Remove Open Loops
         i = 0
@@ -934,8 +931,7 @@ class Engrave(object):
             Lend.append(len(ecoords) - 1)
 
         # Determine loop directions CW/CCW
-        if self.status_callback is not None:
-            self.status_callback('Calculating Initial Loop Directions (CW/CCW)')
+        self.status_update('Calculating Initial Loop Directions (CW/CCW)')
 
         Lflip = []  # normvector direction in (False) or out (True) for loopsegment [i]
         Lcw = []    # loop direction clockwise (True) or counterclockwise for loopsegment [i]
@@ -970,10 +966,7 @@ class Engrave(object):
 
         # For each loop determine if other loops are inside
         for iloop in range(Nloops):
-
-            if self.status_callback is not None:
-                self.status_callback('Determining Which Side of Loop to Cut: %d of %d' % (iloop + 1, Nloops))
-
+            self.status_update('Determining Which Side of Loop to Cut: %d of %d' % (iloop + 1, Nloops))
             ipoly = ecoords[Lbeg[iloop]:Lend[iloop]]
 
             # Check points in other loops (could just check one)
@@ -995,8 +988,7 @@ class Engrave(object):
                 Lcw[iloop] = not Lcw[iloop]
 
         # Find new order based on distance to next beginning
-        if self.status_callback is not None:
-            self.status_callback('Re-Ordering Loops')
+        self.status_update('Re-Ordering Loops')
 
         order_out = []
         if len(Lflip) > 0:
@@ -1216,10 +1208,7 @@ class Engrave(object):
         check_coords = []
 
         if bit_type == "straight":
-
-            if self.status_callback is not None:
-                self.status_callback('Calculating Cleanup Cut Paths')
-
+            self.status_update('Calculating Cleanup Cut Paths')
             self.clean_coords_sort = []
 
             # diameter of cleanup bit
@@ -1233,10 +1222,7 @@ class Engrave(object):
             check_coords = self.clean_coords
 
         elif bit_type == "v-bit":
-
-            if self.status_callback is not None:
-                self.status_callback('Calculating V-Bit Cleanup Cut Paths')
-
+            self.status_update('Calculating V-Bit Cleanup Cut Paths')
             self.v_clean_coords_sort = []
 
             # effective diameter of clean-up v-bit
@@ -1287,8 +1273,7 @@ class Engrave(object):
             else:
                 self.clean_coords_sort = clean_coords_out
 
-        if self.status_callback is not None:
-            self.status_callback('Done Calculating Cleanup Cut Paths', color='white')
+        self.status_update('Done Calculating Cleanup Cut Paths', color=COLOR_OK)
 
     def line_cuts(self, MAXD, clean_coords, clean_coords_out, clean_dia, loop_cnt_out):
 

@@ -6,14 +6,13 @@ which in turn was a fork of [Scorchworks F-Engrave](http://www.scorchworks.com/F
 Refactored the original code to get a better understanding of it. As often in life, one action led to another. Hence this fork of Jieter's code.
 The repo name was changed into OOF-Engrave to avoid confusion with the original. This after having consulted Scorch, the F-Engrave author.
 
-## Changes (being) made
+## Changes
  - aligned with F-Engrave version 1.65 (2017)
  - split into modules
  - decoupled the GUI from the actual processing
  - automated testing (using [nose](http://pythontesting.net/framework/nose/nose-introduction))
  - clean, consistent coding style (using [flake](http://flake8.pycqa.org/en/latest/user/index.html))
  - document settings in settings file and use more descriptive names
- - provide [openvoronoi](https://github.com/Blokkendoos/openvoronoi) as an alternative toolpath strategy
  
 ## TODO's
  - Circle around
@@ -24,6 +23,7 @@ The repo name was changed into OOF-Engrave to avoid confusion with the original.
  	- More coverage on geometry functions
  - GUI
  	- settings with documentation
+ - provide [openvoronoi](https://github.com/Blokkendoos/openvoronoi) as an alternative toolpath strategy
 
 ## Running tests
 

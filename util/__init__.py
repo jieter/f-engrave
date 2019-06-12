@@ -3,6 +3,7 @@ import datetime
 
 import externals
 from icon import *
+from pubsub import pub
 
 IN_AXIS = "AXIS_PROGRESS_BAR" in os.environ
 
@@ -16,6 +17,13 @@ OK = 0  # value is ok (may require recalculation)
 NOR = 1  # value is a valid number change that does not require recalc
 INV = 2  # value is invalid
 NAN = 3  # value is not a number
+
+# entry color codes:
+COLOR_OK = 'white'
+COLOR_NOR = 'white'
+COLOR_INV = 'red'
+COLOR_NAN = 'red'
+COLOR_RECALC = 'yellow'
 
 if VERSION == 3:
     # from tkinter import *
@@ -41,12 +49,14 @@ def fmessage(text, newline=True):
 
 
 PIL = False
+PUBSUB = False
 OVD_AVAILABLE = False
 TTF_AVAILABLE = False
 POTRACE_AVAILABLE = False
 
 try:
     PIL = externals.check_pil()
+    PUBSUB = externals.check_pubsub()
     OVD_AVAILABLE = externals.check_ovd()
     TTF_AVAILABLE = externals.check_ttf()
     POTRACE_AVAILABLE = externals.check_potrace()
@@ -86,14 +96,62 @@ def message_ask_ok_cancel(title, message):
     return result
 
 
+def validate_entry_set(val, check_flag=0, new=0, setting=None, settings=None):
+    '''Validate a GUI entry value and show informational status_message when applicable'''
+
+    retval = 1
+
+    if setting is not None and settings is None:
+        print("validate_entry_set, no settings for setting: %s" % setting)
+
+    if check_flag == OK and new == 0:
+        val.configure(bg=COLOR_RECALC)
+        pub.sendMessage('status_color', color=COLOR_RECALC)
+        pub.sendMessage('status_message', msg='Recalculation required.')
+
+    elif check_flag == NAN:
+        val.configure(bg=COLOR_NAN)
+        pub.sendMessage('status_color', color=COLOR_NAN)
+        pub.sendMessage('status_message', msg='Value should be a number.')
+
+    elif check_flag == INV:
+        val.configure(bg=COLOR_INV)
+        # set color only, the message has been set in the entry validation callback
+        pub.sendMessage('status_color', color=COLOR_INV)
+
+    elif (check_flag == OK or check_flag == NOR) and new == 1:
+        val.configure(bg=COLOR_OK)
+        pub.sendMessage('status_message_bbox', color=COLOR_OK)
+
+    elif check_flag == NOR and new == 0:
+        val.configure(bg=COLOR_NOR)
+        pub.sendMessage('status_message_bbox', color=COLOR_NOR)
+
+    elif (check_flag == OK or check_flag == NOR) and new == 2:
+        retval = 0
+
+    else:
+        pass
+
+    if (setting is not None) and \
+            (check_flag == OK or check_flag == NOR) and \
+            new == 0:
+        settings.set(setting, val.get())
+
+    if retval == 1:
+        pub.sendMessage('increment_error_count')
+
+    return retval
+
+
 def position_window(win, width, height):
-    """
+    '''
     centers a tkinter Toplevel window to its master
     Source: https://stackoverflow.com/questions/36050192/how-to-position-toplevel-widget-relative-to-root-window
     :param width: the Toplevel window width
     :param height: the Toplevel window height
     :param win: the Toplevel window to center
-    """
+    '''
     win.update_idletasks()
 
     master = win.master

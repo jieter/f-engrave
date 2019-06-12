@@ -1,4 +1,5 @@
-from util import VERSION, OK, NOR, INV, NAN, position_window
+from util import VERSION, OK, NOR, INV, NAN, position_window, validate_entry_set
+from settings import CUT_TYPE_VCARVE, INPUT_TYPE_IMAGE
 from tooltip import ToolTip
 
 if VERSION == 3:
@@ -7,6 +8,7 @@ if VERSION == 3:
 else:
     from Tkinter import *
     from tkFileDialog import *
+    from pubsub import pub
 
 
 class GeneralSettings(object):
@@ -14,19 +16,6 @@ class GeneralSettings(object):
     def __init__(self, master, settings):
 
         self.settings = settings
-
-        # GUI callbacks
-        self.Ctrl_entry_set = master.entry_set
-        self.Ctrl_status_message = master.statusMessage
-        self.Ctrl_reload = master.Settings_ReLoad_Click
-        self.Ctrl_font_selected = master.Ctrl_Fontdir_Click
-        self.Ctrl_write_config_file = master.write_config_file
-        self.Ctrl_recalculation_required = master.Recalc_RQD
-
-        self.Ctrl_recalculate = master.Recalculate_Click
-        self.Ctrl_units_changed = master.Ctrl_Entry_units_var_Callback
-        self.Ctrl_scale_changed = master.Ctrl_Scale_Linear_Inputs
-        self.Ctrl_v_pplot_changed = master.Ctrl_v_pplot_changed
 
         # General settings window
         self.width = 600
@@ -73,11 +62,37 @@ class GeneralSettings(object):
 
         self.initialise_variables()
         self.create_widgets()
+        self.configure_cut_type()
+        self.configure_input_type()
         self.configure_boxgap()
         self.create_icon()
 
         position_window(self.general_settings, self.width, self.height)
         self.general_settings.deiconify()
+
+    def Ctrl_units_changed(self):
+        pub.sendMessage('units_changed')
+
+    def Ctrl_scale_linear_inputs(self, factor=1.0):
+        pub.sendMessage('scale_linear_inputs', factor=factor)
+
+    def Ctrl_v_pplot_changed(self):
+        pub.sendMessage('v_pplot_changed')
+
+    def Ctrl_font_selected(self):
+        pub.sendMessage('fontdir_click')
+
+    def Ctrl_reload(self, event=None):
+        pub.sendMessage('reload')
+
+    def Ctrl_write_config_file(self, event=None):
+        pub.sendMessage('write_config_file')
+
+    def Ctrl_recalculate(self, event=None):
+        pub.sendMessage('recalculate')
+
+    def Ctrl_recalculation_required(self):
+        pub.sendMessage('recalculation_required')
 
     def initialise_variables(self):
         self.units.set(self.settings.get('units'))
@@ -104,22 +119,21 @@ class GeneralSettings(object):
         self.v_pplot.set(self.settings.get('v_pplot'))
 
     def Close_Current_Window_Click(self):
-
         error_cnt = \
-            self.Ctrl_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
+            validate_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
+            validate_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
+            validate_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
+            validate_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
+            validate_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2) + \
+            validate_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), 2) + \
+            validate_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), 2) + \
+            validate_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), 2) + \
+            validate_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), 2) + \
+            validate_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
 
         if error_cnt > 0:
-            self.Ctrl_status_message.set(
-                "Entry Error Detected: Check the entry values in the General Settings window")
+            pub.sendMessage('status_message', msg=
+                "Entry Error Detected: Check the entry values in the General Settings window.")
         else:
             self.general_settings.destroy()
 
@@ -267,7 +281,7 @@ class GeneralSettings(object):
         self.Radio_Hcalc_ALL.configure(variable=self.H_CALC)
         self.H_CALC.trace_variable("w", self.Checkbutton_H_CALC_Callback)
 
-        if self.settings.get('input_type') == "image":
+        if self.settings.get('input_type') == INPUT_TYPE_IMAGE:
             self.Entry_Fontdir.configure(state="disabled")
             self.Fontdir.configure(state="disabled")
             self.Radio_Hcalc_ALL.configure(state="disabled")
@@ -316,13 +330,13 @@ class GeneralSettings(object):
         padx = 10
         pady = 10
 
-        self.GEN_Reload = Button(self.button_frame, text="Recalculate")
-        self.GEN_Reload.pack(side=LEFT, padx=padx, pady=pady, anchor=CENTER)
-        self.GEN_Reload.bind("<ButtonRelease-1>", self.recalculate_click)
-
-        self.GEN_Recalculate = Button(self.button_frame, text="Re-Load Image")
+        self.GEN_Recalculate = Button(self.button_frame, text="Recalculate")
         self.GEN_Recalculate.pack(side=LEFT, padx=padx, pady=pady, anchor=CENTER)
-        self.GEN_Recalculate.bind("<ButtonRelease-1>", self.Ctrl_reload)
+        self.GEN_Recalculate.bind("<ButtonRelease-1>", self.recalculate_click)
+
+        self.GEN_Reload = Button(self.button_frame, text="Re-Load Image")
+        self.GEN_Reload.pack(side=LEFT, padx=padx, pady=pady, anchor=CENTER)
+        self.GEN_Reload.bind("<ButtonRelease-1>", self.Ctrl_reload)
 
         self.GEN_Close = Button(self.button_frame, text="Close", command=self.Close_Current_Window_Click)
         self.GEN_Close.pack(side=LEFT, padx=padx, pady=pady, anchor=CENTER)
@@ -381,15 +395,28 @@ class GeneralSettings(object):
         self.accuracy.set('%.3g' % self.settings.get('accuracy'))
         self.boxgap.set('%.3g' % self.settings.get('boxgap'))
 
-        self.Ctrl_scale_changed(factor)
+        self.Ctrl_scale_linear_inputs(factor)
 
     def check_all_variables(self, new=1):
-        error_cnt = self.Ctrl_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), new)
+        error_cnt = \
+            validate_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), new) + \
+            validate_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), new) + \
+            validate_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), new) + \
+            validate_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), new) + \
+            validate_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), new)
         return error_cnt
+
+    def configure_cut_type(self):
+        if self.settings.get('cut_type') == CUT_TYPE_VCARVE:
+            self.GEN_Recalculate.configure(state="disabled")
+        else:
+            self.GEN_Recalculate.configure(state="normal")
+
+    def configure_input_type(self):
+        if self.settings.get('input_type') == INPUT_TYPE_IMAGE:
+            self.GEN_Reload.configure(state="normal")
+        else:
+            self.GEN_Reload.configure(state="disabled")
 
     def configure_boxgap(self):
         if not bool(self.plotbox.get()):
@@ -431,7 +458,7 @@ class GeneralSettings(object):
         return NOR
 
     def Entry_Xoffset_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xorigin')
+        validate_entry_set(self.Entry_Xoffset, self.Entry_Xoffset_Check(), setting='xorigin', settings=self.settings)
 
     def Entry_Yoffset_Check(self):
         try:
@@ -441,7 +468,7 @@ class GeneralSettings(object):
         return NOR
 
     def Entry_Yoffset_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yorigin')
+        validate_entry_set(self.Entry_Yoffset, self.Entry_Yoffset_Check(), setting='yorigin', settings=self.settings)
 
     def Entry_ArcAngle_Check(self):
         try:
@@ -451,7 +478,7 @@ class GeneralSettings(object):
         return OK
 
     def Entry_ArcAngle_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='segarc')
+        validate_entry_set(self.Entry_ArcAngle, self.Entry_ArcAngle_Check(), setting='segarc', settings=self.settings)
 
     def Entry_Accuracy_Check(self):
         try:
@@ -461,7 +488,7 @@ class GeneralSettings(object):
         return OK
 
     def Entry_Accuracy_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy')
+        validate_entry_set(self.Entry_Accuracy, self.Entry_Accuracy_Check(), setting='accuracy', settings=self.settings)
 
     def Entry_ext_char_Callback(self, varName, index, mode):
         self.settings.set('ext_char', self.ext_char.get())
@@ -490,14 +517,14 @@ class GeneralSettings(object):
         try:
             value = float(self.boxgap.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Gap should be greater than zero.")
+                pub.sendMessage('status_message', msg="Gap should be greater than zero.")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_BoxGap_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
+        validate_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap', settings=self.settings)
         self.configure_boxgap()
 
     def Entry_v_pplot_Callback(self, varName, index, mode):
@@ -512,7 +539,7 @@ class GeneralSettings(object):
             pass
         self.Ctrl_recalculation_required()
 
-    def Fontdir_Click(self, event):
+    def Fontdir_Click(self, event=None):
         newfontdir = askdirectory(mustexist=1, initialdir=self.fontdir.get())
         if newfontdir != "" and newfontdir != ():
             self.fontdir.set(newfontdir.encode("utf-8"))
