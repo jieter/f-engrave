@@ -1,7 +1,7 @@
 from util import POTRACE_AVAILABLE, VERSION, IN_AXIS, OK, NOR, INV, NAN, validate_entry_set
 import os.path
-from tooltip import ToolTip
-from settings import CUT_TYPE_VCARVE  # , CUT_TYPE_ENGRAVE
+from application.tooltip import ToolTip
+from application.settings import CUT_TYPE_VCARVE  # , CUT_TYPE_ENGRAVE
 
 if VERSION == 3:
     from tkinter import *

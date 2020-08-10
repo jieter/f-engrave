@@ -1,8 +1,8 @@
 import sys
+import os
 import datetime
 
-import externals
-from icon import *
+from util import externals
 from pubsub import pub
 
 IN_AXIS = "AXIS_PROGRESS_BAR" in os.environ

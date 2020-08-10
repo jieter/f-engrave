@@ -2,7 +2,7 @@ from geometry import Line
 from geometry.font import Character, Font
 from geometry.boundingbox import BoundingBox
 
-from dxf_class import DXF_CLASS
+from readers.dxf.dxf_class import DXF_CLASS
 
 
 # TODO dedicated image reader instead of using Font instance to exchange image data

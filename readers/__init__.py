@@ -1,4 +1,4 @@
-from cxf import *
-from dxf import *
-from font import *
-from image import *
+from readers.cxf import *  # noqa F401
+from readers.dxf import *  # noqa F401
+from readers.font import *  # noqa F401
+from readers.image import *  # noqa F401

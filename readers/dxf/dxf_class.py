@@ -10,8 +10,8 @@ from math import (
 from geometry import get_angle, transform, Zero
 from util import fmessage, VERSION
 
-from elements import *
-from nurbs import NURBSClass
+from readers.dxf.elements import *
+from readers.dxf.nurbs import NURBSClass
 
 if VERSION < 3 and sys.version_info[1] < 6:
     def next(item):

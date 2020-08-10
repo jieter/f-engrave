@@ -1,6 +1,6 @@
 from geometry import BoundingBox, Zero, rotation
 from readers.cxf import parse as parse_cxf
-from settings import CUT_TYPE_VCARVE
+from application.settings import CUT_TYPE_VCARVE
 
 import readers
 import writers

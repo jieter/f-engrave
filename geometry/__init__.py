@@ -1,6 +1,6 @@
 from math import atan2, cos, sin, degrees, radians, hypot, sqrt
 
-from boundingbox import BoundingBox
+from geometry.boundingbox import BoundingBox
 from util import MAXINT
 
 Zero = 1e-5

@@ -1,6 +1,6 @@
 from util import VERSION, OVD_AVAILABLE, OK, NOR, INV, NAN, position_window, validate_entry_set
-from tooltip import ToolTip
-from settings import CUT_TYPE_VCARVE
+from application.tooltip import ToolTip
+from application.settings import CUT_TYPE_VCARVE
 
 if VERSION == 3:
     from tkinter import *

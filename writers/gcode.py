@@ -3,8 +3,7 @@ import sys
 from math import tan
 from geometry import *
 from geometry.pathsorter import sort_paths
-
-from douglas import douglas
+from writers.douglas import douglas
 
 from util import header_text, fmessage, f_engrave_version
 # TODO How to import higher level package:

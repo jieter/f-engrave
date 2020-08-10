@@ -1,12 +1,14 @@
 import getopt
 import webbrowser
 
-from util import VERSION, PIL, POTRACE_AVAILABLE, COLOR_OK, COLOR_RECALC, position_window, message_ask_ok_cancel
+from util import VERSION, PIL, POTRACE_AVAILABLE, COLOR_OK, COLOR_RECALC
+from util import position_window, message_box, message_ask_ok_cancel
 
-from bitmap_settings import BitmapSettings
-from vcarve_settings import VCarveSettings
-from general_settings import GeneralSettings
-from main_window import MenuBar, MainWindowTextLeft, MainWindowTextRight, MainWindowImageLeft
+from application.settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE, INPUT_TYPE_TEXT, INPUT_TYPE_IMAGE
+from application.bitmap_settings import BitmapSettings
+from application.vcarve_settings import VCarveSettings
+from application.general_settings import GeneralSettings
+from application.main_window import MenuBar, MainWindowTextLeft, MainWindowTextRight, MainWindowImageLeft
 
 from geometry.font import Font
 from geometry.coords import MyImage, MyText
