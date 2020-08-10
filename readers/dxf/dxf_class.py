@@ -253,7 +253,12 @@ class DXF_CLASS(object):
             elif e.type == "LWPOLYLINE":
                 flag = 0
                 lpcnt = -1
-                for x, y in zip(e.data["10"], e.data["20"]):
+                try:
+                    xy_data = zip(e.data["10"], e.data["20"])
+                except:
+                    fmessage("DXF Import zero length %s ignored" % (e.type))
+                    xy_data = []
+                for x, y in xy_data:
                     x1 = x
                     y1 = y
                     lpcnt = lpcnt + 1
@@ -279,8 +284,13 @@ class DXF_CLASS(object):
                         bulge0 = bulge1
 
                 if e.data["70"] != 0:
-                    x1 = e.data["10"][0]
-                    y1 = e.data["20"][0]
+                    try:
+                        x1 = e.data["10"][0]
+                        y1 = e.data["20"][0]
+                    except:
+                        x1 = e.data["10"]
+                        y1 = e.data["20"]
+
                     if bulge0 != 0:
                         bcoords = self.bulge_coords(x0, y0, x1, y1, bulge1, tol_deg)
                         for line in bcoords:
@@ -335,7 +345,12 @@ class DXF_CLASS(object):
                         self.Weights.append(1)
                     pass
 
-                for x, y in zip(e.data["10"], e.data["20"]):
+                try:
+                    xy_data = zip(e.data["10"], e.data["20"])
+                except:
+                    fmessage("DXF Import zero length %s Ignored" % (e.type))
+                    xy_data = []
+                for x, y in xy_data:
                     self.CPoints.append(PointClass(float(x), float(y)))
 
                 self.MYNURBS = NURBSClass(degree=self.degree,
@@ -464,7 +479,12 @@ class DXF_CLASS(object):
             # LEADER ###########
             elif e.type == "LEADER":
                 flag = 0
-                for x, y in zip(e.data["10"], e.data["20"]):
+                try:
+                    xy_data = zip(e.data["10"], e.data["20"])
+                except:
+                    fmessage("DXF Import zero length %s Ignored" % (e.type))
+                    xy_data = []
+                for x, y in xy_data:
                     x1 = x
                     y1 = y
                     if flag == 0:
@@ -482,13 +502,31 @@ class DXF_CLASS(object):
                 self.POLY_FLAG = -1
                 try:
                     TYPE = e.data["70"]
-                    if (TYPE == 0 or TYPE == 8):
-                        pass
-                    elif (TYPE == 1):
+                    if TYPE >= 128:
+                        # print "#128 = The linetype pattern is generated continuously around the vertices of this polyline."
+                        TYPE -= 128
+                    if TYPE >= 64:
+                        # print "#64 = The polyline is a polyface mesh."
+                        TYPE -= 64
+                    if TYPE >= 32:
+                        # print "#32 = The polygon mesh is closed in the N direction."
+                        TYPE -= 32
+                    if TYPE >= 16:
+                        # print "#16 = This is a 3D polygon mesh."
+                        TYPE -= 16
+                    if TYPE >= 8:
+                        # print "#8 = This is a 3D polyline."
+                        TYPE -= 8
+                    if TYPE >= 4:
+                        # print "#4 = Spline-fit vertices have been added."
+                        TYPE -= 4
+                    if TYPE >= 2:
+                        # print "#2 = Curve-fit vertices have been added."
+                        TYPE -= 2
+                    if TYPE >= 1:
+                        # print "#1 = This is a closed polyline (or a polygon mesh closed in the M direction)."
                         self.POLY_CLOSED = 1
-                    else:
-                        fmessage("DXF Import Ignored: - %s - Entity" % (e.type))
-                        self.POLY_FLAG = 0
+                        TYPE -= 1
                 except:
                     pass
 
