@@ -1,4 +1,4 @@
-from util import VERSION, OK, INV, NAN, position_window
+from util import VERSION, OK, INV, NAN, position_window, validate_entry_set
 
 if VERSION == 3:
     from tkinter import *
@@ -20,7 +20,6 @@ class BitmapSettings(object):
         self.settings = settings
 
         # GUI callbacks
-        self.Ctrl_entry_set = master.entry_set
         self.Ctrl_status_message = master.statusMessage
         self.Ctrl_reload = master.Settings_ReLoad_Click
 
@@ -65,9 +64,9 @@ class BitmapSettings(object):
     def Close_Current_Window_Click(self):
 
         error_cnt = \
-            self.Ctrl_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
+            validate_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2) + \
+            validate_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2) + \
+            validate_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
 
         if error_cnt > 0:
             self.Ctrl_status_message.set(
@@ -101,7 +100,7 @@ class BitmapSettings(object):
         self.bmp_turdsize.trace_variable("w", self.Entry_BMPturdsize_Callback)
         self.Label_BMPturdsize2 = Label(self.turdsize_frame, text="Suppress speckles of up to this pixel size", width=w_tip)
         self.Label_BMPturdsize2.pack(side=RIGHT)
-        self.Ctrl_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2)
+        validate_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2)
 
         self.alphamax_frame = Frame(bmp_settings)
         self.Label_BMPalphamax = Label(self.alphamax_frame, text="Alpha Max", width=w_label)
@@ -112,7 +111,7 @@ class BitmapSettings(object):
         self.bmp_alphamax.trace_variable("w", self.Entry_BMPalphamax_Callback)
         self.Label_BMPalphamax2 = Label(self.alphamax_frame, text="0.0 = sharp corners, 1.33 = smoothed corners", width=w_tip)
         self.Label_BMPalphamax2.pack(side=RIGHT)
-        self.Ctrl_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
+        validate_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
 
         self.longcurve_frame = Frame(bmp_settings)
         self.Label_BMP_longcurve = Label(self.longcurve_frame, text="Long Curve", width=w_label)
@@ -133,7 +132,7 @@ class BitmapSettings(object):
         self.bmp_opttolerance.trace_variable("w", self.Entry_BMPoptTolerance_Callback)
         self.Label_BMPoptTolerance2 = Label(self.tolerance_frame, text="Curve Optimization Tolerance", width=w_tip)
         self.Label_BMPoptTolerance2.pack(side=RIGHT)
-        self.Ctrl_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2)
+        validate_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2)
 
         self.button_frame = Frame(bmp_settings)
         self.PBM_Reload = Button(self.button_frame, text="Re-Load Image")
