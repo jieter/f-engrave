@@ -281,6 +281,16 @@ from util import f_engrave_version
 
     Version 1.65b - OOF-Engrave: refactored F-Engrave source code.
 
+    Version 1.66b - align with f-engrave v1.66 - v1.68:
+             1.66 - [Fixed a problem with the origin when wrapping text in some cases.]
+                  - [Decreased number of updates while doing computations which increases overall calculation speed.]
+                  - [Fixed problem that can cause the program to freeze if the saved settings contain errors.]
+                  - [Fixed problem that can cause the program to freeze if the saved settings contain errors.]
+             1.67 - Improved DXF import for DXF files with some incomplete data
+                  - Fixed curve fitting upon g-code export.
+                    Limited curve fitting angle to avoid curve fitting sharp corners.
+             1.68 - [Fixed typo in code introduced in v1.67 that broke curve fitting.]
+
 """
 
 # TODO insert psyco / pypy
