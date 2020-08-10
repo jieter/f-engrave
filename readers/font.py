@@ -20,7 +20,7 @@ def readFontFile(settings):
     TYPE = fileExtension.upper()
 
     if TYPE == '.CXF':
-        with open(filename, 'r') as fontfile:
+        with open(filename, 'r', encoding='ISO-8859-1') as fontfile:
             # build stroke lists from font file
             return parse_cxf.parse(fontfile, segarc)
 

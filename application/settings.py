@@ -333,7 +333,7 @@ class Settings(object):
                 try:
                     self.set(name, setting)
                 except KeyError:
-                    print 'Setting not found:', name  # TODO
+                    print('Setting not found:', name)  # TODO
 
     def to_gcode(self):
         gcode = [CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))

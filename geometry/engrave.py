@@ -199,7 +199,7 @@ class Engrave(object):
 
         # determine the total length of segments
         curr_cnt = -1
-        for v_index in xrange(v_start, v_end, v_inc):
+        for v_index in range(v_start, v_end, v_inc):
             curr_cnt += 1
             line = self.coords[v_index]
             x1 = line[0]
