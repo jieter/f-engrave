@@ -159,8 +159,8 @@ class VCarveSettings(object):
             validate_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), 2)
 
         if error_cnt > 0:
-            pub.sendMessage('status_message', msg=
-                "Entry Error Detected: Check the entry values in the V-Carve Settings window.")
+            pub.sendMessage('status_message',
+                            msg="Entry Error Detected: Check the entry values in the V-Carve Settings window.")
         else:
             self.vcarve_settings.destroy()
 

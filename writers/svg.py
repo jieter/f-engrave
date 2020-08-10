@@ -64,11 +64,11 @@ def svg(job):
             thickness * dpi))
 
     # The image
-    for l in job.coords:
+    for ln in job.coords:
         # translate
         line = [
-            l[0] - minx, -l[1] + maxy,
-            l[2] - minx, -l[3] + maxy
+            ln[0] - minx, -ln[1] + maxy,
+            ln[2] - minx, -ln[3] + maxy
         ]
         # scale
         line = map(lambda x: x * dpi, line)

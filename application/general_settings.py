@@ -132,8 +132,8 @@ class GeneralSettings(object):
             validate_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), 2)
 
         if error_cnt > 0:
-            pub.sendMessage('status_message', msg=
-                "Entry Error Detected: Check the entry values in the General Settings window.")
+            pub.sendMessage('status_message',
+                            msg="Entry Error Detected: Check the entry values in the General Settings window.")
         else:
             self.general_settings.destroy()
 

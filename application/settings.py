@@ -350,4 +350,4 @@ class Settings(object):
         self._text_code = text_code
 
     def __str__(self):
-        return 'Settings:\n' + ('\n'.join([', '.join(map(str, l)) for l in self._settings.items()]))
+        return 'Settings:\n' + ('\n'.join([', '.join(map(str, line)) for line in self._settings.items()]))

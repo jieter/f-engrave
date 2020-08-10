@@ -390,7 +390,7 @@ class Gui(Frame):
 
         self.Check_All_Variables()
         if self.error_count > 0:
-            #print("error_count: %s" % self.error_count)
+            # print("error_count: %s" % self.error_count)
             # clear clipboard, or leave unchanged
             # self.clipboard_append('')
             return
