@@ -330,10 +330,6 @@ def get_pts(plane, x, y, z):
 
 
 def one_quadrant(plane, c, p1, p2, p3):
-    xc, yc = c
-    x1, y1 = get_pts(plane, p1[0], p1[1], p1[2])
-    x2, y2 = get_pts(plane, p2[0], p2[1], p2[2])
-    x3, y3 = get_pts(plane, p3[0], p3[1], p3[2])
 
     def sign(x):
         if abs(x) < 1e-5:
@@ -341,6 +337,34 @@ def one_quadrant(plane, c, p1, p2, p3):
         if x < 0:
             return -1
         return 1
+
+    xc, yc = c
+    x1, y1 = get_pts(plane, p1[0], p1[1], p1[2])
+    x2, y2 = get_pts(plane, p2[0], p2[1], p2[2])
+    x3, y3 = get_pts(plane, p3[0], p3[1], p3[2])
+
+    # Check the angle here and return false if it is too sharp
+    La = hypot((x1 - x2), (y1 - y2))
+    Lb = hypot((x3 - x2), (y3 - y2))
+
+    cos1 = (x1 - x2) / La
+    sin1 = (y1 - y2) / La
+
+    cos2 = (x3 - x2) / Lb
+    sin2 = (y3 - y2) / Lb
+
+    theta_a = get_angle(sin1, cos1)
+    theta_b = get_angle(sin2, cos2)
+
+    if theta_a > theta_b:
+        angle = theta_a - theta_b
+    else:
+        angle = theta_b - theta_a
+
+    test_angle = 36
+    if angle > 180 + test_angle or angle < 180 - test_angle:
+        # pass
+        return False
 
     signs = set((
         (sign(x1 - xc), sign(y1 - yc)),
@@ -374,29 +398,11 @@ def arc_dir(plane, c, p1, p2, p3):
     x2, y2 = get_pts(plane, p2[0], p2[1], p2[2])
     x3, y3 = get_pts(plane, p3[0], p3[1], p3[2])
 
-    # theta_start = atan2(y1-yc, x1-xc)
-    # theta_mid = atan2(y2-yc, x2-xc)
-    # theta_end = atan2(y3-yc, x3-xc)
-
-    theta_start = get_angle(y1 - yc, x1 - xc)
-    theta_mid = get_angle(y2 - yc, x2 - xc) - theta_start
-    if (theta_mid < 0):
-        theta_mid = theta_mid + 360.0
-    theta_end = get_angle(y3 - yc, x3 - xc) - theta_start
-    if (theta_end < 0):
-        theta_end = theta_end + 360.0
-
-    theta_start = 0.0
-    if (theta_end > theta_mid):
+    signed_area = (x1 * y2 - x2 * y1) + (x2 * y3 - x3 * y2) + (x3 * y1 - x1 * y3)
+    if signed_area > 0.0:
         ccw = True
     else:
         ccw = False
-        # The following values result in an incorect result
-    # with the old method of determining direction
-    # x1, y1 = 0.131980576, 1.103352326
-    # x2, y2 = 0.092166910, 1.083988473
-    # x3, y3 = 0.135566569, 1.103764645
-    # xc, yc = 0.141980825, 1.032178989
     return ccw
 
 
