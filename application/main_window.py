@@ -9,7 +9,8 @@ if VERSION == 3:
 else:
     from Tkinter import *
     from tkFileDialog import *
-    from pubsub import pub
+
+from pubsub import pub
 
 
 class MenuBar(object):
