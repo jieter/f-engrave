@@ -78,6 +78,7 @@ class Gui(Frame):
         pub.subscribe(self.status_update_bbox, 'status_message_bbox')
 
         pub.subscribe(self.general_settings_window, 'general_settings_window')
+        pub.subscribe(self.menu_Help_About, 'help_about')
         pub.subscribe(self.vcarve_settings_window, 'vcarve_settings_window')
         pub.subscribe(self.bitmap_settings_window, 'bitmap_settings_window')
         pub.subscribe(self.Settings_ReLoad_Click, 'reload')
