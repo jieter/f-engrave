@@ -1,7 +1,7 @@
 import getopt
 import webbrowser
 
-from util import VERSION, POTRACE_AVAILABLE, COLOR_OK, COLOR_RECALC, position_window, message_ask_ok_cancel
+from util import VERSION, PIL, POTRACE_AVAILABLE, COLOR_OK, COLOR_RECALC, position_window, message_ask_ok_cancel
 
 from bitmap_settings import BitmapSettings
 from vcarve_settings import VCarveSettings
