@@ -280,14 +280,21 @@ class Settings(object):
     def __iter__(self):
         return self._settings.items()
 
-    def type(self, name):
-        return str(type(self._settings[name]))[7:-2]
+    def var_type(self, name):
+        if type(self._settings[name]) is str:
+            return 'str'
+        elif type(self._settings[name]) is bool:
+            return 'bool'
+        elif type(self._settings[name]) is int:
+            return 'int'
+        elif type(self._settings[name]) is float:
+            return 'float'
 
     def set(self, name, value):
         if name == TEXT_CODE:
             self._set_text_code(value)
         else:
-            cast = CAST_TYPES[self.type(name)]
+            cast = CAST_TYPES[self.var_type(name)]
             self._settings[name] = cast(value)
 
     def get(self, name):
