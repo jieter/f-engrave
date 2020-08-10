@@ -291,6 +291,10 @@ from util import f_engrave_version
                     Limited curve fitting angle to avoid curve fitting sharp corners.
              1.68 - [Fixed typo in code introduced in v1.67 that broke curve fitting.]
 
+    Version 1.69b - align with f-engrave v1.69:
+                 - A couple of minor fixes to keep things working in Python 3.x
+                 - [Added ability to disable plotting of v-carve toolpath and area]
+                 - Fixed problem causing v-carve path to go outside of design bounds for very thin design sections.
 """
 
 # TODO insert psyco / pypy
@@ -331,8 +335,7 @@ else:
     y = (screen_height / 2) - (height / 2)
     root.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
-    app.f_engrave_init()
-
     icon.add_to_app(app)
 
+    app.f_engrave_init()
     root.mainloop()

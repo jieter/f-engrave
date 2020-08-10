@@ -1,8 +1,8 @@
 import os
 from subprocess import Popen, PIPE
 
-import dxf
 from util import fmessage, VERSION
+from readers.dxf import parse
 from geometry.font import *
 
 
@@ -28,13 +28,12 @@ def read_image_file(settings):
         try:
             with open(file_full) as dxf_file:
                 # build stroke lists from image file
-                font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
+                font, DXF_source = parse(dxf_file, segarc, new_origin)
                 # font['DXF_source'] = DXF_source
                 settings.set('input_type', "image")
 
-        except Exception, e:
-            fmessage("Unable To open Drawing Exchange File (DXF) file.")
-            fmessage(e)
+        except Exception as e:
+            fmessage("Unable to open Drawing Exchange File (DXF), error: {}".format(e))
 
     elif filetype in ('.BMP', '.PBM', '.PPM', '.PGM', '.PNM'):
         try:
@@ -58,12 +57,12 @@ def read_image_file(settings):
                 dxf_file = stdout.split("\n")
 
             # build stroke lists from font file
-            font, DXF_source = dxf.parse(dxf_file, segarc, new_origin)
+            font, DXF_source = parse(dxf_file, segarc, new_origin)
             # font['DXF_source'] = DXF_source
             settings.set('input_type', "image")
 
-        except:
-            fmessage("Unable To create path data from bitmap File.")
+        except Exception as e:
+            fmessage("Unable to create path data from bitmap file, error: {}".format(e))
     else:
         fmessage("Unknown filetype: " + fileExtension)
 

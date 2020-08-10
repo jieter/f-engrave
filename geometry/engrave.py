@@ -906,6 +906,24 @@ class Engrave(object):
                 LNbeg.append(len(ecoords) - 2)
                 LNend.append(len(ecoords) - 1)
 
+        # Eliminate Tiny Features
+        for k in range(len(Lbeg)):
+            Start = Lbeg[k]
+            End = Lend[k]
+            step = 1
+            [x1, y1] = ecoords[Start + 0]
+            for i in range(Start + 1, End + step, step):
+                [x2, y2] = ecoords[i]
+                Lseg = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                if Lseg >= self.accuracy:
+                    x1 = float(x2)
+                    y1 = float(y2)
+                elif i != End:
+                    ecoords[i] = [float(x1), float(y1)]
+                else:
+                    [x1, y1] = ecoords[Start]
+                    ecoords[End] = [float(x1), float(y1)]
+
         # Make new sequential ecoords for each new loop
         Loop_last = -1
         for k in range(len(LNbeg)):
@@ -1063,6 +1081,21 @@ class Engrave(object):
                         temp_coords[-1][3] = ya
                     else:
                         temp_coords.append([x1, y1, xa, ya, LN, 0])
+
+        cnt = 1
+        if temp_coords != []:
+            loop_last = temp_coords[len(temp_coords) - 1][4]
+            for i in range(len(temp_coords) - 2, -1, -1):
+                loop = temp_coords[i][4]
+                if loop == loop_last:
+                    cnt += 1
+                else:
+                    if cnt < 3:
+                        idel = i + 1
+                        while idel < len(temp_coords) and temp_coords[idel][4] == loop_last:
+                            temp_coords.pop(idel)
+                    cnt = 1
+                    loop_last = loop
 
         return temp_coords
 

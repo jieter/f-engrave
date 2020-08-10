@@ -546,8 +546,9 @@ class GeneralSettings(object):
     def Fontdir_Click(self, event=None):
         newfontdir = askdirectory(mustexist=1, initialdir=self.fontdir.get())
         if newfontdir != "" and newfontdir != ():
-            self.fontdir.set(newfontdir.encode("utf-8"))
-            self.settings.set('fontdir', self.fontdir.get())
+            if type(newfontdir) is not str:
+                newfontdir = newfontdir.encode("utf-8")
+            self.fontdir.set(newfontdir)
             self.Ctrl_font_selected()
 
     def create_icon(self):
