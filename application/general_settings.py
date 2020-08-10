@@ -472,7 +472,10 @@ class GeneralSettings(object):
 
     def Entry_ArcAngle_Check(self):
         try:
-            float(self.segarc.get())
+            value = float(self.segarc.get())
+            if value <= 0.0:
+                pub.sendMessage('status_message', msg="Arc angle should be greater than zero.")
+                return INV
         except ValueError:
             return NAN
         return OK
