@@ -17,7 +17,6 @@ from geometry.engrave import Engrave
 from readers import *
 from writers import *
 
-from settings import CUT_TYPE_VCARVE, CUT_TYPE_ENGRAVE, INPUT_TYPE_TEXT, INPUT_TYPE_IMAGE
 
 if VERSION == 3:
     from tkinter import *
@@ -117,13 +116,13 @@ class Gui(Frame):
         self._error_count += incr
 
     def general_settings_window(self):
-        general_settings_window = GeneralSettings(self, self.settings)
+        general_settings_window = GeneralSettings(self, self.settings)  # noqa F841
 
     def bitmap_settings_window(self):
-        bitmap_settings_window = BitmapSettings(self, self.settings)
+        bitmap_settings_window = BitmapSettings(self, self.settings)  # noqa F841
 
     def vcarve_settings_window(self):
-        vcarve_settings_window = VCarveSettings(self, self.settings)
+        vcarve_settings_window = VCarveSettings(self, self.settings)  # noqa F841
 
     def status_color(self, color=COLOR_RECALC):
         self.statusbar.configure(bg=color)
