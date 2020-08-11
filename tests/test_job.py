@@ -7,7 +7,7 @@ from application.job import Job
 class JobTest(unittest.TestCase):
 
     def _save_testfiles(self, job, filename):
-        basename = '/Users/johan/Desktop/cnc/%s.%s'
+        basename = 'tmp/%s.%s'
 
         with open(basename % (filename, 'ngc'), 'w') as f:
             f.write(job.get_gcode())
