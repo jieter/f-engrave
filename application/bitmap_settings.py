@@ -1,4 +1,5 @@
 from util import VERSION, OK, INV, NAN, position_window, validate_entry_set
+from pubsub import pub
 
 if VERSION == 3:
     from tkinter import *

@@ -16,6 +16,7 @@ from geometry.engrave import Engrave
 
 from readers import *
 from writers import *
+from pubsub import pub
 
 
 if VERSION == 3:
@@ -24,8 +25,6 @@ if VERSION == 3:
 else:
     from Tkinter import *
     from tkFileDialog import *
-
-from pubsub import pub
 
 
 class Gui(Frame):
@@ -63,6 +62,7 @@ class Gui(Frame):
 
         pub.subscribe(self.menu_File_Quit, 'quit')
         pub.subscribe(self.Ctrl_font_file_changed, 'font_file_changed')
+        pub.subscribe(self.reload_image_file_click, 'reload_image')
 
         pub.subscribe(self.menu_File_Save_Settings_File, 'save.settings_file')
         pub.subscribe(self.menu_File_Open_G_Code_File, 'open.g_code_file')
@@ -745,7 +745,12 @@ class Gui(Frame):
             self.do_it()
 
     def load_image_file(self):
+        self.reload_image_file()
+        # the input_type may have been changed
+        self.Ctrl_set_menu_input_type()
+        self.create_mainwindow_widgets()
 
+    def reload_image_file(self):
         # TODO future read_image_file will return a MyImage instead of a Font instance
         font = read_image_file(self.settings)
         if font is not None and len(font) > 0:
@@ -754,9 +759,9 @@ class Gui(Frame):
         else:
             self.image = MyImage()
 
-        # the input_type may have been changed by read_image_file
-        self.Ctrl_set_menu_input_type()
-        self.create_mainwindow_widgets()
+    def reload_image_file_click(self):
+        self.reload_image_file()
+        self.Recalculate_Click()
 
     def Open_G_Code_File(self, filename):
 

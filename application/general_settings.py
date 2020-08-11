@@ -1,6 +1,7 @@
 from util import VERSION, OK, NOR, INV, NAN, position_window, validate_entry_set
 from application.settings import CUT_TYPE_VCARVE, INPUT_TYPE_IMAGE
 from application.tooltip import ToolTip
+from pubsub import pub
 
 if VERSION == 3:
     from tkinter import *
@@ -8,8 +9,6 @@ if VERSION == 3:
 else:
     from Tkinter import *
     from tkFileDialog import *
-
-from pubsub import pub
 
 
 class GeneralSettings(object):

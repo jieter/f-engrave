@@ -2,6 +2,7 @@ from util import POTRACE_AVAILABLE, VERSION, IN_AXIS, OK, NOR, INV, NAN, validat
 import os.path
 from application.tooltip import ToolTip
 from application.settings import CUT_TYPE_VCARVE  # , CUT_TYPE_ENGRAVE
+from pubsub import pub
 
 if VERSION == 3:
     from tkinter import *
@@ -9,8 +10,6 @@ if VERSION == 3:
 else:
     from Tkinter import *
     from tkFileDialog import *
-
-from pubsub import pub
 
 
 class MenuBar(object):

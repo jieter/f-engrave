@@ -1,7 +1,7 @@
 import os
 from subprocess import Popen, PIPE
 
-from util import fmessage, VERSION
+from util import fmessage, VERSION, PIL
 from readers.dxf import parse
 from geometry.font import *
 
