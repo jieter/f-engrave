@@ -6,7 +6,8 @@
 # ignore project files
 .idea/
 
-# ignore G-Code output
-output.ngc
+# ignore test output
+tmp/*.ngc
+tmp/*.svg
 
 f-engrave.icon

@@ -135,6 +135,13 @@ class JobTest(unittest.TestCase):
         )
         self._save_testfiles(job, 'bitmap')
 
+    def test_bitmap_pil(self):
+        job = self._job_with_settings(
+            ('input_type', 'image'),
+            ('IMAGE_FILE', 'tests/files/bitmap.png'),
+        )
+        self._save_testfiles(job, 'bitmap_png')
+
     # TODO diff with original v1.65 output
     def test_dxf(self):
         job = self._job_with_settings(
