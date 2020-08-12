@@ -12,6 +12,27 @@ if PIL:
 
 def read_image_file(settings):
 
+    def potrace(file):
+        cmd = ["potrace",
+               "-z", settings.get('bmp_turnpol'),
+               "-t", settings.get('bmp_turdsize'),
+               "-a", settings.get('bmp_alphamax'),
+               "-n",
+               "-b", "dxf", file, "-o", "-"]
+        if settings.get('bmp_longcurve'):
+            cmd.extend(("-O", settings.get('bmp_opttolerance')))
+
+        cmd = ' '.join(map(str, cmd))
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        stdout, stderr = p.communicate()
+
+        if VERSION == 3:
+            dxf_file = bytes.decode(stdout).split("\n")
+        else:
+            dxf_file = stdout.split("\n")
+
+        return dxf_file
+
     font = Font()
 
     file_full = settings.get('IMAGE_FILE')
@@ -31,7 +52,7 @@ def read_image_file(settings):
     if filetype == '.DXF':
         try:
             with open(file_full) as dxf_file:
-                # build stroke lists from image file
+                # build stroke lists
                 font, DXF_source = parse(dxf_file, segarc, new_origin)
                 # font['DXF_source'] = DXF_source
                 settings.set('input_type', "image")
@@ -41,28 +62,8 @@ def read_image_file(settings):
 
     elif filetype in ('.BMP', '.PBM', '.PPM', '.PGM', '.PNM'):
         try:
-            # cmd = ["potrace","-b","dxf",file_full,"-o","-"]
-            cmd = ["potrace",
-                   "-z", settings.get('bmp_turnpol'),
-                   "-t", settings.get('bmp_turdsize'),
-                   "-a", settings.get('bmp_alphamax'),
-                   "-n",
-                   "-b", "dxf", file_full, "-o", "-"]
-            if settings.get('bmp_longcurve'):
-                cmd.extend(("-O", settings.get('bmp_opttolerance')))
-
-            cmd = ' '.join(map(str, cmd))
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-            stdout, stderr = p.communicate()
-
-            if VERSION == 3:
-                dxf_file = bytes.decode(stdout).split("\n")
-            else:
-                dxf_file = stdout.split("\n")
-
-            # build stroke lists from font file
-            font, DXF_source = parse(dxf_file, segarc, new_origin)
-            # font['DXF_source'] = DXF_source
+            # build stroke lists
+            font, DXF_source = parse(potrace(file_full), segarc, new_origin)
             settings.set('input_type', "image")
 
         except Exception as e:
@@ -82,28 +83,8 @@ def read_image_file(settings):
                 file_full_tmp = settings.get('HOME_DIR') + "/fengrave_tmp.bmp"
                 PIL_im.save(file_full_tmp, "bmp")
 
-                # TODO create a separate potrace method
-                # cmd = ["potrace","-b","dxf",file_full,"-o","-"]
-                cmd = ["potrace",
-                       "-z", settings.get('bmp_turnpol'),
-                       "-t", settings.get('bmp_turdsize'),
-                       "-a", settings.get('bmp_alphamax'),
-                       "-n",
-                       "-b", "dxf", file_full_tmp, "-o", "-"]
-                if settings.get('bmp_longcurve'):
-                    cmd.extend(("-O", settings.get('bmp_opttolerance')))
-
-                cmd = ' '.join(map(str, cmd))
-                p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-                stdout, stderr = p.communicate()
-
-                if VERSION == 3:
-                    dxf_file = bytes.decode(stdout).split("\n")
-                else:
-                    dxf_file = stdout.split("\n")
-
-                # build stroke lists from font file
-                font, DXF_source = parse(dxf_file, segarc, new_origin)
+                # build stroke lists
+                font, DXF_source = parse(potrace(file_full_tmp), segarc, new_origin)
                 settings.set('input_type', "image")
                 try:
                     os.remove(file_full_tmp)
