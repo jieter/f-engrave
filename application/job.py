@@ -165,7 +165,7 @@ class Job(object):
     def get_font(self):
         filename = self.settings.get_fontfile()
 
-        with open(filename) as font:
+        with open(filename, errors='ignore') as font:
             return parse_cxf(font, self.settings.get('segarc'))
 
     def load_font(self):

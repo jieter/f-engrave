@@ -1,4 +1,5 @@
 import os
+from util import VERSION
 
 
 def cast_boolean(value):
@@ -349,10 +350,10 @@ class Settings(object):
         code_list = line.split()
 
         for char in code_list:
-            try:
-                text_code += "%c" % unichr(int(char))
-            except:
+            if VERSION == 3:
                 text_code += "%c" % chr(int(char))
+            else:
+                text_code += "%c" % unichr(int(char))
 
         self._text_code = text_code
 

@@ -48,7 +48,8 @@ class BoundingBoxTest(unittest.TestCase):
         bbox = BoundingBox()
 
         with open('tests/files/lines.csv', 'r') as csvfile:
-            lines = [map(float, line) for line in csv.reader(csvfile, delimiter=',')]
+            csv_file = csv.reader(csvfile, delimiter=',')
+            lines = [list(map(float, line)) for line in csv_file]
 
             minx, maxx, miny, maxy = (INFINITY, -INFINITY, INFINITY, -INFINITY)
             for line in lines:

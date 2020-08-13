@@ -49,7 +49,7 @@ class CXFReaderTest(unittest.TestCase):
         )
 
         for fontfile, numchars in testfonts:
-            with open(fontfile) as f:
+            with open(fontfile, 'r', encoding='ISO-8859-1', errors='ignore') as f:
                 font = cxf.parse(f, 1.0)
 
                 self.assertEquals(len(font), numchars)
