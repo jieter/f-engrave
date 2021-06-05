@@ -5,6 +5,8 @@ which in turn was a fork of [Scorchworks F-Engrave](http://www.scorchworks.com/F
 Refactored the original code to get a better understanding of it. As often in life, one action led to another. Hence this fork of Jieter's code.
 The repo name was changed into OOF-Engrave to avoid confusion with the original. This after having consulted Scorch, the F-Engrave author.
 
+![Screenshot](Schermafbeelding 2021-06-05 om 22.08.38.png?raw=true "Screenshot")
+
 ## Changes
  - split into modules
  - decoupled the GUI from the actual processing
