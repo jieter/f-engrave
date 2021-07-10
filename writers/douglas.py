@@ -14,18 +14,13 @@ def douglas(st, tolerance=.001, plane=None, _first=True):
     plane in addition to lines.
 
     -- I [scorch] modified the code so the note below does not apply when using plane 17 --
-    Note that if there is movement in the plane
-    perpendicular to the arc, it will be distorted, so 'plane' should usually
-    be specified only when there is only movement on 2 axes
+    Note that if there is movement in the plane perpendicular to the arc, it will be distorted,
+    so 'plane' should usually be specified only when there is only movement on 2 axes.
     """
 
     if len(st) == 1:
         yield "G1", st[0], None
         return
-    # if len(st) < 1:
-    #    print "whaaaa!?"
-    #    #yield "G1", st[0], None
-    #    return
 
     L1 = st[0]
     L2 = st[-1]

@@ -1,6 +1,7 @@
-from util import VERSION, OVD_AVAILABLE, OK, NOR, INV, NAN, position_window
-from tooltip import ToolTip
-from settings import CUT_TYPE_VCARVE
+from util import VERSION, OVD_AVAILABLE, OK, NOR, INV, NAN, position_window, validate_entry_set
+from application.tooltip import ToolTip
+from application.settings import CUT_TYPE_VCARVE
+from pubsub import pub
 
 if VERSION == 3:
     from tkinter import *
@@ -15,21 +16,6 @@ class VCarveSettings(object):
     def __init__(self, master, settings):
 
         self.settings = settings
-
-        # GUI callbacks
-        self.Ctrl_entry_set = master.entry_set
-        self.Ctrl_status_message = master.statusMessage
-        self.Ctrl_calc_depth_limit = master.calc_depth_limit
-        self.Ctrl_calculate_cleanup = master.Calculate_CLEAN_Click
-        self.Ctrl_write_clean_file = master.Write_Clean_Click
-        self.Ctrl_write_v_clean_file = master.Write_V_Clean_Click
-        self.Ctrl_recalculation_required = master.Recalc_RQD
-        self.Ctrl_calculate_v_carve = master.V_Carve_Calc_Click
-        self.Ctrl_recalculate = master.Recalculate_Click
-
-        # GUI Engraver callback
-        self.Ctrl_init_clean_coords = master.engrave.init_clean_coords
-        self.Ctrl_v_pplot_changed = master.engrave.refresh_v_pplot
 
         # V-Carve settings window
         self.width = 600
@@ -94,11 +80,35 @@ class VCarveSettings(object):
         self.create_widgets()
         self.create_icon()
 
-        # self.vcarve_settings_lower.update_idletasks()
-        # self.height = self.vcarve_settings.winfo_height()
-
         position_window(self.vcarve_settings, self.width, self.height)
         self.vcarve_settings.deiconify()
+
+    def Ctrl_init_clean_coords(self):
+        pub.sendMessage('init_clean_coords')
+
+    def Ctrl_v_pplot_changed(self):
+        pub.sendMessage('refresh_v_pplot')
+
+    def Ctrl_calc_depth_limit(self):
+        pub.sendMessage('calc_depth_limit')
+
+    def Ctrl_calculate_cleanup(self):
+        pub.sendMessage('calculate_cleanup')
+
+    def Ctrl_write_clean_file(self):
+        pub.sendMessage('write_clean_file')
+
+    def Ctrl_write_v_clean_file(self):
+        pub.sendMessage('write_v_clean_file')
+
+    def Ctrl_recalculation_required(self):
+        pub.sendMessage('calc_depth_limit')
+
+    def Ctrl_calculate_v_carve(self):
+        pub.sendMessage('calculate_v_carve')
+
+    def Ctrl_recalculate(self):
+        pub.sendMessage('recalculate')
 
     def initialise_variables(self):
         self.units.set(self.settings.get('units'))
@@ -137,21 +147,20 @@ class VCarveSettings(object):
         self.v_clean_X.set(self.settings.get('v_clean_X'))
 
     def Close_Current_Window_Click(self):
-
         error_cnt = \
-            self.Ctrl_entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), 2)
+            validate_entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), 2) + \
+            validate_entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), 2) + \
+            validate_entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), 2) + \
+            validate_entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), 2) + \
+            validate_entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), 2) + \
+            validate_entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), 2) + \
+            validate_entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), 2) + \
+            validate_entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), 2) + \
+            validate_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), 2)
 
         if error_cnt > 0:
-            self.Ctrl_status_message.set(
-                "Entry Error Detected: Check the entry values in the V-Carve Settings window")
+            pub.sendMessage('status_message',
+                            msg="Entry Error Detected: Check the entry values in the V-Carve Settings window.")
         else:
             self.vcarve_settings.destroy()
 
@@ -560,33 +569,34 @@ class VCarveSettings(object):
             pass
 
     def check_all_variables(self, new=1):
-        error_cnt = self.Ctrl_entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), new) + \
-                    self.Ctrl_entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), new)
+        error_cnt = \
+            validate_entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), new) + \
+            validate_entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), new) + \
+            validate_entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), new) + \
+            validate_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), new) + \
+            validate_entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), new) + \
+            validate_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), new) + \
+            validate_entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), new) + \
+            validate_entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), new) + \
+            validate_entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), new) + \
+            validate_entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), new) + \
+            validate_entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), new)
         return error_cnt
 
-    # V-Carve Settings check and call-back methods
+    # V-Carve Settings check
 
     def Entry_Vbitangle_Check(self):
         try:
             value = float(self.v_bit_angle.get())
             if value < 0.0 or value > 180.0:
-                self.Ctrl_status_message.set(" Angle should be between 0 and 180 ")
+                pub.sendMessage('status_message', msg="Angle should be between 0 and 180")
                 return INV
         except ValueError:
             return NAN
         return NOR
 
     def Entry_Vbitangle_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), setting='v_bit_angle')
+        validate_entry_set(self.Entry_Vbitangle, self.Entry_Vbitangle_Check(), setting='v_bit_angle', settings=self.settings)
         if self.Ctrl_calc_depth_limit():
             self.max_cut.set(self.settings.get('max_cut'))
         else:
@@ -596,14 +606,14 @@ class VCarveSettings(object):
         try:
             value = float(self.v_bit_dia.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Diameter should be greater than 0 ")
+                pub.sendMessage('status_message', msg="Diameter should be greater than 0")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_Vbitdia_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), setting='v_bit_dia')
+        validate_entry_set(self.Entry_Vbitdia, self.Entry_Vbitdia_Check(), setting='v_bit_dia', settings=self.settings)
         if self.Ctrl_calc_depth_limit():
             self.max_cut.set(self.settings.get('max_cut'))
         else:
@@ -613,14 +623,14 @@ class VCarveSettings(object):
         try:
             value = float(self.v_depth_lim.get())
             if value > 0.0:
-                self.Ctrl_status_message.set(" Depth should be less than 0 ")
+                pub.sendMessage('status_message', msg="Depth should be less than 0")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_VDepthLimit_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), setting='v_depth_lim')
+        validate_entry_set(self.Entry_VDepthLimit, self.Entry_VDepthLimit_Check(), setting='v_depth_lim', settings=self.settings)
         if self.Ctrl_calc_depth_limit():
             self.max_cut.set(self.settings.get('max_cut'))
         else:
@@ -630,14 +640,14 @@ class VCarveSettings(object):
         try:
             value = float(self.v_step_len.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Step size should be greater than 0 ")
+                pub.sendMessage('status_message', msg="Step size should be greater than 0 ")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_StepSize_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), setting='v_step_len')
+        validate_entry_set(self.Entry_StepSize, self.Entry_StepSize_Check(), setting='v_step_len', settings=self.settings)
 
     def Entry_v_flop_Callback(self, varName, index, mode):
         self.settings.set('v_flop', self.v_flop.get())
@@ -647,14 +657,14 @@ class VCarveSettings(object):
         try:
             value = float(self.allowance.get())
             if value > 0.0:
-                self.Ctrl_status_message.set(" Allowance should be less than or equal to 0 ")
+                pub.sendMessage('status_message', msg="Allowance should be less than or equal to 0 ")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_Allowance_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), setting='allowance')
+        validate_entry_set(self.Entry_Allowance, self.Entry_Allowance_Check(), setting='allowance', settings=self.settings)
 
     def Entry_Prismatic_Callback(self, varName, index, mode):
         self.configure_inlay()
@@ -666,20 +676,20 @@ class VCarveSettings(object):
             value = float(self.v_max_cut.get())
             # max depth is only relevant for multipass
             if float(self.v_rough_stk.get()) != 0 and value >= 0.0:
-                self.Ctrl_status_message.set(" Max Depth per Pass should be less than 0.0 ")
+                self.Ctrl_status_message.set("Max Depth per Pass should be less than 0.0 ")
                 return INV
         except ValueError:
             return NAN
         return NOR
 
     def Entry_v_max_cut_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut')
+        validate_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut', settings=self.settings)
 
     def Entry_v_rough_stk_Check(self):
         try:
             value = float(self.v_rough_stk.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Finish Pass Stock should be positive or zero (Zero disables multi-pass)")
+                self.Ctrl_status_message.set("Finish Pass Stock should be positive or zero (Zero disables multi-pass)")
                 return INV
         except ValueError:
             return NAN
@@ -687,48 +697,48 @@ class VCarveSettings(object):
         return NOR
 
     def Entry_v_rough_stk_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), setting='v_rough_stk')
-        self.Ctrl_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut')
+        validate_entry_set(self.Entry_v_rough_stk, self.Entry_v_rough_stk_Check(), setting='v_rough_stk', settings=self.settings)
+        validate_entry_set(self.Entry_v_max_cut, self.Entry_v_max_cut_Check(), setting='v_max_cut', settings=self.settings)
 
     def Entry_V_CLEAN_Check(self):
         try:
             value = float(self.clean_v.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Angle should be greater than 0.0 ")
+                pub.sendMessage('status_message', msg="Angle should be greater than 0.0 ")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_V_CLEAN_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), setting='clean_v')
+        validate_entry_set(self.Entry_V_CLEAN, self.Entry_V_CLEAN_Check(), setting='clean_v', settings=self.settings)
 
     def Entry_CLEAN_DIA_Check(self):
         try:
             value = float(self.clean_dia.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Angle should be greater than 0.0 ")
+                self.Ctrl_status_message.set("Angle should be greater than 0.0 ")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_CLEAN_DIA_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), setting='clean_dia')
+        validate_entry_set(self.Entry_CLEAN_DIA, self.Entry_CLEAN_DIA_Check(), setting='clean_dia', settings=self.settings)
         self.Ctrl_init_clean_coords()
 
     def Entry_STEP_OVER_Check(self):
         try:
             value = float(self.clean_step.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Step Over should be between 0% and 100% ")
+                pub.sendMessage('status_message', msg="Step Over should be between 0% and 100% ")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_STEP_OVER_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), setting='clean_step')
+        validate_entry_set(self.Entry_STEP_OVER, self.Entry_STEP_OVER_Check(), setting='clean_step', settings=self.settings)
 
     def Checkbutton_clean_P_Callback(self, varName, index, mode):
         self.settings.set('clean_P', self.clean_P.get())
@@ -756,14 +766,14 @@ class VCarveSettings(object):
         try:
             value = float(self.boxgap.get())
             if value <= 0.0:
-                self.Ctrl_status_message.set(" Gap should be greater than zero.")
+                pub.sendMessage('status_message', msg="Gap should be greater than zero.")
                 return INV
         except:
             return NAN
         return OK
 
     def Entry_BoxGap_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap')
+        validate_entry_set(self.Entry_BoxGap, self.Entry_BoxGap_Check(), setting='boxgap', settings=self.settings)
         self.configure_plotbox()
 
     def Entry_Box_Callback(self, varName, index, mode):
@@ -772,8 +782,9 @@ class VCarveSettings(object):
         self.Ctrl_recalculation_required()
 
     def recalculate_click(self, event):
-        self.check_all_variables()
-        self.Ctrl_recalculate(event)
+        error_cnt = self.check_all_variables()
+        if error_cnt == 0:
+            self.Ctrl_recalculate()
 
     def vcarve_recalculate_click(self):
         self.Ctrl_calculate_v_carve()
@@ -814,7 +825,7 @@ class VCarveSettings(object):
         try:
             vcarve_settings.iconbitmap(bitmap="@emblem64")
         except:
-            try:  # Attempt to create temporary icon bitmap file
+            try:  # attempt to create temporary icon bitmap file
                 temp_icon("f_engrave_icon")
                 vcarve_settings.iconbitmap("@f_engrave_icon")
                 os.remove("f_engrave_icon")

@@ -7,7 +7,7 @@ from application.job import Job
 class JobTest(unittest.TestCase):
 
     def _save_testfiles(self, job, filename):
-        basename = '/Users/johan/Desktop/cnc/%s.%s'
+        basename = 'tmp/%s.%s'
 
         with open(basename % (filename, 'ngc'), 'w') as f:
             f.write(job.get_gcode())
@@ -28,9 +28,6 @@ class JobTest(unittest.TestCase):
 
     def test_text_code(self):
         job = self._job_with_settings(
-            # ('fontfile', 'unicode.cxf'),
-            # ('fontfile', 'ttf/LucidaBright.ttf'),
-            # ('text_code', '116  101  115  116'),  # "test"
             ('text_code', '079 079 070 045 069 110 103 114 097 118 130'),  # "OOF-Engrav&eacute;"
             ('default_text', ''),
         )
@@ -137,6 +134,13 @@ class JobTest(unittest.TestCase):
             ('IMAGE_FILE', 'tests/files/outline.bmp'),
         )
         self._save_testfiles(job, 'bitmap')
+
+    def test_bitmap_pil(self):
+        job = self._job_with_settings(
+            ('input_type', 'image'),
+            ('IMAGE_FILE', 'tests/files/bitmap.png'),
+        )
+        self._save_testfiles(job, 'bitmap_png')
 
     # TODO diff with original v1.65 output
     def test_dxf(self):

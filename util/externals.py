@@ -6,10 +6,10 @@ VERSION = sys.version_info[0]
 
 def check_ovd():
     try:
-        import openvoronoi as ovd
+        import openvoronoi as ovd  # noqa F401
         return True
     except:
-        print("openvoronoi module is not found/working...")
+        print("openvoronoi module is not found...")
 
     return False
 
@@ -52,10 +52,21 @@ def check_potrace():
 
 def check_pil():
     try:
-        from PIL import Image
+        from PIL import Image  # noqa F401
         return True
     except:
         raise Exception("Python Imaging Library (PIL) was not found...Bummer\n\
         PIL enables more image file formats.")
+
+    return False
+
+
+def check_pubsub():
+    try:
+        from pubsub import pub
+        print("Python pubsub API version: %s found" % pub.VERSION_API)
+        return True
+    except:
+        raise Exception("Python pubsub is not found...")
 
     return False

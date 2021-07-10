@@ -281,6 +281,20 @@ from util import f_engrave_version
 
     Version 1.65b - OOF-Engrave: refactored F-Engrave source code.
 
+    Version 1.66b - align with f-engrave v1.66 - v1.68:
+             1.66 - [Fixed a problem with the origin when wrapping text in some cases.]
+                  - [Decreased number of updates while doing computations which increases overall calculation speed.]
+                  - [Fixed problem that can cause the program to freeze if the saved settings contain errors.]
+                  - [Fixed problem that can cause the program to freeze if the saved settings contain errors.]
+             1.67 - Improved DXF import for DXF files with some incomplete data
+                  - Fixed curve fitting upon g-code export.
+                    Limited curve fitting angle to avoid curve fitting sharp corners.
+             1.68 - [Fixed typo in code introduced in v1.67 that broke curve fitting.]
+
+    Version 1.69b - align with f-engrave v1.69:
+                 - A couple of minor fixes to keep things working in Python 3.x
+                 - [Added ability to disable plotting of v-carve toolpath and area]
+                 - Fixed problem causing v-carve path to go outside of design bounds for very thin design sections.
 """
 
 # TODO insert psyco / pypy
@@ -304,12 +318,24 @@ else:
 
     root = Tk()
     app = Gui(root, settings)
+
+    width = 900
+    height = 600
+
     app.master.title("OOF-Engrave v" + f_engrave_version())
     app.master.iconname("OOF-Engrave")
-    app.master.minsize(900, 600)
+    app.master.minsize(width, height)
 
-    app.f_engrave_init()
+    # get screen width and height
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    # center window
+    x = (screen_width / 2) - (width / 2)
+    y = (screen_height / 2) - (height / 2)
+    root.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
     icon.add_to_app(app)
 
+    app.f_engrave_init()
     root.mainloop()

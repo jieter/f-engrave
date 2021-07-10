@@ -1,4 +1,5 @@
-from util import VERSION, OK, INV, NAN, position_window
+from util import VERSION, OK, INV, NAN, position_window, validate_entry_set
+from pubsub import pub
 
 if VERSION == 3:
     from tkinter import *
@@ -18,11 +19,6 @@ class BitmapSettings(object):
     def __init__(self, master, settings):
 
         self.settings = settings
-
-        # GUI callbacks
-        self.Ctrl_entry_set = master.entry_set
-        self.Ctrl_status_message = master.statusMessage
-        self.Ctrl_reload = master.Settings_ReLoad_Click
 
         # Bitmap settings window
         self.width = 550
@@ -65,13 +61,13 @@ class BitmapSettings(object):
     def Close_Current_Window_Click(self):
 
         error_cnt = \
-            self.Ctrl_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2) + \
-            self.Ctrl_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
+            validate_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2) + \
+            validate_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2) + \
+            validate_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
 
         if error_cnt > 0:
-            self.Ctrl_status_message.set(
-                "Entry Error Detected: Check the entry values in the Bitmap Settings window")
+            pub.sendMessage('status_message',
+                            msg="Entry Error Detected: Check the entry values in the Bitmap Settings window")
         else:
             self.bmp_settings.destroy()
 
@@ -101,7 +97,7 @@ class BitmapSettings(object):
         self.bmp_turdsize.trace_variable("w", self.Entry_BMPturdsize_Callback)
         self.Label_BMPturdsize2 = Label(self.turdsize_frame, text="Suppress speckles of up to this pixel size", width=w_tip)
         self.Label_BMPturdsize2.pack(side=RIGHT)
-        self.Ctrl_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), 2)
+        self.bmp_turdsize.trace_variable("w", self.Entry_BMPturdsize_Callback)
 
         self.alphamax_frame = Frame(bmp_settings)
         self.Label_BMPalphamax = Label(self.alphamax_frame, text="Alpha Max", width=w_label)
@@ -112,7 +108,7 @@ class BitmapSettings(object):
         self.bmp_alphamax.trace_variable("w", self.Entry_BMPalphamax_Callback)
         self.Label_BMPalphamax2 = Label(self.alphamax_frame, text="0.0 = sharp corners, 1.33 = smoothed corners", width=w_tip)
         self.Label_BMPalphamax2.pack(side=RIGHT)
-        self.Ctrl_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), 2)
+        self.bmp_alphamax.trace_variable("w", self.Entry_BMPalphamax_Callback)
 
         self.longcurve_frame = Frame(bmp_settings)
         self.Label_BMP_longcurve = Label(self.longcurve_frame, text="Long Curve", width=w_label)
@@ -133,11 +129,11 @@ class BitmapSettings(object):
         self.bmp_opttolerance.trace_variable("w", self.Entry_BMPoptTolerance_Callback)
         self.Label_BMPoptTolerance2 = Label(self.tolerance_frame, text="Curve Optimization Tolerance", width=w_tip)
         self.Label_BMPoptTolerance2.pack(side=RIGHT)
-        self.Ctrl_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), 2)
+        self.bmp_opttolerance.trace_variable("w", self.Entry_BMPoptTolerance_Callback)
 
         self.button_frame = Frame(bmp_settings)
         self.PBM_Reload = Button(self.button_frame, text="Re-Load Image")
-        self.PBM_Reload.bind("<ButtonRelease-1>", self.Ctrl_reload)
+        self.PBM_Reload.bind("<ButtonRelease-1>", self.reload_image_click)
         self.PBM_Reload.pack(side=LEFT)
 
         self.PBM_Close = Button(self.button_frame, text="Close", command=self.Close_Current_Window_Click)
@@ -154,33 +150,38 @@ class BitmapSettings(object):
 
         bmp_settings.update_idletasks()
 
+    def reload_image_click(self, event=None):
+        pub.sendMessage('reload_image')
+
     # Bitmap check and callback methods
 
     def Entry_BMPturdsize_Check(self):
         try:
             value = float(self.bmp_turdsize.get())
             if value < 1.0:
-                self.Ctrl_status_message.set(" Step size should be greater or equal to 1.0 ")
+                pub.sendMessage('status_message',
+                                msg="Step size should be greater or equal to 1.0 ")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_BMPturdsize_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), setting='bmp_turdsize')
+        validate_entry_set(self.Entry_BMPturdsize, self.Entry_BMPturdsize_Check(), setting='bmp_turdsize', settings=self.settings)
 
     def Entry_BMPalphamax_Check(self):
         try:
             value = float(self.bmp_alphamax.get())
             if value < 0.0 or value > 4.0 / 3.0:
-                self.Ctrl_status_message.set(" Alpha Max should be between 0.0 and 1.333 ")
+                pub.sendMessage('status_message',
+                                msg="Alpha Max should be between 0.0 and 1.333 ")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_BMPalphamax_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), setting='bmp_alphamax')
+        validate_entry_set(self.Entry_BMPalphamax, self.Entry_BMPalphamax_Check(), setting='bmp_alphamax', settings=self.settings)
 
     def Entry_BMPTurnpol_Callback(self, varName, index, mode):
         self.settings.set('bmp_turnpol', self.bmp_turnpol.get())
@@ -192,14 +193,15 @@ class BitmapSettings(object):
         try:
             value = float(self.bmp_opttolerance.get())
             if value < 0.0:
-                self.Ctrl_status_message.set(" Alpha Max should be between 0.0 and 1.333 ")
+                pub.sendMessage('status_message',
+                                msg="Alpha Max should be between 0.0 and 1.333 ")
                 return INV
         except ValueError:
             return NAN
         return OK
 
     def Entry_BMPoptTolerance_Callback(self, varName, index, mode):
-        self.Ctrl_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), setting='bmp_opttolerance')
+        validate_entry_set(self.Entry_BMPoptTolerance, self.Entry_BMPoptTolerance_Check(), setting='bmp_opttolerance', settings=self.settings)
 
     def create_icon(self):
         try:

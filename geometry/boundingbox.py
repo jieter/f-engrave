@@ -7,7 +7,7 @@ class BoundingBox(object):
         self.ymax = float(ymax)
 
     def extend(self, *args):
-        if len(args) is 1:
+        if len(args) == 1:
             obj = args[0]
             if type(obj) is BoundingBox:
                 self.xmin = min(self.xmin, obj.xmin)

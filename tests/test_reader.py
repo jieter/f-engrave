@@ -24,9 +24,9 @@ class DXFReaderTest(unittest.TestCase):
 
             for i, line in enumerate(parsed[self.key].stroke_list):
                 line = str(line)
-                if i is 0:
+                if i == 0:
                     self.assertEquals(line, 'Line([0.0, 0.0, 50.0, 50.0])')
-                elif i is 1:
+                elif i == 1:
                     self.assertEquals(line, 'Line([50.0, 50.0, 40.0, 0.0])')
 
     def test_circle(self):
@@ -49,7 +49,7 @@ class CXFReaderTest(unittest.TestCase):
         )
 
         for fontfile, numchars in testfonts:
-            with open(fontfile) as f:
+            with open(fontfile, 'r', encoding='ISO-8859-1', errors='ignore') as f:
                 font = cxf.parse(f, 1.0)
 
                 self.assertEquals(len(font), numchars)

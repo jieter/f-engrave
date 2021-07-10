@@ -1,4 +1,5 @@
 import os
+from util import VERSION
 
 
 def cast_boolean(value):
@@ -65,6 +66,9 @@ TEXT_CODE = 'text_code'
 
 CUT_TYPE_ENGRAVE = 'engrave'
 CUT_TYPE_VCARVE = 'v-carve'
+
+INPUT_TYPE_TEXT = 'text'
+INPUT_TYPE_IMAGE = 'image'
 
 HOME_DIR = os.path.expanduser("~")
 NGC_FILE = (HOME_DIR + "/None")
@@ -192,9 +196,10 @@ class Settings(object):
         'input_type': 'text',
         # 'input_type': 'image',
 
-        # v-cutter parameters
+        # v-cutter parameters:
+
         # options: 'scorch', 'voronoi'
-        'v_strategy': 'scorch',
+        'v_strategy': 'scorch',  # new in v1.65b
         'v_bit_angle': 60,
         'v_bit_dia': 3.0,
         'v_depth_lim': 0.0,
@@ -276,14 +281,21 @@ class Settings(object):
     def __iter__(self):
         return self._settings.items()
 
-    def type(self, name):
-        return str(type(self._settings[name]))[7:-2]
+    def var_type(self, name):
+        if type(self._settings[name]) is str:
+            return 'str'
+        elif type(self._settings[name]) is bool:
+            return 'bool'
+        elif type(self._settings[name]) is int:
+            return 'int'
+        elif type(self._settings[name]) is float:
+            return 'float'
 
     def set(self, name, value):
         if name == TEXT_CODE:
             self._set_text_code(value)
         else:
-            cast = CAST_TYPES[self.type(name)]
+            cast = CAST_TYPES[self.var_type(name)]
             self._settings[name] = cast(value)
 
     def get(self, name):
@@ -322,7 +334,7 @@ class Settings(object):
                 try:
                     self.set(name, setting)
                 except KeyError:
-                    print 'Setting not found:', name  # TODO
+                    print('Setting not found:', name)  # TODO
 
     def to_gcode(self):
         gcode = [CONFIG_TEMPLATE % (key, str(value).replace('\n', '\\n'))
@@ -338,12 +350,12 @@ class Settings(object):
         code_list = line.split()
 
         for char in code_list:
-            try:
-                text_code += "%c" % unichr(int(char))
-            except:
+            if VERSION == 3:
                 text_code += "%c" % chr(int(char))
+            else:
+                text_code += "%c" % unichr(int(char))
 
         self._text_code = text_code
 
     def __str__(self):
-        return 'Settings:\n' + ('\n'.join([', '.join(map(str, l)) for l in self._settings.items()]))
+        return 'Settings:\n' + ('\n'.join([', '.join(map(str, line)) for line in self._settings.items()]))

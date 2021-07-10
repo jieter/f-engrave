@@ -1,7 +1,7 @@
 from math import *
 
-from bspline import BSplineClass
-from elements import PointClass
+from readers.dxf.bspline import BSplineClass
+from readers.dxf.elements import PointClass
 from geometry import Zero
 
 

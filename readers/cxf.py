@@ -35,7 +35,7 @@ def parse(file, segarc):
         if end_char and key:
             font.add_character(Character(key=key, stroke_list=stroke_list))
 
-        new_cmd = re.match('^\[(.*)\]\s', text)
+        new_cmd = re.match('^\[(.*)\]\s', text)  # noqa W605
 
         # new character
         if new_cmd:

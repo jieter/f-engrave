@@ -1,4 +1,13 @@
 *.pyc
+
+# ignore Mac OS files
 .DS_Store
+
+# ignore project files
 .idea/
+
+# ignore test output
+tmp/*.ngc
+tmp/*.svg
+
 f-engrave.icon

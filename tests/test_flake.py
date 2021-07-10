@@ -32,7 +32,6 @@ style_guide = flake8.get_style_guide(
     report=None,
     exclude=[
         # old files:
-        # 'f-engrave-140.py',
         # 'py2exe_setup.py',
 
         # new files:
@@ -51,7 +50,6 @@ style_guide = flake8.get_style_guide(
         # 'coords.py',
         # 'engrave.py'
         # 'font.py',
-        # 'linearcfitter.py',
         # 'pathsorter.py',
 
         # readers:
